@@ -6,7 +6,7 @@ import numpy as np
 import os
 import sys
 
-from . import msh
+from . import fn_msh
 
 class interfacemmgs_export(bpy.types.Operator, ExportHelper):
     """Export a Mesh file"""

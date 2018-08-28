@@ -11,8 +11,16 @@ import sys
 import os
 import importlib
 
-modulesNames =  ["src." + f.replace(".py", "") for f in os.listdir("src/") if "op_" in f]
-modulesNames += "GUI"
+modulesFiles = [
+    "fn_match", "fn_nodes", "fn_msh", "fn_ortho", "fn_soft", # Functions
+    "op_import_scan", "op_export_orthoview",                 # Initial operators
+    "op_remesh_iterative", "op_remesh_mmgs",                 # Remeshing operators
+    "op_list_textures", "op_import_material",                # Material operators
+    "op_bake_textures", "op_export_blend", "op_export_fbx",  # Baking operators
+    "op_import_mesh", "op_export_mesh"                       # .mesh format operators
+]
+modulesNames = ["src." + f for f in modulesFiles]
+modulesNames += ["GUI"]
 
 modulesFullNames = {}
 for currentModuleName in modulesNames:
@@ -22,6 +30,7 @@ for currentModuleFullName in modulesFullNames.values():
     if currentModuleFullName in sys.modules:
         importlib.reload(sys.modules[currentModuleFullName])
     else:
+        print(currentModuleFullName)
         globals()[currentModuleFullName] = importlib.import_module(currentModuleFullName)
         setattr(globals()[currentModuleFullName], 'modulesNames', modulesFullNames)
 

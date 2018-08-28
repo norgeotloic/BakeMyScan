@@ -7,7 +7,7 @@ def execute(cmd):
     out, err = process.communicate()
     code     = process.returncode
     if code:
-        "Error running '" + cmd + "'\n" + "OUTPUT:\n" + str(out) + "ERROR:\n" + str(err)
+        #"Error running '" + cmd + "'\n" + "OUTPUT:\n" + str(out) + "ERROR:\n" + str(err)
         raise Exception(code)
 
 convertExe = "convert "

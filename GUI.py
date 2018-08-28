@@ -37,7 +37,7 @@ class BakingPanel(bpy.types.Panel):
     bl_label       = "Baking"
 
     def draw(self, context):
-        self.layout.operator("bakemyscan.bake_textures", icon="CAMERA", text="Bake textures")
+        self.layout.operator("bakemyscan.bake_textures", icon="OUTLINER_OB_CAMERA", text="Bake textures")
         self.layout.operator("bakemyscan.export_blend",  icon="EXPORT", text="Export to BLEND")
         self.layout.operator("bakemyscan.export_fbx",    icon="EXPORT", text="Export to FBX")
 

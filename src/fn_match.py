@@ -1,3 +1,6 @@
+import imghdr
+import os
+
 def findMaterials(directory):
     """Recursively looks for sets of texture in the specified directory"""
 

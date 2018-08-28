@@ -3,6 +3,7 @@ from bpy_extras.io_utils import ExportHelper
 from mathutils import Vector
 import numpy as np
 import os
+import subprocess
 
 from . import fn_soft
 
@@ -109,7 +110,7 @@ def create_scale_image(ax, output):
     #bpy.ops.image.save_as(save_as_render=False, filepath="/home/loic/Desktop/tmp/scaleX.png")
     return image
 def IMAGEMAGICK_trim(side, image, output=None):
-    cmd = convertExe
+    cmd = fn_soft.convertExe
     cmd+= image + " "
     #Get the side
     if side=="LEFT":
@@ -130,56 +131,54 @@ def IMAGEMAGICK_trim(side, image, output=None):
         cmd+= output
     else:
         cmd+= image
-    os.system(cmd)
+    fn_soft.execute(cmd)
 def IMAGEMAGICK_createAxio(trim, images, output, thumbres, marg):
     if not trim:
         #images = [top, left, front, right, back, bottom]
         #creates a grid of 3 rows, 4 columns
-        cmd = montageExe + "-background transparent "
+        cmd = fn_soft.montageExe + "-background transparent "
         cmd+= "null: " + images[0] + " null: null: "
         cmd+= " ".join( images[1:5] )  + " "
         cmd+= "null: " + images[5] + " null: null: "
         cmd+= "-tile 4x3  -geometry "
         cmd+= str(thumbres) + "x" + str(thumbres) + "+" + str(marg) + "+" + str(marg) + " "
         cmd+= output
-        os.system(cmd)
+        fn_soft.execute(cmd)
     else:
         #Do the middle line first
-        cmd = montageExe + "-background transparent "
+        cmd = fn_soft.montageExe + "-background transparent "
         cmd+= " ".join( images[1:5] )  + " "
         cmd+= "-tile 4x1 -geometry +50+50 "
         cmd+= output
-        os.system(cmd)
+        fn_soft.execute(cmd)
         #Make a bigger canvas
         finalHeight = 6*50 + 2*IMAGEMAGICK_getsize(images[0])[1] + IMAGEMAGICK_getsize(images[1])[1]
-        cmd = convertExe + output + " "
+        cmd = fn_soft.convertExe + output + " "
         cmd+= "-gravity center -background transparent -extent 0x" + str(finalHeight) + " " + output
-        os.system(cmd)
+        fn_soft.execute(cmd)
         #Then add the top and bottom views
         IMAGEMAGICK_overlay(output, images[0], x=3*50 + IMAGEMAGICK_getsize(images[1])[0], y=50)
         IMAGEMAGICK_overlay(output, images[5], x=3*50 + IMAGEMAGICK_getsize(images[1])[0], y=50 + IMAGEMAGICK_getsize(images[0])[1] + 2*50 + IMAGEMAGICK_getsize(images[1])[1] + 50)
-
 def IMAGEMAGICK_overlay(baseImage, overlayImage, output=None, x=0, y=0):
-    cmd = composeExe
+    cmd = fn_soft.composeExe
     cmd+= overlayImage + " "
     cmd+= "-geometry +" + str(x) + "+" + str(y) + " "
     if output is not None:
         cmd+= baseImage + " " + output
     else:
         cmd+= baseImage + " " + baseImage
-    os.system(cmd)
+    fn_soft.execute(cmd)
 def IMAGEMAGICK_annotate(image, annotation, x=0, y=0):
-    cmd = convertExe + image + " "
+    cmd = fn_soft.convertExe + image + " "
     cmd+= "-gravity center -pointsize 30 -fill black "
     cmd+= "-annotate "
     cmd+= "-" + str(x) if x < TW/2 else "+" + str(x)
     cmd+= "-" + str(y) if y > TH/2 else "+" + str(y)
     cmd+= " '" + annotation + "' "
     cmd+= image
-    print(cmd)
-    os.system(cmd)
+    fn_soft.execute(cmd)
 def IMAGEMAGICK_getsize(image):
-    out = subprocess.check_output(convertExe + image + ' -format "%w %h" info:', shell=True)
+    out = subprocess.check_output(fn_soft.convertExe + image + ' -format "%w %h" info:', shell=True)
     size = [int(x) for x in out.strip().split()]
     return size
 #Wrapper for the different scale images

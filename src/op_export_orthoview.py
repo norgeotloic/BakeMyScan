@@ -1,14 +1,10 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
 from mathutils import Vector
-import numpy as np
 import os
-import subprocess
 
 from . import fn_ortho
-
-D = bpy.data
-C = bpy.context
+from . import fn_soft
 
 class export_orthoview(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.export_orthoview"
@@ -24,6 +20,12 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         maxlen= 1024,
         default= ""
     )
+
+    @classmethod
+    def poll(self, context):
+        if fn_soft.convertExe is None or fn_soft.composeExe is None or fn_soft.montageExe is None:
+            return 0
+        return 1
 
     def execute(self, context):
         obj = context.active_object
@@ -65,18 +67,18 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         #Get the object's center and dimensions to fit the view later
         center = sum((obj.matrix_world*Vector(b) for b in obj.bound_box), Vector()) / 8
         print(center)
-        maxDim = np.max(obj.dimensions)
+        maxDim = max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
 
         # 1 - Set the different rendering options
-        _set_camera_options(camera_data)
-        _set_render_options(resolution=512)
-        _set_viewport_options(newArea)
+        fn_ortho._set_camera_options(camera_data)
+        fn_ortho._set_render_options(resolution=512)
+        fn_ortho._set_viewport_options(newArea)
 
         # 2 - Render the orthographic projections
         axises = ["TOP", "LEFT", "FRONT", "RIGHT", "BACK", "BOTTOM"]
         for axis in axises:
             print("Rendering a view from " + axis)
-            _position_camera(camera, obj, axis, center, maxDim)
+            fn_ortho._position_camera(camera, obj, axis, center, maxDim)
             bpy.data.scenes["Scene"].render.filepath = os.path.join(path, "render_"+axis+".png")
             bpy.ops.render.opengl(write_still=True)
 
@@ -84,13 +86,13 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         # 3 - Trim the images to take less space
         if trim:
             for x in axises:#["TOP", "BOTTOM"]:
-                IMAGEMAGICK_trim("TOP",    os.path.join(path, "render_" + x + ".png"))
-                IMAGEMAGICK_trim("BOTTOM", os.path.join(path, "render_" + x + ".png"))
-                IMAGEMAGICK_trim("LEFT",   os.path.join(path, "render_" + x + ".png"))
-                IMAGEMAGICK_trim("RIGHT",  os.path.join(path, "render_" + x + ".png"))
+                fn_ortho.IMAGEMAGICK_trim("TOP",    os.path.join(path, "render_" + x + ".png"))
+                fn_ortho.IMAGEMAGICK_trim("BOTTOM", os.path.join(path, "render_" + x + ".png"))
+                fn_ortho.IMAGEMAGICK_trim("LEFT",   os.path.join(path, "render_" + x + ".png"))
+                fn_ortho.IMAGEMAGICK_trim("RIGHT",  os.path.join(path, "render_" + x + ".png"))
 
         # 4 - Merge the projections together and create the blueprint image
-        IMAGEMAGICK_createAxio(
+        fn_ortho.IMAGEMAGICK_createAxio(
             trim,
             [ os.path.join(path, img) for img in ["render_" + x + ".png" for x in axises] ],
             os.path.abspath(self.properties.filepath),
@@ -113,15 +115,15 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         """
         # 5 - maybe add the scales
         if not trim:
-            overlayScale(0)
-            overlayScale(1)
-        overlayScale(2)
+            fn_ortho.overlayScale(0)
+            fn_ortho.overlayScale(1)
+        fn_ortho.overlayScale(2)
         """
 
         return {'FINISHED'}
 
 def register() :
-    bpy.utils.register_class(orthoproject_project)
+    bpy.utils.register_class(export_orthoview)
 
 def unregister() :
-    bpy.utils.unregister_class(orthoproject_project)
+    bpy.utils.unregister_class(export_orthoview)

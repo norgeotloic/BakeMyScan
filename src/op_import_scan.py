@@ -1,6 +1,8 @@
 import bpy
-from bpy_extras.io_utils import ImportHelper
+from   bpy_extras.io_utils import ImportHelper
 import os
+
+from . import fn_nodes
 
 class import_scan(bpy.types.Operator, ImportHelper):
     bl_idname = "bakemyscan.import_scan"
@@ -104,24 +106,27 @@ class import_scan(bpy.types.Operator, ImportHelper):
         #Give it the name of the file
         obj.name = name
 
-        #Reassign new blender materials to it
+        #Reassign a new PBR material to it
         for i,slot in enumerate(obj.material_slots):
-            #Add a material
-            matName = name + "_" + str(i+1).zfill(2)
-            mat = bpy.data.materials.new( matName )
-            slot.material = mat
-            #Add a slot for the albedo texture
-            albedo = bpy.data.textures.new( matName + "_albedo",  "IMAGE" )
-            slot = mat.texture_slots.add()
-            slot.texture = albedo
-            #Add a slot for the normals texture
-            normal = bpy.data.textures.new( matName + "_normals", "IMAGE" )
-            slot = mat.texture_slots.add()
-            slot.texture = normal
-            normal.use_normal_map = True
-            slot.use_map_normal = True
-            slot.use_map_color_diffuse = False
-
+            _material = bpy.data.materials.new(name + "_" + str(i+1).zfill(2))
+            _material.use_nodes = True
+            _materialOutput = [_n for _n in _material.node_tree.nodes if _n.type=='OUTPUT_MATERIAL'][0]
+            for _n in _material.node_tree.nodes:
+                if _n!=_materialOutput:
+                    _material.node_tree.nodes.remove(_n)
+            #Create and link the PBR group node
+            _group           = _material.node_tree.nodes.new(type="ShaderNodeGroup")
+            _group.label     = name
+            _group.node_tree = fn_nodes.node_tree_pbr(settings = {}, name=name)
+            #Set the default height to 2% of the object size and the UV scale factor to 1
+            _group.inputs["UV scale"].default_value = 1.0
+            if obj is not None:
+                _group.inputs["Height"].default_value = 0.02 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
+            else:
+                _group.inputs["Height"].default_value = 0.02
+            _material.node_tree.links.new(_group.outputs["BSDF"], _materialOutput.inputs[0] )
+            #Assign the material to the object
+            slot.material = _material
         return{'FINISHED'}
 
 def register() :

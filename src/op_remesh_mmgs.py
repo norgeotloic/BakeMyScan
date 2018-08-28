@@ -12,6 +12,12 @@ class remesh_mmgs(bpy.types.Operator):
     hausd  = bpy.props.FloatProperty( name="hausd", description="Haussdorf distance as a ratio", default=0.01, min=0.0001, max=1)
     smooth = bpy.props.BoolProperty( name="smooth", description="Smooth surface", default=True)
 
+    @classmethod
+    def poll(self, context):
+        if fn_soft.mmgsExe is not None:
+            return 1
+        return 0
+
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
@@ -26,17 +32,17 @@ class remesh_mmgs(bpy.types.Operator):
         maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
 
         #Export
-        bpy.ops.interfacemmgs.exportmesh(filepath="tmp.mesh")
+        bpy.ops.bakemyscan.export_mesh(filepath="tmp.mesh")
 
         #Remesh
-        cmd = "mmgs_O3 tmp.mesh -o tmp.o.mesh -hausd " + str( float(self.hausd * maxDim) )
+        cmd = mmgsExe + "tmp.mesh -o tmp.o.mesh -hausd " + str( float(self.hausd * maxDim) )
         if self.smooth:
             cmd+=" -nr"
-        err = command(cmd)
+        err = fn_soft.execute(cmd)
 
         #Clean and import
         if not err:
-            bpy.ops.interfacemmgs.importmesh(filepath="tmp.o.mesh")
+            bpy.ops.bakemyscan.import_mesh(filepath="tmp.o.mesh")
         else:
             self.report({'INFO'}, "MMGS failure")
         for f in ["tmp.mesh", "tmp.o.mesh", "tmp.sol", "tmp.o.sol"]:
