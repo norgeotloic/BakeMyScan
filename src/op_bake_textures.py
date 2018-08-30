@@ -20,8 +20,8 @@ def addImageNode(mat, nam, res, dir, fmt):
 
 def bakeWithBlender(mat, nam, res, dir, fmt):
     restore = mat.use_nodes
-    engine  = context.scene.render.engine
-    context.scene.render.engine="BLENDER_RENDER"
+    engine  = bpy.context.scene.render.engine
+    bpy.context.scene.render.engine="BLENDER_RENDER"
     if bpy.data.images.get(nam):
         bpy.data.images.remove(bpy.data.images.get(nam))
     image = bpy.data.images.new(nam, res, res)
@@ -42,7 +42,7 @@ def bakeWithBlender(mat, nam, res, dir, fmt):
     image.save()
     bpy.ops.object.editmode_toggle()
     mat.use_nodes = restore
-    context.scene.render.engine=engine
+    bpy.context.scene.render.engine=engine
 
 class bake_textures(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.bake_textures"
@@ -160,12 +160,13 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                     tmpMat.node_tree.links.new(group.outputs[0], _matOut.inputs[0])
                 #bake
                 bpy.ops.object.bake(type="EMIT")
+                #Save the image
+                imgNode.image.save()
                 #Remove the material and reassign the original one
                 targetMat.node_tree.nodes.remove(imgNode)
                 source.material_slots[0].material = material
                 bpy.data.materials.remove(tmpMat)
-                #Save the image
-                image.save()
+
 
         #Bake the geometric normals with blender render
         if source != target and self.bake_geometry:
@@ -226,10 +227,10 @@ class bake_textures(bpy.types.Operator, ExportHelper):
 
 
             #Add the image for the baking
-            addImageNode(normalMat, "baked_normal_combined", self.resolution, self.directory, self.imgFormat)
+            imgNode = addImageNode(normalMat, "baked_normal_combined", self.resolution, self.directory, self.imgFormat)
             #Bake, save and restore
             bpy.ops.object.bake(type="EMIT")
-            image.save()
+            imgNode.image.save()
             bpy.data.materials.remove(normalMat)
 
         #Import the resulting baked material

@@ -72,7 +72,7 @@ class import_material(bpy.types.Operator):
             #Get the active material
             mat = obj.material_slots[0].material
             #Create the group
-            _group = material.node_tree.nodes.new(type="ShaderNodeGroup")
+            _group = mat.node_tree.nodes.new(type="ShaderNodeGroup")
             _group.node_tree = fn_nodes.node_tree_pbr(materials[self.enum], name=self.enum)
             _group.label = self.enum
             #Set the default height to 2% of the object size and the UV scale factor to 1
