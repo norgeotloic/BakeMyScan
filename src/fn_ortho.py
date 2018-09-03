@@ -261,13 +261,54 @@ def crop(img):
     """
     return pixels[starth:endh,startw:endw,:]
 def create_axio_array(a01, a10, a11, a12, a13, a21, M=50):
-    #check that everything is ok (compatible sizes)
+    """
     assert(a01.shape[1] == a11.shape[1] == a21.shape[1])
     assert(a10.shape[0] == a11.shape[0] == a12.shape[0] == a13.shape[0])
+    """
+    #Are the size compatible?? If not, correct them
+    if not a01.shape[1] == a11.shape[1] == a21.shape[1]:
+        print("Width do not correspond")
+        maxWidth = np.max([a01.shape[1], a11.shape[1], a21.shape[1]])
+
+        tmp = np.zeros((a01.shape[0], maxWidth, 4))
+        tmp[:a01.shape[0],:a01.shape[1],:] = a01
+        a01 = tmp
+
+        tmp = np.zeros((a11.shape[0], maxWidth, 4))
+        tmp[:a11.shape[0],:a11.shape[1],:] = a11
+        a11 = tmp
+
+        tmp = np.zeros((a21.shape[0], maxWidth, 4))
+        tmp[:a21.shape[0],:a21.shape[1],:] = a21
+        a21 = tmp
+
+    if not a10.shape[0] == a11.shape[0] == a12.shape[0] == a13.shape[0]:
+        print("Height do not correspond")
+        maxHeight = np.max([a10.shape[0], a11.shape[0], a12.shape[0], a13.shape[0]])
+
+        tmp = np.zeros((maxHeight, a10.shape[1], 4))
+        tmp[:a10.shape[0],:a10.shape[1], :] = a10
+        a10 = tmp
+
+        tmp = np.zeros((maxHeight, a11.shape[1], 4))
+        tmp[:a11.shape[0],:a11.shape[1], :] = a11
+        a11 = tmp
+
+        tmp = np.zeros((maxHeight, a12.shape[1], 4))
+        tmp[:a12.shape[0],:a12.shape[1], :] = a12
+        a12 = tmp
+
+        tmp = np.zeros((maxHeight, a13.shape[1], 4))
+        tmp[:a13.shape[0],:a13.shape[1], :] = a13
+        a13 = tmp
+
     #optionnal sanity check
+    """
     assert(a01.shape[0] == a21.shape[0])#top and bottom same height
     assert(a10.shape[1] == a12.shape[1])#left and right same width
     assert(a11.shape[1] == a13.shape[1])#front and back same width
+    """
+    
     #Create the new array
     A = np.zeros((
         a01.shape[0] + a11.shape[0] + a21.shape[0] + 4*M,
