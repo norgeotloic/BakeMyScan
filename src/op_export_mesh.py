@@ -8,9 +8,9 @@ import sys
 
 from . import fn_msh
 
-class interfacemmgs_export(bpy.types.Operator, ExportHelper):
+class export_mesh(bpy.types.Operator, ExportHelper):
     """Export a Mesh file"""
-    bl_idname = "interfacemmgs.exportmesh"
+    bl_idname = "bakemyscan.export_mesh"
     bl_label  = "Exports a .mesh file"
 
     filter_glob = bpy.props.StringProperty(
@@ -77,11 +77,11 @@ def export(operator, context, filepath, refAtVerts, triangulate, miniSol, maxiSo
                     for v in f.vertices:
                         verts[v][3] = f.material_index + 1
 
-    exportMesh = msh.Mesh()
-    exportMesh.verts = msh.np.array(verts)
-    exportMesh.tris  = msh.np.array(triangles)
-    exportMesh.quads = msh.np.array(quads)
-    exportMesh.edges = msh.np.array(edges)
+    exportMesh = fn_msh.Mesh()
+    exportMesh.verts = fn_msh.np.array(verts)
+    exportMesh.tris  = fn_msh.np.array(triangles)
+    exportMesh.quads = fn_msh.np.array(quads)
+    exportMesh.edges = fn_msh.np.array(edges)
     exportMesh.write(filepath)
 
     #Solutions according to the weight paint mode (0 to 1 by default)
@@ -98,10 +98,10 @@ def export(operator, context, filepath, refAtVerts, triangulate, miniSol, maxiSo
         try:
             mini = bpy.context.scene["mmgsMini"]
             maxi = bpy.context.scene["mmgsMaxi"]
-            exportMesh.scalars = msh.np.array(cols)*(maxi - mini) + mini
+            exportMesh.scalars = fn_msh.np.array(cols)*(maxi - mini) + mini
             print("Min and max values taken from the scene property")
         except:
-            exportMesh.scalars = msh.np.array(cols)*(maxiSol - miniSol) + miniSol
+            exportMesh.scalars = fn_msh.np.array(cols)*(maxiSol - miniSol) + miniSol
             print("Min and max values taken from the operator property")
         exportMesh.writeSol(filepath[:-5] + ".sol")
 
@@ -112,10 +112,10 @@ def export(operator, context, filepath, refAtVerts, triangulate, miniSol, maxiSo
     return 0
 
 def export_func(self, context):
-    self.layout.operator("interfacemmgs.exportmesh", text="MESH (.mesh)")
+    self.layout.operator("bakemyscan.export_mesh", text="MESH (.mesh)")
 def register():
-    bpy.utils.register_class(interfacemmgs_export)
+    bpy.utils.register_class(export_mesh)
     bpy.types.INFO_MT_file_export.append(export_func)
 def unregister():
-    bpy.utils.unregister_class(interfacemmgs_export)
+    bpy.utils.unregister_class(export_mesh)
     bpy.types.INFO_MT_file_export.remove(export_func)

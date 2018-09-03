@@ -35,7 +35,7 @@ class remesh_mmgs(bpy.types.Operator):
         bpy.ops.bakemyscan.export_mesh(filepath="tmp.mesh")
 
         #Remesh
-        cmd = mmgsExe + "tmp.mesh -o tmp.o.mesh -hausd " + str( float(self.hausd * maxDim) )
+        cmd = fn_soft.mmgsExe + "tmp.mesh -o tmp.o.mesh -hausd " + str( float(self.hausd * maxDim) )
         if self.smooth:
             cmd+=" -nr"
         err = fn_soft.execute(cmd)

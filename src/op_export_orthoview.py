@@ -84,7 +84,7 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         a13 = fn_ortho.crop(bpy.data.images.load(os.path.join(path, "render_BACK.png")))
         a21 = fn_ortho.crop(bpy.data.images.load(os.path.join(path, "render_TOP.png")))
         #Create a big array by appending the images array into a common one
-        final = fn_ortho.create_axio_array(a01, a10, a11, a12, a13, a21, M=50)
+        final = fn_ortho.create_axio_array(a01, a10, a11, a12, a13, a21, M=self.margin)
         #Write the array to an image, taking into account the vertical inversion
         fn_ortho.array_to_image(final, os.path.join(path, self.properties.filepath))
 
@@ -98,6 +98,13 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         bpy.data.objects.remove(bpy.data.objects[camera.name])
 
         #Close the double window
+        """
+        override = {'window': bpy.context.window, 'screen': bpy.context.screen, 'area': newArea}
+        bpy.context.area.tag_redraw()
+        bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+        bpy.ops.screen.area_join(override, min_x=area.x, min_y=area.y, max_x=newArea.x, max_y=newArea.y)
+        """
+        #bpy.ops.screen.area_join(max_x=top.x, max_y=top.y, min_x=bottom.x, min_y=bottom.y)
         #bpy.ops.screen.area_join(override)
 
         return {'FINISHED'}

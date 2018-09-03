@@ -3,6 +3,7 @@ from   bpy_extras.io_utils import ImportHelper
 import os
 
 from . import fn_nodes
+from . import fn_match
 
 class import_scan(bpy.types.Operator, ImportHelper):
     bl_idname = "bakemyscan.import_scan"
@@ -106,6 +107,52 @@ class import_scan(bpy.types.Operator, ImportHelper):
         #Give it the name of the file
         obj.name = name
 
+        #Find the textures associated with the object
+        textures = {}
+
+        #First look in the current directory (not recursive)
+        texture_sets = fn_match.findMaterials(os.path.dirname(path), recursive=False)
+        #If we found nothing, look for a directory called "textures" in the parent directory
+        if len(texture_sets)==0:
+            texDir = os.path.join(os.path.dirname(os.path.dirname(path)), "textures")
+            if os.path.exists(texDir):
+                texture_sets = fn_match.findMaterials(texDir, recursive=False)
+                if len(texture_sets)==1:
+                    textures = texture_sets[list(texture_sets.keys())[0]]
+                elif len(texture_sets)>1:
+                    if name in texture_sets:
+                        textures = texture_sets[name]
+        #If we found multiple materials, check for one with the same base name
+        elif len(texture_sets)>1:
+            if name in texture_sets:
+                textures = texture_sets[name]
+        #If we found one set of textures, then we're all good to go
+        elif len(textures)==1:
+            textures = texture_sets[texture_sets.keys()[0]]
+            pass
+
+        if len(textures)==0:
+            #Look for the textures in the directory, or in a parent texture directory (sketchfab)
+            texture_sets = fn_match.findMaterials(os.path.dirname(path))
+            #If we found nothing, look for a directory called "textures" in the parent directory
+            if len(texture_sets)==0:
+                texDir = os.path.join(os.path.dirname(os.path.dirname(path)), "textures")
+                if os.path.exists(texDir):
+                    texture_sets = fn_match.findMaterials(texDir)
+                    if len(texture_sets)==1:
+                        textures = texture_sets[list(texture_sets.keys())[0]]
+                    elif len(texture_sets)>1:
+                        if name in texture_sets:
+                            textures = texture_sets[name]
+            #If we found multiple materials, check for one with the same base name
+            elif len(texture_sets)>1:
+                if name in texture_sets:
+                    textures = texture_sets[name]
+            #If we found one set of textures, then we're all good to go
+            elif len(textures)==1:
+                textures = texture_sets[texture_sets.keys()[0]]
+                pass
+
         #Reassign a new PBR material to it
         for i,slot in enumerate(obj.material_slots):
             _material = bpy.data.materials.new(name + "_" + str(i+1).zfill(2))
@@ -117,7 +164,7 @@ class import_scan(bpy.types.Operator, ImportHelper):
             #Create and link the PBR group node
             _group           = _material.node_tree.nodes.new(type="ShaderNodeGroup")
             _group.label     = name
-            _group.node_tree = fn_nodes.node_tree_pbr(settings = {}, name=name)
+            _group.node_tree = fn_nodes.node_tree_pbr(settings = textures, name=name)
             #Set the default height to 2% of the object size and the UV scale factor to 1
             _group.inputs["UV scale"].default_value = 1.0
             if obj is not None:

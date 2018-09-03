@@ -223,42 +223,42 @@ def node_tree_pbr(settings, name):
     for node in _node_tree.nodes:
         if node.type == "TEX_IMAGE":
             LN(_combine.outputs["Vector"], node.inputs["Vector"])
-    if _albedo is not None:
+    if _albedo is not None and "albedo" in settings:
         LN(_albedo.outputs["Color"], _principled.inputs["Base Color"])
-    if _ao is not None:
+    if _ao is not None and "ao" in settings:
         LN(_albedo.outputs["Color"], _ao_mix.inputs[1])
         LN(_ao.outputs["Color"], _ao_mix.inputs[2])
         LN(_ao_mix.outputs["Color"], _principled.inputs["Base Color"])
     if _vertexcolors is not None:
         LN(_vertexcolors.outputs["Color"], _principled.inputs["Base Color"])
-    if _metallic is not None:
+    if _metallic is not None and "metallic" in settings:
         LN(_metallic.outputs["Color"], _principled.inputs["Metallic"])
-    if _roughness is not None:
+    if _roughness is not None and "roughness" in settings:
         LN(_roughness.outputs["Color"], _principled.inputs["Roughness"])
-    if _glossiness is not None:
+    if _glossiness is not None and "glossiness" in settings:
         LN(_glossiness.outputs["Color"], _glossiness_invert.inputs["Color"])
         LN(_glossiness_invert.outputs["Color"], _principled.inputs["Roughness"])
-    if _bump is not None:
+    if _bump is not None and ("normal" in settings or "surface" in settings or "height" in settings):
         LN(_bump.outputs["Normal"], _principled.inputs["Normal"])
-        if _height is not None:
+        if _height is not None and "height" in settings:
             LN(_input.outputs["Height"], _bump.inputs["Distance"])
             LN(_height.outputs["Color"], _bump.inputs["Height"])
-        if _nmap is not None:
+        if _nmap is not None and ("normal" in settings or "surface" in settings):
             LN(_normal.outputs["Color"], _nmap.inputs["Color"])
             LN(_nmap.outputs["Normal"], _bump.inputs["Normal"])
     #Post shader emission and opacity mix
-    if _emission is not None:
+    if _emission is not None and "emission" in settings:
         LN(_emission.outputs["Color"], _emission_shader.inputs["Color"])
         LN(_emission.outputs["Color"], _emission_mix.inputs[0])
         LN(_emission_shader.outputs["Emission"], _emission_mix.inputs[2])
         LN(_principled.outputs["BSDF"], _emission_mix.inputs[1])
         LN(_emission_mix.outputs["Shader"], _output.inputs["BSDF"])
-    if _opacity is not None:
+    if _opacity is not None and "opacity" in settings:
         LN(_opacity.outputs["Color"], _opacity_shader.inputs["Color"])
         LN(_opacity.outputs["Color"], _opacity_mix.inputs[0])
         LN(_opacity_shader.outputs["BSDF"], _opacity_mix.inputs[1])
         LN(_opacity_mix.outputs["Shader"], _output.inputs["BSDF"])
-        if _emission is not None:
+        if _emission is not None and "emission" in settings:
             LN(_emission_mix.outputs["Shader"], _opacity_mix.inputs[2])
         else:
             LN(_principled.outputs["BSDF"], _opacity_mix.inputs[2])

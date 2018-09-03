@@ -55,7 +55,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
 
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
     imgFormat      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
-    cageRatio      = bpy.props.FloatProperty(name="cageRation", description="baking cage size as a ratio", default=0.01, min=0.00001, max=0.5)
+    cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.1, min=0.00001, max=0.5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
     bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=True)
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
@@ -100,6 +100,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
         bpy.data.scenes["Scene"].cycles.samples   = 1
         bpy.data.scenes["Scene"].render.bake.margin = 8
         dims = source.dimensions
+        bpy.data.scenes["Scene"].render.bake.use_cage = True
         bpy.data.scenes["Scene"].render.bake.cage_extrusion = self.cageRatio * max(max(dims[0], dims[1]), dims[2])
         bpy.data.scenes["Scene"].render.bake.use_clear = True
 

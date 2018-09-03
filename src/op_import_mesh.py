@@ -33,10 +33,10 @@ class import_mesh(bpy.types.Operator, ImportHelper):
             return {'FINISHED'}
 
 def meshImport(operator, context, filepath):
-    MESH = msh.Mesh(filepath)
+    MESH = fn_msh.Mesh(filepath)
     if os.path.exists(filepath[:-5]+".sol"):
         MESH.readSol()
-    MESH.tets = msh.np.array([])
+    MESH.tets = fn_msh.np.array([])
     MESH.discardUnused()
 
     meshes = []
@@ -93,7 +93,7 @@ def meshImport(operator, context, filepath):
         vgrp = bpy.context.active_object.vertex_groups[0]
         for X in tris+quads:
             for x in X:
-                vgrp.add([x],msh.np.linalg.norm(MESH.vectors[x]),"REPLACE")
+                vgrp.add([x],fn_msh.np.linalg.norm(MESH.vectors[x]),"REPLACE")
     elif len(MESH.scalars) > 0:
         bpy.ops.object.vertex_group_add()
         vgrp = bpy.context.active_object.vertex_groups[0]

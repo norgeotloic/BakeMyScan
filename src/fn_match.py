@@ -132,19 +132,31 @@ def material_dictionnary(images):
 
     return materials
 
-def findMaterials(directory):
+def findMaterials(directory, recursive = True):
     """Recursively looks for sets of texture in the specified directory"""
 
     #List all availables images in the specified directory
     images = []
-    for root, subFolders, files in os.walk(directory):
-        for f in files:
-            if imghdr.what(os.path.join(root, f)) is not None:
+    if recursive:
+        for root, subFolders, files in os.walk(directory):
+            files = [f for f in files if not f[0] == '.']
+            subFolders[:] = [d for d in subFolders if not d[0] == '.']
+            for f in files:
+                if imghdr.what(os.path.join(root, f)) is not None:
+                    images.append({
+                        "file": os.path.join(root, f),
+                        "dir":  os.path.dirname(os.path.join(root, f)),
+                        "name": normalize_name(os.path.splitext(f)[0].lower().strip())
+                    })
+    else:
+        for f in [f for f in os.listdir(directory) if f[0]!="." and not os.path.isdir(os.path.join(directory,f))]:
+            if imghdr.what(os.path.join(directory, f)) is not None:
                 images.append({
-                    "file": os.path.join(root, f),
-                    "dir":  os.path.dirname(os.path.join(root, f)),
+                    "file": os.path.join(directory, f),
+                    "dir":  os.path.dirname(os.path.join(directory, f)),
                     "name": normalize_name(os.path.splitext(f)[0].lower().strip())
                 })
+
     images.sort(key = lambda image : image["file"])
     images    = ignore_trailing_variations(images)
     images    = material_names_in_images(images)

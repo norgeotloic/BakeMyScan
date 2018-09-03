@@ -1,6 +1,7 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
 import os
+import shutil
 
 class export_fbx(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.export_fbx"
@@ -25,21 +26,21 @@ class export_fbx(bpy.types.Operator, ExportHelper):
         #Get the parameters
         directory = os.path.dirname(os.path.abspath(self.properties.filepath))
         name      = os.path.splitext(os.path.basename(os.path.abspath(self.properties.filepath)))[0]
-        print(directory, name)
+
+        #
+        def save_images(tree, directory, name, fmt):
+            for node in tree.nodes:
+                if node.type=="TEX_IMAGE":
+                    if node.image is not None:
+                        shutil.copyfile(node.image.filepath_raw, os.path.abspath(os.path.join(directory, name + "_" + node.image.name.split("_")[-1])))
+                        os.remove(node.image.filepath_raw)
+                elif node.type == "GROUP":
+                    save_images(node.node_tree, directory, name, fmt)
 
         #Move and update the textures
         bpy.ops.export_scene.fbx(filepath = self.filepath, use_selection=True)
         mat = obj.material_slots[0].material
-        for slot in mat.texture_slots:
-            if slot is not None:
-                if slot.texture is not None:
-                    img = slot.texture.image
-                    if img is not None:
-                        img.name = name + "_" + img.name.split("_")[-1]
-                        ext = '.jpg' if self.imgFormat == "JPEG" else ".png"
-                        img.filepath_raw = os.path.join(directory, img.name + ext)
-                        img.file_format = self.imgFormat
-                        img.save()
+        save_images(mat.node_tree, directory, name, self.imgFormat)
 
         return {'FINISHED'}
 
