@@ -1,11 +1,15 @@
 import bpy
 import os
 from bpy_extras.io_utils import ImportHelper
+import addon_utils
 
 class do_one_iteration(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_one_iteration"
     bl_label  = "Do one iteration for remshing"
     bl_options = {"REGISTER", "UNDO"}
+
+    manifold     = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
+    vertex_group = bpy.props.BoolProperty(name="vertex_group", description="Use vertex group", default=False)
 
     def execute(self, context):
         # 1 - planar decimation
@@ -27,7 +31,12 @@ class do_one_iteration(bpy.types.Operator):
         # 4 - decimate it
         bpy.ops.object.modifier_add(type='DECIMATE')
         bpy.context.object.modifiers["Decimate"].ratio = 0.8
+        if len(bpy.context.object.vertex_groups)>0 and self.vertex_group:
+            bpy.context.object.modifiers["Decimate"].vertex_group = bpy.context.object.vertex_groups[0].name
+            bpy.context.object.modifiers["Decimate"].vertex_group_factor = 0.75
+            bpy.context.object.modifiers["Decimate"].invert_vertex_group = True
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
+
 
         # 5 - shrinkwrap to the original
         bpy.ops.object.modifier_add(type='SHRINKWRAP')
@@ -39,7 +48,9 @@ class do_one_iteration(bpy.types.Operator):
         bpy.ops.mesh.remove_doubles(threshold=0.0001)
         bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
         bpy.ops.mesh.vert_connect_nonplanar()
-        bpy.ops.mesh.print3d_clean_non_manifold()
+        if self.manifold:
+            addon_utils.enable("object_print3d_utils")
+            bpy.ops.mesh.print3d_clean_non_manifold()
         bpy.ops.object.editmode_toggle()
 
         return{'FINISHED'}
@@ -50,10 +61,13 @@ class remesh_iterative(bpy.types.Operator):
     bl_label  = "Remesh to a target number of faces"
     bl_options = {"REGISTER", "UNDO"}
 
-    limit = bpy.props.IntProperty(name="limit", description="Target faces", default=1500, min=50, max=500000)
+    limit    = bpy.props.IntProperty(name="limit",    description="Target faces", default=1500, min=50, max=500000)
+    manifold = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
+    vertex_group = bpy.props.BoolProperty(name="vertex_group", description="Use vertex group", default=True)
 
     def draw(self, context):
         self.layout.prop(self, "limit", text="target triangles")
+        self.layout.prop(self, "manifold", text="make manifold")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
@@ -78,7 +92,7 @@ class remesh_iterative(bpy.types.Operator):
         while(iterate):
             lr = context.scene.objects.active
             bpy.ops.object.duplicate_move()
-            bpy.ops.bakemyscan.remesh_one_iteration()
+            bpy.ops.bakemyscan.remesh_one_iteration(manifold=self.manifold, vertex_group=self.vertex_group)
             tmp = context.scene.objects.active
             print(self.limit, len(tmp.data.polygons), len(lr.data.polygons))
             if len(tmp.data.polygons) < self.limit:

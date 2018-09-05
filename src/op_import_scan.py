@@ -1,6 +1,7 @@
 import bpy
 from   bpy_extras.io_utils import ImportHelper
 import os
+import addon_utils
 
 from . import fn_nodes
 from . import fn_match
@@ -13,6 +14,8 @@ class import_scan(bpy.types.Operator, ImportHelper):
         default="*.obj;*.ply;*.stl;*.fbx;*.dae;*.x3d;*.wrl",
         options={'HIDDEN'},
     )
+
+    manifold = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
 
     def execute(self, context):
 
@@ -81,10 +84,12 @@ class import_scan(bpy.types.Operator, ImportHelper):
         bpy.ops.object.editmode_toggle()
 
         #Clean the problematic normals: non manifolds and smooth
-        bpy.ops.mesh.print3d_clean_non_manifold()
-        bpy.ops.object.modifier_add(type='SMOOTH')
-        bpy.context.object.modifiers["Smooth"].iterations = 1
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
+        if self.manifold:
+            addon_utils.enable("object_print3d_utils")
+            bpy.ops.mesh.print3d_clean_non_manifold()
+            bpy.ops.object.modifier_add(type='SMOOTH')
+            bpy.context.object.modifiers["Smooth"].iterations = 1
+            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
 
         #Smooth shade the object
         bpy.ops.object.shade_smooth()

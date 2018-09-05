@@ -153,7 +153,7 @@ def parameter_to_node(tree, parameter):
     #If it is a path
     elif type(parameter) is str and os.path.exists(parameter):
         _node = tree.nodes.new(type="ShaderNodeTexImage")
-        _node.image = bpy.data.images.load(parameter)
+        _node.image = bpy.data.images.load(parameter, check_existing=False)
     #Else
     else:
         pass

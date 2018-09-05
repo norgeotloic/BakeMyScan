@@ -208,10 +208,10 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             #Add the two normal maps
             _normal_geometric = AN(type="ShaderNodeTexImage")
             _normal_geometric.color_space = "NONE"
-            _normal_geometric.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower()))
+            _normal_geometric.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower()), check_existing=False)
             _normal_surface = AN(type="ShaderNodeTexImage")
             _normal_surface.color_space = "NONE"
-            _normal_surface.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal." + self.imgFormat.lower()))
+            _normal_surface.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal." + self.imgFormat.lower()), check_existing=False)
             #Add a mixing group
             _mix = AN(type="ShaderNodeGroup")
             _mix.label = "Mix Normals"

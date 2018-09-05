@@ -46,14 +46,14 @@ for m in models:
     for f in os.listdir(args.input):
         if rootName + "_ALBEDO" in f:
             path         = os.path.join(args.input, f)
-            img          = bpy.data.images.load(path)
+            img          = bpy.data.images.load(path, check_existing=False)
             tex          = bpy.data.textures.new( rootName + "_albedo",  "IMAGE" )
             tex.image    = img
             slot         = mat.texture_slots.add()
             slot.texture = tex
         if rootName + "_NORMAL" in f:
             path         = os.path.join(args.input, f)
-            img          = bpy.data.images.load(path)
+            img          = bpy.data.images.load(path, check_existing=False)
             tex          = bpy.data.textures.new( rootName + "_normal",  "IMAGE" )
             tex.image    = img
             slot         = mat.texture_slots.add()
