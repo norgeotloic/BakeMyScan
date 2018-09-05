@@ -4,16 +4,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from . import fn_match
-"""
-class AvailablePBRTextures(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        bpy.types.Scene.pbrtextures = {}
 
-    @classmethod
-    def unregister(cls):
-        del bpy.types.Scene.pbrtextures
-"""
 class list_textures(bpy.types.Operator, ImportHelper):
     bl_idname = "bakemyscan.list_textures"
     bl_label  = "List available materials"
@@ -35,9 +26,7 @@ class list_textures(bpy.types.Operator, ImportHelper):
 def register() :
     bpy.utils.register_class(list_textures)
     bpy.types.Scene.pbrtextures = {}
-    #bpy.utils.register_class(AvailablePBRTextures)
 
 def unregister() :
     bpy.utils.unregister_class(list_textures)
     del bpy.types.Scene.pbrtextures
-    #bpy.utils.unregister_class(AvailablePBRTextures)

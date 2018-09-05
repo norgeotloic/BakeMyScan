@@ -3,15 +3,14 @@ import imghdr
 import os
 import bpy
 
-# Manual node tree implementation
-
-def node_tree_mix_normals():
+#The new version, with the simple add option without the blue channel
+def node_tree_combine_normals():
     #Get the group if it already exists
-    if bpy.data.node_groups.get("mix_normals"):
-        _node_tree = bpy.data.node_groups.get("mix_normals")
+    if bpy.data.node_groups.get("combine_normals"):
+        _node_tree = bpy.data.node_groups.get("combine_normals")
         return _node_tree
     #Create the group and its input/output sockets
-    _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name="mix_normals")
+    _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name="combine_normals")
     _node_tree.inputs.new('NodeSocketColor','Geometry')
     _node_tree.inputs.new('NodeSocketColor','Surface')
     _node_tree.outputs.new('NodeSocketVector','Normal')
@@ -22,47 +21,66 @@ def node_tree_mix_normals():
     _input     = AN(type="NodeGroupInput")
     _output    = AN(type="NodeGroupOutput")
     #Nodes
-    _separate  = AN(type="ShaderNodeSeparateRGB")
+    _separate1 = AN(type="ShaderNodeSeparateRGB")
+    _separate2 = AN(type="ShaderNodeSeparateRGB")
+    _add1      = AN(type="ShaderNodeMath")
+    _add2      = AN(type="ShaderNodeMath")
+    _multiply1 = AN(type="ShaderNodeMath")
+    _multiply2 = AN(type="ShaderNodeMath")
     _combine   = AN(type="ShaderNodeCombineRGB")
-    _overlay   = AN(type="ShaderNodeMixRGB")
     _normalMap = AN(type="ShaderNodeNormalMap")
     #Parameters
-    _overlay.blend_type                  = "OVERLAY"
-    _overlay.inputs["Fac"].default_value = 1.0
-    _combine.inputs["B"].default_value   = 0.0
+    _add1.operation = "ADD"
+    _add2.operation = "ADD"
+    _multiply1.operation = "MULTIPLY"
+    _multiply1.inputs[1].default_value = 0.5
+    _multiply2.operation = "MULTIPLY"
+    _multiply2.inputs[1].default_value = 0.5
     #Links
-    LN(_input.outputs["Geometry"],   _overlay.inputs["Color1"])
-    LN(_input.outputs["Surface"],    _separate.inputs["Image"])
-    LN(_separate.outputs["R"],       _combine.inputs["R"])
-    LN(_separate.outputs["G"],       _combine.inputs["G"])
-    LN(_combine.outputs["Image"],    _overlay.inputs["Color2"])
-    LN(_overlay.outputs["Color"],    _normalMap.inputs["Color"])
+    LN(_input.outputs["Geometry"],   _separate1.inputs["Image"])
+    LN(_input.outputs["Surface"],   _separate2.inputs["Image"])
+    LN(_separate1.outputs["R"],   _add1.inputs[0])
+    LN(_separate2.outputs["R"],   _add1.inputs[1])
+    LN(_separate1.outputs["G"],   _add2.inputs[0])
+    LN(_separate2.outputs["G"],   _add2.inputs[1])
+    LN(_add1.outputs["Value"],   _multiply1.inputs[0])
+    LN(_add2.outputs["Value"],   _multiply2.inputs[0])
+    LN(_multiply1.outputs["Value"],   _combine.inputs["R"])
+    LN(_multiply2.outputs["Value"],   _combine.inputs["G"])
+    LN(_separate1.outputs["B"],   _combine.inputs["B"])
+    LN(_combine.outputs["Image"],   _normalMap.inputs["Color"])
     LN(_normalMap.outputs["Normal"], _output.inputs["Normal"])
     #Position
-    _input.location     = [0,-100]
-    _separate.location  = [200, -200]
-    _combine.location   = [400, -200]
-    _overlay.location   = [600, 0]
-    _normalMap.location = [800,0]
-    _output.location    = [1000,0]
+    _input.location     = [0,0]
+    _separate1.location = [200,100]
+    _separate2.location = [200,-100]
+    _add1.location      = [400,100]
+    _add2.location      = [400,-100]
+    _multiply1.location = [600,100]
+    _multiply2.location = [600,-100]
+    _combine.location   = [800,0]
+    _normalMap.location = [1000,0]
+    _output.location    = [1200,0]
     #Return
     return _node_tree
 
 def node_tree_normal_to_color():
     #Get the group if it already exists
-    if bpy.data.node_groups.get("normal_to_color"):
-        _node_tree = bpy.data.node_groups.get("normal_to_color")
-        return _node_tree
+    #if bpy.data.node_groups.get("normal_to_color"):
+    #    _node_tree = bpy.data.node_groups.get("normal_to_color")
+    #    return _node_tree
     #Create the group and its input/output sockets
     _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name="normal_to_color")
-    _node_tree.inputs.new('NodeSocketVector','Normal')
-    _node_tree.outputs.new('NodeSocketColor','Color')
     #Aliases for the functions
     AN = _node_tree.nodes.new
     LN = _node_tree.links.new
     #Inputs and outputs
     _input     = AN(type="NodeGroupInput")
     _output    = AN(type="NodeGroupOutput")
+    _node_tree.inputs.new('NodeSocketVector','Normal')
+    _node_tree.outputs.new('NodeSocketColor','Color')
+
+
     #Nodes
     _tangent   = AN(type="ShaderNodeTangent")
     _normal    = AN(type="ShaderNodeNewGeometry")
@@ -139,9 +157,8 @@ def parameter_to_node(tree, parameter):
     #Else
     else:
         pass
-    print(parameter, _node)
+    #print(parameter, _node)
     return _node
-
 def node_tree_pbr(settings, name):
     #Get the group if it already exists
     if bpy.data.node_groups.get(name):
@@ -327,7 +344,6 @@ def node_tree_pbr(settings, name):
     return _node_tree
 
 # Functions to transform a principled shader to emission
-
 def get_neighbor_nodes(node):
     """Returns a list of the node's immediate neighbors"""
     _neighs = []
@@ -353,123 +369,84 @@ def get_linked_nodes(node):
                     _linkedNodes.append(_neigh)
         _neighs = _newNeighs
     return _linkedNodes
-def make_normals_non_color(node_tree):
-    for n in node_tree.nodes:
-        if n.type == "NORMAL_MAP":
-            for link in n.inputs["Color"].links:
-                if link.from_node.type == "TEX_IMAGE":
-                    link.from_node.color_space="NONE"
-        if n.type=="GROUP":
-            make_normals_non_color(n.node_tree)
 
-def fillPrincipledInputs(node_tree, node, channel):
-    """Adjusts the input nodes of a Principled, to make them ready for Emit"""
-    #Get the Principled shader relevant input links and connected node
-    _inLinks = node.inputs[channel].links
-    _inNode = node.inputs[channel].links[0].from_node if len(_inLinks)>0 else None
-    #Treat the normal case separately (default color and color conversion)
-    if channel == "Normal":
-        #If no input, just add a gamma corrected neutral color
-        if _inNode is None:
-            _inNode = node_tree.nodes.new(type="ShaderNodeRGB")
-            _inNode.outputs["Color"].default_value = (0.5, 0.5, 1, 1)
-            _gamma = node_tree.nodes.new(type="ShaderNodeGamma")
-            _gamma.inputs["Gamma"].default_value = 2.2
-            node_tree.links.new(_inNode.outputs[0], _gamma.inputs["Color"])
-            node_tree.links.new(_gamma.outputs["Color"], node.inputs["Normal"])
-        #If one input is found, insert a converter between a vector and a color
-        else:
-            #But first, transform the normal maps to non color data
-            make_normals_non_color(node_tree)
-            NtoC = node_tree.nodes.new("ShaderNodeGroup")
-            NtoC.node_tree = node_tree_normal_to_color()
-            node_tree.links.new(_inNode.outputs["Normal"], NtoC.inputs["Normal"])
-            node_tree.links.new(NtoC.outputs["Color"], node.inputs["Normal"])
-    #Image or node based inputs are either untouched or replaced with a RGB
-    else:
-        #If no node is found, replace with a plain RGB input
-        if _inNode is None:
-            _inNode = node_tree.nodes.new(type="ShaderNodeRGB")
-            _val = node.inputs[channel].default_value
-            if type(_val) is float:
-                _inNode.outputs["Color"].default_value = (_val, _val, _val, 1)
+def find_groups_in_tree(tree):
+    groups = []
+    for node in tree.nodes:
+        if node.type == "GROUP":
+            groups.append(node.node_tree)
+            groups += find_groups_in_tree(node.node_tree)
+    return groups
+def convert_principled_node(node, tree, channel):
+
+    #Remove the unnecessary links
+    for i in node.inputs:
+        if i.name!=channel:
+            for l in i.links:
+                tree.links.remove(l)
+
+    #Remove the newly isolated nodes
+    isolated = [n for n in tree.nodes if n not in get_linked_nodes(node)]
+    for n in isolated:
+        tree.nodes.remove(n)
+
+    #Keep the input or set a default value if none is here
+    inputNode = node.inputs[channel].links[0].from_node if len(node.inputs[channel].links)>0 else None
+
+    if channel!="Normal":
+        if inputNode is None:
+            inputNode = tree.nodes.new(type="ShaderNodeRGB")
+            x = node.inputs[channel].default_value
+            if type(x) is float:
+                inputNode.outputs["Color"].default_value = (x, x, x, 1)
             else:
-                _inNode.outputs["Color"].default_value = _val
-            node_tree.links.new(_inNode.outputs[0], node.inputs[channel])
-        #If there is one, just let it be, let it beeeee!!!
+                inputNode.outputs["Color"].default_value = x
+            tree.links.new(inputNode.outputs["Color"], node.inputs[channel])
         else:
             pass
-def principledNodeToEmission(node_tree, node, nodeInput):
-    """Replaces the Principled by an Emission node, keeping only one input"""
-    #Disconnect every principled input not of interest
-    for _input in node.inputs:
-        if _input != nodeInput:
-            for _link in _input.links:
-                node_tree.links.remove(_link)
-    #Remove all links not connected to the principled shader
-    _linked = get_linked_nodes(node) + [node]
-    for _node in node_tree.nodes:
-        if _node not in _linked:
-            node_tree.nodes.remove(_node)
-    #Create an Emission shader to replace the Principled
-    _emission = node_tree.nodes.new(type="ShaderNodeEmission")
-    _emission.location = node.location
-    if len(nodeInput.links):
-        _from_output = nodeInput.links[0].from_socket
-        node_tree.links.new(_from_output, _emission.inputs["Color"])
-    if len(node.outputs["BSDF"].links):
-        _to_input    = node.outputs["BSDF"].links[0].to_socket
-        node_tree.links.new(_emission.outputs["Emission"], _to_input)
+    else:
+        if inputNode is None:
+            inputNode = tree.nodes.new(type="ShaderNodeRGB")
+            inputNode.outputs["Color"].default_value = (0.5, 0.5, 1, 1)
+            gamma = tree.nodes.new(type="ShaderNodeGamma")
+            gamma.inputs["Gamma"].default_value = 2.2
+            tree.links.new(inputNode.outputs[0], gamma.inputs["Color"])
+            tree.links.new(gamma.outputs["Color"], node.inputs["Normal"])
+        else:
+            ntoc = tree.nodes.new(type="ShaderNodeGroup")
+            ntoc.label = "Normal to color"
+            ntoc.node_tree = node_tree_normal_to_color()
+            tree.links.new(inputNode.outputs["Normal"], ntoc.inputs["Normal"])
+            tree.links.new(ntoc.outputs["Color"], node.inputs["Normal"])
+            inputNode = ntoc
 
+    #Convert the principled node to an emission shader
+    emit = tree.nodes.new(type="ShaderNodeEmission")
+    emit.location = node.location
+    tree.links.new(inputNode.outputs[0], emit.inputs["Color"])
+    for l in node.outputs["BSDF"].links:
+        tree.links.new(emit.outputs["Emission"], l.to_socket)
+
+    #Remove the principled node
+    tree.nodes.remove(node)
+
+def convert(_tree, _type):
+    #For every group, look for a principled BSDF shader node
+    groups = find_groups_in_tree(_tree) + [_tree]
+    for tree in groups:
+        for node in tree.nodes:
+            if node.type == "BSDF_PRINCIPLED":
+                convert_principled_node(node, tree, _type)
+    return _tree
 def createBakingNodeGroup(material, bakeType):
     """Effectively add the converted group to the material"""
-    #Do the conversion
-    _newTree  = material.node_tree.copy()
-    _trees = [_newTree]
-    while len(_trees):
-        _newTrees = []
-        for _tree in _trees:
-            for _node in _tree.nodes:
-                if _node.type == "BSDF_PRINCIPLED":
-                    fillPrincipledInputs(_tree, _node, bakeType)
-                    principledNodeToEmission(_tree, _node, _node.inputs[bakeType])
-                    _tree.nodes.remove(_node)
-                    continue
-                if _node.type == "TEX_IMAGE":
-                    _node.color_space="COLOR"
-                    if _node.image is None:
-                        _tree.nodes.remove(_node)
-                        continue
-                if _node.type == "GROUP":
-                    _newTrees.append(_node.node_tree)
-        _trees = _newTrees
-
-    make_normals_non_color(_newTree)
-
-    """Insert the converted tree into the material"""
-    #Create a node group and assign the tree to it
+    _newTree  = convert(material.node_tree.copy(), bakeType)
     _group = material.node_tree.nodes.new("ShaderNodeGroup")
-    _group.node_tree   = _newTree
-    #Add an output node for the group
+    _group.node_tree = _newTree
     _group.outputs.new("NodeSocketShader", 'material')
     _newOut = _group.node_tree.nodes.new("NodeGroupOutput")
-    #Replace the old output node with the new one (location and links)
     _oldOut    = [_n for _n in _group.node_tree.nodes if _n.type == 'OUTPUT_MATERIAL' and _n.is_active_output][0]
     _newOut.location = _oldOut.location
     _group.node_tree.links.new(_oldOut.inputs[0].links[0].from_node.outputs[0], _newOut.inputs[0])
-    #Remove the old node
     _group.node_tree.nodes.remove(_oldOut)
-
     return _group
-
-"""
-group = bpy.context.active_object.material_slots[0].material.node_tree.nodes.new("ShaderNodeGroup")
-group.node_tree = node_tree_mix_normals()
-
-group = bpy.context.active_object.material_slots[0].material.node_tree.nodes.new("ShaderNodeGroup")
-group.node_tree = node_tree_normal_to_color()
-
-group = bpy.context.active_object.material_slots[0].material.node_tree.nodes.new("ShaderNodeGroup")
-#Add an empty PBR structure
-group.node_tree = node_tree_pbr(settings={}, name="MyMaterial")
-"""

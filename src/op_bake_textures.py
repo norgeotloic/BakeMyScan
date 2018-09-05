@@ -112,6 +112,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             "Normal": self.bake_surface,
             "Emission": self.bake_emission,
             "Opacity": self.bake_opacity}
+
         for baketype in toBake:
             if toBake[baketype]:
                 #Prepare a copy of the material which will be used as baking input
@@ -122,7 +123,10 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                     if n.type=="GROUP":
                         if n.node_tree.users>1:
                             n.node_tree = n.node_tree.copy()
-                group = fn_nodes.createBakingNodeGroup(tmpMat, baketype) if baketype != "Emission" and baketype!= "Opacity" else None
+
+                if baketype != "Emission" and baketype!= "Opacity":
+                    fn_nodes.convert(tmpMat.node_tree, baketype)
+
                 _matOut = [_n for _n in tmpMat.node_tree.nodes if _n.type == 'OUTPUT_MATERIAL' and _n.is_active_output][0]
                 # Create a new image and image node for the baking in the target
                 suffix   = baketype.replace(" ", "").lower()
@@ -157,9 +161,10 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                                         tmpMat.node_tree.links.new(_emission.outputs["Emission"], _matOut.inputs["Surface"])
                     if alphaMixNode is None:
                         continue
-                else:
-                    tmpMat.node_tree.links.new(group.outputs[0], _matOut.inputs[0])
+                #else:
+                #    tmpMat.node_tree.links.new(group.outputs[0], _matOut.inputs[0])
                 #bake
+
                 bpy.ops.object.bake(type="EMIT")
                 #Save the image
                 imgNode.image.save()
@@ -167,7 +172,6 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                 targetMat.node_tree.nodes.remove(imgNode)
                 source.material_slots[0].material = material
                 bpy.data.materials.remove(tmpMat)
-
 
         #Bake the geometric normals with blender render
         if source != target and self.bake_geometry:
@@ -211,7 +215,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             #Add a mixing group
             _mix = AN(type="ShaderNodeGroup")
             _mix.label = "Mix Normals"
-            _mix.node_tree = fn_nodes.node_tree_mix_normals()
+            _mix.node_tree = fn_nodes.node_tree_combine_normals()
             #Add the normal to color node
             _normal_to_color = AN(type="ShaderNodeGroup")
             _normal_to_color.label = "Normals to color"

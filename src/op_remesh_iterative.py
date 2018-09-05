@@ -2,6 +2,49 @@ import bpy
 import os
 from bpy_extras.io_utils import ImportHelper
 
+class do_one_iteration(bpy.types.Operator):
+    bl_idname = "bakemyscan.remesh_one_iteration"
+    bl_label  = "Do one iteration for remshing"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        # 1 - planar decimation
+        bpy.ops.object.modifier_add(type='DECIMATE')
+        bpy.context.object.modifiers["Decimate"].decimate_type = 'DISSOLVE'
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
+
+        # 2 - triangulate the mesh
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.quads_convert_to_tris()
+        bpy.ops.object.editmode_toggle()
+
+        # 3 - smooth the vertices
+        bpy.ops.object.modifier_add(type='SMOOTH')
+        bpy.context.object.modifiers["Smooth"].iterations = 1
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
+
+        # 4 - decimate it
+        bpy.ops.object.modifier_add(type='DECIMATE')
+        bpy.context.object.modifiers["Decimate"].ratio = 0.8
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
+
+        # 5 - shrinkwrap to the original
+        bpy.ops.object.modifier_add(type='SHRINKWRAP')
+        bpy.context.object.modifiers["Shrinkwrap"].target = bpy.types.Scene.hr
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
+
+        # 6 - Remove non manifold and doubles
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.remove_doubles(threshold=0.0001)
+        bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
+        bpy.ops.mesh.vert_connect_nonplanar()
+        bpy.ops.mesh.print3d_clean_non_manifold()
+        bpy.ops.object.editmode_toggle()
+
+        return{'FINISHED'}
+
+
 class remesh_iterative(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_iterative"
     bl_label  = "Remesh to a target number of faces"
@@ -30,41 +73,22 @@ class remesh_iterative(bpy.types.Operator):
             bpy.ops.object.modifier_apply(modifier="decimate")
 
         #Iteration process to reach 1.5 x limit
-        while( len(lr.data.polygons) > 1.5*self.limit ):
-
-            # 1 - planar decimation
-            bpy.ops.object.modifier_add(type='DECIMATE')
-            bpy.context.object.modifiers["Decimate"].decimate_type = 'DISSOLVE'
-            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
-
-            # 2 - triangulate the mesh
-            bpy.ops.object.editmode_toggle()
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.mesh.quads_convert_to_tris()
-            bpy.ops.object.editmode_toggle()
-
-            # 3 - smooth the vertices
-            bpy.ops.object.modifier_add(type='SMOOTH')
-            bpy.context.object.modifiers["Smooth"].iterations = 1
-            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
-
-            # 4 - decimate it
-            bpy.ops.object.modifier_add(type='DECIMATE')
-            bpy.context.object.modifiers["Decimate"].ratio = 0.8
-            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
-
-            # 5 - shrinkwrap to the original
-            bpy.ops.object.modifier_add(type='SHRINKWRAP')
-            bpy.context.object.modifiers["Shrinkwrap"].target = hr
-            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
-
-            # 6 - Remove non manifold and doubles
-            bpy.ops.object.editmode_toggle()
-            bpy.ops.mesh.remove_doubles(threshold=0.0001)
-            bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
-            bpy.ops.mesh.vert_connect_nonplanar()
-            bpy.ops.mesh.print3d_clean_non_manifold()
-            bpy.ops.object.editmode_toggle()
+        bpy.types.Scene.hr = hr
+        iterate = True
+        while(iterate):
+            lr = context.scene.objects.active
+            bpy.ops.object.duplicate_move()
+            bpy.ops.bakemyscan.remesh_one_iteration()
+            tmp = context.scene.objects.active
+            print(self.limit, len(tmp.data.polygons), len(lr.data.polygons))
+            if len(tmp.data.polygons) < self.limit:
+                iterate=False
+                bpy.data.objects.remove(tmp)
+                bpy.context.scene.objects.active = lr
+                lr.select = True
+            else:
+                bpy.data.objects.remove(lr)
+        del bpy.types.Scene.hr
 
         #Final decimation to stick to the limit
         lr.modifiers.new("decimate", type='DECIMATE')
@@ -92,7 +116,9 @@ class remesh_iterative(bpy.types.Operator):
         return{'FINISHED'}
 
 def register() :
+    bpy.utils.register_class(do_one_iteration)
     bpy.utils.register_class(remesh_iterative)
 
 def unregister() :
+    bpy.utils.unregister_class(do_one_iteration)
     bpy.utils.unregister_class(remesh_iterative)
