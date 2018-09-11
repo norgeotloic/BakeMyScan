@@ -20,6 +20,34 @@ class export_fbx(bpy.types.Operator, ExportHelper):
         default= ""
     )
 
+    @classmethod
+    def poll(self, context):
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        #Must have only one selected object
+        if len(context.selected_objects)!=1:
+            return 0
+        #If no object is active
+        if context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        #it must have slots
+        if len(context.active_object.material_slots)==0:
+            return 0
+        #Each material must be not None and have nodes
+        for slot in context.active_object.material_slots:
+            if slot.material is None:
+                return 0
+            if slot.material.use_nodes == False:
+                return 0
+        if context.mode!="OBJECT":
+            return 0
+        return 1
+
     def execute(self, context):
         obj = context.active_object
 
@@ -27,13 +55,21 @@ class export_fbx(bpy.types.Operator, ExportHelper):
         directory = os.path.dirname(os.path.abspath(self.properties.filepath))
         name      = os.path.splitext(os.path.basename(os.path.abspath(self.properties.filepath)))[0]
 
-        #
+        #function to save all images in a tree
         def save_images(tree, directory, name, fmt):
             for node in tree.nodes:
                 if node.type=="TEX_IMAGE":
-                    if node.image is not None:
-                        shutil.copyfile(node.image.filepath_raw, os.path.abspath(os.path.join(directory, name + "_" + node.image.name.split("_")[-1])))
-                        os.remove(node.image.filepath_raw)
+                    img = node.image
+                    if img is not None:
+                        path = os.path.abspath(os.path.join(directory, name + "_" + img.name.split("_")[-1].split(".")[0]))
+                        #If the image is a file
+                        if img.source=="FILE":
+                            img.save()
+                            shutil.copyfile(img.filepath_raw, path)
+                            #os.remove(node.image.filepath_raw)
+                        else:
+                            img.filepath_raw = path
+                            img.save()
                 elif node.type == "GROUP":
                     save_images(node.node_tree, directory, name, fmt)
 

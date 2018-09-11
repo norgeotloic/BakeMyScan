@@ -64,6 +64,148 @@ def node_tree_combine_normals():
     #Return
     return _node_tree
 
+#A new version, trying to reproduce the Imagemagick overlay behaviour
+def node_tree_combine_normals_2():
+    #cf https://blenderartists.org/t/baking-normals-within-other-maps/621625/22
+    #Get the group if it already exists
+    """
+    if bpy.data.node_groups.get("combine_normals2"):
+        _node_tree = bpy.data.node_groups.get("combine_normals2")
+        return _node_tree
+    """
+    #Create the group and its input/output sockets
+    _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name="combine_normals2")
+    _node_tree.inputs.new('NodeSocketColor','Geometry')
+    _node_tree.inputs.new('NodeSocketColor','Surface')
+    _node_tree.inputs.new('NodeSocketFloat','Factor')
+    _node_tree.outputs.new('NodeSocketColor','Color')
+    #Aliases for the functions
+    AN = _node_tree.nodes.new
+    LN = _node_tree.links.new
+    #Inputs and outputs
+    _input     = AN(type="NodeGroupInput")
+    _output    = AN(type="NodeGroupOutput")
+    #Nodes
+    _value1    = AN(type="ShaderNodeValue")
+    _value2    = AN(type="ShaderNodeValue")
+    _value3    = AN(type="ShaderNodeValue")
+    _value4    = AN(type="ShaderNodeValue")
+    _value5    = AN(type="ShaderNodeValue")
+    _value6    = AN(type="ShaderNodeValue")
+    _value7    = AN(type="ShaderNodeValue")
+    _addval    = AN(type="ShaderNodeMath")
+    _combine1  = AN(type="ShaderNodeCombineRGB")
+    _combine2  = AN(type="ShaderNodeCombineRGB")
+    _combine3  = AN(type="ShaderNodeCombineRGB")
+    _multiply1 = AN(type="ShaderNodeMixRGB")
+    _multiply2 = AN(type="ShaderNodeMixRGB")
+    _multiply3 = AN(type="ShaderNodeMixRGB")
+    _multiply4 = AN(type="ShaderNodeMixRGB")
+    _add1      = AN(type="ShaderNodeMixRGB")
+    _add2      = AN(type="ShaderNodeMixRGB")
+    _add3      = AN(type="ShaderNodeMixRGB")
+    _dot       = AN(type="ShaderNodeVectorMath")
+    _separate  = AN(type="ShaderNodeSeparateRGB")
+    _divide    = AN(type="ShaderNodeMixRGB")
+    _substract = AN(type="ShaderNodeMixRGB")
+    _normalize = AN(type="ShaderNodeVectorMath")
+    #Values
+    _value1.outputs["Value"].default_value = 2.0
+    _value2.outputs["Value"].default_value = -1.0
+    _value3.outputs["Value"].default_value = -2.0
+    _value4.outputs["Value"].default_value = 2.0
+    _value5.outputs["Value"].default_value = 1.0
+    _value6.outputs["Value"].default_value = -1.0
+    _value7.outputs["Value"].default_value = 0.5
+    #RGB Operations
+    _multiply1.blend_type = "MULTIPLY"
+    _multiply2.blend_type = "MULTIPLY"
+    _multiply3.blend_type = "MULTIPLY"
+    _multiply4.blend_type = "MULTIPLY"
+    _multiply1.inputs["Fac"].default_value = 1.0
+    _multiply2.inputs["Fac"].default_value = 1.0
+    _multiply3.inputs["Fac"].default_value = 1.0
+    _multiply4.inputs["Fac"].default_value = 1.0
+    _add1.blend_type = "ADD"
+    _add2.blend_type = "ADD"
+    _add3.blend_type = "ADD"
+    _add1.inputs["Fac"].default_value = 1.0
+    _add2.inputs["Fac"].default_value = 1.0
+    _add3.inputs["Fac"].default_value = 1.0
+    _divide.blend_type="DIVIDE"
+    _divide.inputs["Fac"].default_value=1.0
+    _substract.blend_type = "SUBTRACT"
+    _substract.inputs["Fac"].default_value=1.0
+    #Others
+    _addval.operation = "ADD"
+    _dot.operation = "DOT_PRODUCT"
+    _normalize.operation="NORMALIZE"
+    #Position
+    _input.location = [00,00]
+    _value1.location = [00,400]
+    _value2.location = [00,200]
+    _value3.location = [00,-200]
+    _value4.location = [00,-400]
+    _value5.location = [00,-600]
+    _value6.location = [00,-800]
+    _addval.location = [200,100]
+    _combine1.location = [200,-300]
+    _combine2.location = [200,-700]
+    _multiply1.location = [400,300]
+    _combine3.location = [400,200]
+    _multiply2.location = [400,-200]
+    _add1.location = [600,300]
+    _add2.location = [600,-400]
+    _dot.location = [800,100]
+    _separate.location = [800,-100]
+    _divide.location = [1000,00]
+    _multiply3.location = [1200,00]
+    _substract.location = [1400,00]
+    _normalize.location = [1600,00]
+    _value7.location = [1600,-100]
+    _multiply4.location = [1800,00]
+    _add3.location = [2000,00]
+    _output.location = [2200,00]
+    #Links
+    LN(_value1.outputs["Value"], _multiply1.inputs["Color1"])
+    LN(_value2.outputs["Value"], _combine3.inputs["R"])
+    LN(_value2.outputs["Value"], _combine3.inputs["G"])
+    LN(_value2.outputs["Value"], _addval.inputs[0])
+    LN(_value3.outputs["Value"], _combine1.inputs["R"])
+    LN(_value3.outputs["Value"], _combine1.inputs["G"])
+    LN(_value4.outputs["Value"], _combine1.inputs["B"])
+    LN(_value5.outputs["Value"], _combine2.inputs["R"])
+    LN(_value5.outputs["Value"], _combine2.inputs["G"])
+    LN(_value6.outputs["Value"], _combine2.inputs["B"])
+    LN(_value7.outputs["Value"], _multiply4.inputs["Color2"])
+    LN(_value7.outputs["Value"], _add3.inputs["Color2"])
+    LN(_addval.outputs["Value"], _combine3.inputs["B"])
+    LN(_combine1.outputs["Image"], _multiply2.inputs["Color2"])
+    LN(_combine2.outputs["Image"], _add2.inputs["Color2"])
+    LN(_multiply1.outputs["Color"], _add1.inputs["Color1"])
+    LN(_combine3.outputs["Image"], _add1.inputs["Color2"])
+    LN(_multiply2.outputs["Color"], _add2.inputs["Color1"])
+    LN(_add1.outputs["Color"], _dot.inputs[0])
+    LN(_add1.outputs["Color"], _separate.inputs["Image"])
+    LN(_add1.outputs["Color"], _multiply3.inputs["Color1"])
+    LN(_add2.outputs["Color"], _dot.inputs[1])
+    LN(_add2.outputs["Color"], _substract.inputs["Color2"])
+    LN(_dot.outputs["Value"], _divide.inputs["Color1"])
+    LN(_separate.outputs["B"], _divide.inputs["Color2"])
+    LN(_divide.outputs["Color"], _multiply3.inputs["Color2"])
+    LN(_multiply3.outputs["Color"], _substract.inputs["Color1"])
+    LN(_substract.outputs["Color"], _normalize.inputs[0])
+    LN(_normalize.outputs["Vector"], _multiply4.inputs["Color1"])
+    LN(_multiply4.outputs["Color"], _add3.inputs["Color1"])
+    LN(_add3.outputs["Color"],     _output.inputs["Color"])
+    LN(_input.outputs["Geometry"], _multiply1.inputs["Color2"])
+    LN(_input.outputs["Surface"], _multiply2.inputs["Color1"])
+    LN(_input.outputs["Factor"], _addval.inputs[1])
+    LN(_input.outputs["Factor"], _multiply3.inputs["Fac"])
+    LN(_input.outputs["Factor"], _substract.inputs["Fac"])
+    #Return
+    return _node_tree
+
 def node_tree_normal_to_color():
     #Get the group if it already exists
     #if bpy.data.node_groups.get("normal_to_color"):
@@ -303,11 +445,17 @@ def node_tree_pbr(settings, name):
         _vertexcolors.location = [-400,0]
     if _metallic is not None:
         _metallic.location = [-200, -200]
+        if _metallic.type == "TEX_IMAGE":
+            _metallic.color_space = "NONE"
     if _roughness is not None:
         _roughness.location = [-200, -400]
+        if _roughness.type == "TEX_IMAGE":
+            _roughness.color_space = "NONE"
     if _glossiness is not None:
         _glossiness.location = [-400, -400]
         _glossiness_invert.location = [-200, -400]
+        if _glossiness.type == "TEX_IMAGE":
+            _glossiness.color_space = "NONE"
     if _bump is not None:
         _bump.location = [-200, -600]
     if _nmap is not None:
@@ -450,3 +598,8 @@ def createBakingNodeGroup(material, bakeType):
     _group.node_tree.links.new(_oldOut.inputs[0].links[0].from_node.outputs[0], _newOut.inputs[0])
     _group.node_tree.nodes.remove(_oldOut)
     return _group
+
+if __name__=="__main__":
+    mat = bpy.context.active_object.material_slots[0].material
+    group = mat.node_tree.nodes.new(type="ShaderNodeGroup")
+    group.node_tree = node_tree_combine_normals_2()

@@ -1,17 +1,19 @@
 # coding: utf8
 import os
 import bpy
-from bpy_extras.io_utils import ImportHelper
 
 from . import fn_match
 
-class list_textures(bpy.types.Operator, ImportHelper):
+class list_textures(bpy.types.Operator):
     bl_idname = "bakemyscan.list_textures"
     bl_label  = "List available materials"
     bl_options = {"REGISTER", "UNDO"}
 
-    filename_ext = "."
-    use_filter_folder = True
+    filepath = bpy.props.StringProperty(
+        name="File Path",
+        description="Filepath used for importing the file",
+        maxlen=1024,
+        subtype='DIR_PATH')
 
     def execute(self, context):
 

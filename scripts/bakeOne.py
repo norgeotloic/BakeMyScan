@@ -30,8 +30,8 @@ if not os.path.exists(args.input):
     print("ERROR: " + args.input + " is not a valid file")
     sys.exit(1)
 args.input = os.path.abspath(args.input)
-if args.output.split(".")[-1]!="fbx" and args.output.split(".")[-1]!="blend":
-    print("ERROR: " + args.output + " must be either a .fbx or .blend file")
+if args.output.split(".")[-1]!="fbx":
+    print("ERROR: " + args.output + " must be a .fbx file")
     sys.exit(1)
 args.output = os.path.abspath(args.output)
 
@@ -59,13 +59,9 @@ bpy.ops.bakemyscan.bake_textures(
     resolution    = args.resolution,
     bake_albedo   = True,
     bake_geometry = True,
-    bake_surface  = False
+    bake_surface  = True
 )
 
 #Export
 hr.select = False
-
-if args.output.split(".")[-1] == "blend":
-    bpy.ops.bakemyscan.export_blend(filepath=args.output)
-if args.output.split(".")[-1] == "fbx":
-    bpy.ops.bakemyscan.export_fbx(filepath=args.output)
+bpy.ops.bakemyscan.export_fbx(filepath=args.output)

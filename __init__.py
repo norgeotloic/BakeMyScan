@@ -12,12 +12,12 @@ import os
 import importlib
 
 modulesFiles = [
-    "fn_match", "fn_nodes", "fn_msh", "fn_ortho", "fn_soft", # Functions
-    "op_import_scan", "op_export_orthoview",                 # Initial operators
-    "op_remesh_iterative", "op_remesh_mmgs",                 # Remeshing operators
-    "op_list_textures", "op_import_material",                # Material operators
-    "op_bake_textures", "op_export_blend", "op_export_fbx",  # Baking operators
-    "op_import_mesh", "op_export_mesh"                       # .mesh format operators
+    "fn_match", "fn_nodes", "fn_msh", "fn_ortho", "fn_soft",            # Functions
+    "op_import_scan", "op_export_orthoview",                            # Initial operators
+    "op_remesh_iterative", "op_remesh_mmgs",                            # Remeshing operators
+    "op_list_textures", "op_import_material",                           # Material operators
+    "op_bake_textures", "op_remove_all_but_selected", "op_export_fbx",  # Baking operators
+    "op_import_mesh", "op_export_mesh"                                  # .mesh format operators
 ]
 modulesNames = ["src." + f for f in modulesFiles]
 modulesNames += ["GUI"]

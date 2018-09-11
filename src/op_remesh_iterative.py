@@ -11,6 +11,17 @@ class do_one_iteration(bpy.types.Operator):
     manifold     = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
     vertex_group = bpy.props.BoolProperty(name="vertex_group", description="Use vertex group", default=False)
 
+    @classmethod
+    def poll(self, context):
+        #If more than two objects are selected
+        if len(context.selected_objects)!=1 or context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        return 1
+
     def execute(self, context):
         # 1 - planar decimation
         bpy.ops.object.modifier_add(type='DECIMATE')

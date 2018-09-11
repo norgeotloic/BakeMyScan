@@ -27,9 +27,24 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
     def poll(self, context):
         if fn_soft.convertExe is None or fn_soft.composeExe is None or fn_soft.montageExe is None:
             return 0
+        #If more than two objects are selected
+        if len(context.selected_objects)!=1:
+            return 0
+        #If no object is active
+        if context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        if context.active_object.type != "MESH":
+            return 0
+        if context.mode!="OBJECT":
+            return 0
         return 1
 
     def execute(self, context):
+        #Switch to local view
+        #if not sum(context.space_data.layers[:]) == 0:
+        #    bpy.ops.view3d.localview()
+
         obj = context.active_object
 
         #Get the parameters
@@ -97,15 +112,20 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         #Once done, delete the camera
         bpy.data.objects.remove(bpy.data.objects[camera.name])
 
+        #Switch out of local view
+        bpy.ops.view3d.localview()
+
         #Close the double window
-        """
-        override = {'window': bpy.context.window, 'screen': bpy.context.screen, 'area': newArea}
-        bpy.context.area.tag_redraw()
-        bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-        bpy.ops.screen.area_join(override, min_x=area.x, min_y=area.y, max_x=newArea.x, max_y=newArea.y)
-        """
-        #bpy.ops.screen.area_join(max_x=top.x, max_y=top.y, min_x=bottom.x, min_y=bottom.y)
-        #bpy.ops.screen.area_join(override)
+        #areas = [a for a in bpy.context.screen.areas if a.type=="IMAGE_EDITOR"]
+        #areas.sort(key=lambda a:a.y)
+        bottom, top = area, newArea#areas
+        bpy.ops.screen.area_join(min_x=bottom.x, min_y=bottom.y, max_x=top.x+top.width, max_y=top.y)
+        for a in context.screen.areas:
+            if a == bottom:
+                context_copy = bpy.context.copy()
+                context_copy['area'] = a
+                bpy.ops.view3d.toolshelf(context_copy)
+                bpy.ops.view3d.toolshelf(context_copy)
 
         return {'FINISHED'}
 

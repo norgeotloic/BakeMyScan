@@ -23,6 +23,10 @@ class import_material(bpy.types.Operator):
     def poll(self, context):
         if len(bpy.types.Scene.pbrtextures.keys())==0:
             return 0
+        if context.area.type != "NODE_EDITOR" or context.area.type != "VIEW_3D" :
+            return 0
+        if context.active_object is None or len(context.selected_objects)!=1:
+            return 0
         return 1
 
     def invoke(self, context, event):

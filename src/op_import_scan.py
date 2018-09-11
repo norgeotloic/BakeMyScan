@@ -17,6 +17,15 @@ class import_scan(bpy.types.Operator, ImportHelper):
 
     manifold = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
 
+    @classmethod
+    def poll(cls, context):
+        if context.mode!="OBJECT":
+            return 0
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        return 1
+
     def execute(self, context):
 
         #Get the model path

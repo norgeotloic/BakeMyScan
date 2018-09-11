@@ -49,13 +49,20 @@ class bake_textures(bpy.types.Operator, ExportHelper):
     bl_label  = "Bake textures"
     bl_options = {"REGISTER", "UNDO"}
 
-    directory         = bpy.props.StringProperty(subtype='DIR_PATH')
-    filename_ext      = "."
-    use_filter_folder = True
+
+    filepath  = bpy.props.StringProperty(
+        name="File Path",
+        description="Filepath used for exporting the file",
+        maxlen=1024,
+        subtype='DIR_PATH',
+        default="")
+    filename_ext=''
+    use_filter=True
+    use_filter_folder=True
 
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
     imgFormat      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
-    cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.1, min=0.00001, max=0.5)
+    cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.01, min=0.00001, max=0.5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
     bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=True)
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
@@ -66,24 +73,36 @@ class bake_textures(bpy.types.Operator, ExportHelper):
 
     @classmethod
     def poll(self, context):
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        #If more than two objects are selected
         if len(context.selected_objects)>2:
             return 0
+        #If no object is active
         if context.active_object is None:
             return 0
-        if len(context.selected_objects) == 1:
-            obj = context.selected_objects[0]
-            if len(obj.material_slots)>0:
-                if obj.material_slots[0].material is not None:
-                    return 1
-        if len(context.selected_objects) == 2:
-            target = [o for o in context.selected_objects if o==context.active_object][0]
-            source = [o for o in context.selected_objects if o!=target][0]
-            if len(source.material_slots)>0:
-                if source.material_slots[0].material is not None:
-                    return 1
-        return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        #The source object must have correct materials
+        source = [o for o in context.selected_objects if o!=context.active_object][0] if len(context.selected_objects)==2 else context.active_object
+        #it must have slots
+        if len(source.material_slots)==0:
+            return 0
+        #Each material must be not None and have nodes
+        for slot in source.material_slots:
+            if slot.material is None:
+                return 0
+            if slot.material.use_nodes == False:
+                return 0
+        if context.mode!="OBJECT":
+            return 0
+        return 1
 
     def execute(self, context):
+        self.directory = os.path.abspath(os.path.dirname(self.properties.filepath))
         #Find which is the source and which is the target, plus material
         source, target = None, None
         if len(context.selected_objects) == 1:
@@ -164,7 +183,6 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                 #else:
                 #    tmpMat.node_tree.links.new(group.outputs[0], _matOut.inputs[0])
                 #bake
-
                 bpy.ops.object.bake(type="EMIT")
                 #Save the image
                 imgNode.image.save()
@@ -215,7 +233,10 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             #Add a mixing group
             _mix = AN(type="ShaderNodeGroup")
             _mix.label = "Mix Normals"
-            _mix.node_tree = fn_nodes.node_tree_combine_normals()
+            _mix.node_tree = fn_nodes.node_tree_combine_normals_2()
+            _mix.inputs["Factor"].default_value=1.0
+            #Add a normal map node
+            _nmap = AN(type="ShaderNodeNormalMap")
             #Add the normal to color node
             _normal_to_color = AN(type="ShaderNodeGroup")
             _normal_to_color.label = "Normals to color"
@@ -226,17 +247,17 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             LN = normalMat.node_tree.links.new
             LN(_normal_geometric.outputs["Color"], _mix.inputs["Geometry"])
             LN(_normal_surface.outputs["Color"], _mix.inputs["Surface"])
-            LN(_mix.outputs["Normal"], _normal_to_color.inputs["Normal"])
+            LN(_mix.outputs["Color"], _nmap.inputs["Color"])
+            LN(_nmap.outputs["Normal"], _normal_to_color.inputs["Normal"])
             LN(_normal_to_color.outputs["Color"], _emission.inputs["Color"])
             LN(_emission.outputs["Emission"], normalMat.node_tree.nodes["Material Output"].inputs["Surface"])
-
 
             #Add the image for the baking
             imgNode = addImageNode(normalMat, "baked_normal_combined", self.resolution, self.directory, self.imgFormat)
             #Bake, save and restore
             bpy.ops.object.bake(type="EMIT")
             imgNode.image.save()
-            bpy.data.materials.remove(normalMat)
+            #bpy.data.materials.remove(normalMat)
 
         #Import the resulting baked material
 
@@ -264,6 +285,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             "emission":  getbaked("Emission")   if self.bake_emission else None,
             "opacity":   getbaked("Opacity")    if self.bake_opacity else None
         }
+        
         print(importSettings)
 
         #Init the material

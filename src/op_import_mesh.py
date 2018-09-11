@@ -19,11 +19,13 @@ class import_mesh(bpy.types.Operator, ImportHelper):
     )
     check_extension = True
     filename_ext = ".mesh"
+
     @classmethod
     def poll(cls, context):
-        return (
-            context.mode=="OBJECT"
-        )
+        if context.mode!="OBJECT":
+            return 0
+        return 1
+
     def execute(self, context):
         keywords = self.as_keywords(ignore=('filter_glob','check_existing'))
         err = meshImport(self, context, **keywords)

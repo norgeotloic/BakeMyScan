@@ -14,9 +14,19 @@ class remesh_mmgs(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        if fn_soft.mmgsExe is not None:
-            return 1
-        return 0
+        #mmgs must be installed
+        if fn_soft.mmgsExe is None:
+            return 0
+        #If more than two objects are selected
+        if len(context.selected_objects)!=1 or context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        if context.mode!="OBJECT":
+            return 0
+        return 1
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
