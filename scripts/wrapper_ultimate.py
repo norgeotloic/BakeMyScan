@@ -111,3 +111,69 @@ def extract_all_archives(_directory, keep=False):
         if compteur > 10:
             print("More than 10 recursions, exiting!")
             sys.exit()
+
+if __name__ == "__main__":
+
+    #Parse and check the arguments
+    parser = create_sketchfab_parser("Process all models from a Sketchfab collection to lowpoly")
+    parser.add_argument("-o", "--output",     dest="output",     type=str, required=True,   help="Output folder")
+    parser.add_argument("-t", "--target",     dest="target",     type=int, default=1500,    help="Target number of faces")
+    parser.add_argument("-r", "--resolution", dest="resolution", type=int, default=1024,    help="Baked textures resolution")
+    parser.add_argument("-s", "--suffix",     dest="suffix",     type=str, default="asset", help="Suffix name")
+    args   = parse_sketchfab_args(parser, sys.argv[1:])
+
+    #Check if the output is empty or not
+    args.output = os.path.abspath(args.output)
+    if os.path.exists(args.output):
+        if os.path.isdir(args.output):
+            print("The directory exists")
+            if len(os.listdir(args.output))>0:
+                print("Not empty, I'm not going there")
+                sys.exit(1)
+            else:
+                pass
+        else:
+            print(args.output + " is not a directory, exiting")
+            sys.exit(1)
+    else:
+        try:
+            os.mkdir(args.output)
+        except:
+            print("Can't create " + args.output + ", exiting")
+            sys.exit(1)
+
+    #Create a context for selenium browser
+    profile = setup_Firefox_profile(args.output)
+    browser = webdriver.Firefox(firefox_profile=profile)
+
+    isCollection = "collection" in args.url
+
+    urls = []
+
+    if isCollection:
+        with open(os.path.join(args.output, "credits.md"), "w") as f:
+            uid = get_collection_uid(browser, args.url)
+            data = make_API_request("https://api.sketchfab.com/v3/collections/" + uid + "/models")
+            for r in data['results'][:2]:
+                if r["isDownloadable"]:
+                    urls.append(r["viewerUrl"])
+                    license = make_API_request(r["uri"])["license"]["label"]
+                    f.write( "* [%s](%s) by [%s](%s), licensed under %s\n" % (r["name"], r["viewerUrl"], r["user"]["displayName"], r["user"]["profileUrl"], license) )
+    else:
+        urls.append(args.url)
+
+
+    #Download the models
+    login_to_sketchfab(browser, args.sketchfab_user, args.sketchfab_pass)
+    for m in models:
+        download_sketchfab_model(browser, m)
+    browser.close()
+
+    #Extract the archives
+    extract_all_archives(args.output)
+
+    #Bake all the files in the output directory
+    os.system("python3.5 scripts/bakeAll.py -i " + args.output + " -o " + args.output + " -p " + args.suffix + " -t " + str(args.target) + " -r " + str(args.resolution))
+
+    #Import everything to a new blender file
+    os.system("blender --python scripts/importAll.py -- -i " + args.output + " -r 5")
