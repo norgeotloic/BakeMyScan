@@ -8,6 +8,10 @@ import os
 import argparse
 import imghdr
 
+src = os.path.join( os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "src")
+sys.path.append(src)
+import fn_match
+
 #colors for the terminal
 class bcolors:
     HEADER = '\033[95m'
@@ -69,25 +73,27 @@ def get_textures_in(_directory):
     return images
 
 #Functions to find which is the albedo and which is the normal map if they exist
-def looks_like_albedo(name):
-    name = name.lower()
-    if "alb" in name or "col" in name:
-        return True
-    return False
-def looks_like_normal(name):
-    name = name.lower()
-    if "nor" in name:
-        return True
-    return False
 def separate_albedo_and_normals(images):
+    patterns = {
+        "albedo"      : ["albedo", "diffuse", "dif", "alb", "basecolor", "color", "_d", "_col","tex"],
+        "normal"      : ["normal", "normals", "nor", "_n", "norm", "nrm"]
+    }
     albedo = None
     normal = None
+    #automatic matching
     for img in images:
-        name = os.path.basename(img)
-        if looks_like_albedo(name):
-            albedo = img
-        elif looks_like_normal(name):
-            normal = img
+        name = os.path.splitext(os.path.basename(img))[0].lower()
+        for p in patterns["albedo"]:
+            if name.endswith(p):
+                albedo = img
+                break
+        for p in patterns["normal"]:
+            if name.endswith(p):
+                normal = img
+                break
+    #if one texture only, then its the albedo
+    if len(images) == 1 and albedo is None and normal is None:
+        albedo = images[0]
     return albedo, normal
 def something_looks_wrong(albedo, normal, texture):
     #If we found at least one candidate, but no match
@@ -207,6 +213,9 @@ with open(log, "a") as f:
         if case["normal"] is not None:
             cmd += " -n " + case["normal"]
         cmd += " > " + os.path.join(args.output, "blender_log_" + str(j).zfill(3) + ".txt")
+
+        print(cmd)
+        sys.exit(0)
 
         #launch the command in a shell
         print(str(i+1).zfill(3) + " / " + str(len(toDo)).zfill(3) + " - " + case["model"][len(args.input)+1:] + " -> " + destination[len(args.output)+1:])

@@ -20,6 +20,8 @@ parser.add_argument("-i", "--input",  dest="input",  type=str, metavar='FILE', r
 parser.add_argument("-o", "--output", dest="output", type=str, metavar='FILE', required=True, help="Output model")
 parser.add_argument("-t", "--target", dest="target", type=int, default=1500,   help="Target number of faces")
 parser.add_argument("-r", "--resolution", dest="resolution", type=int, default=1024, help="Baked textures resolution")
+parser.add_argument("-a", "--albedo", dest="albedo", type=str, metavar='FILE', help="Albedo texture")
+parser.add_argument("-n", "--normal", dest="normal", type=str, metavar='FILE', help="Normal texture")
 
 #Parse the arguments
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -43,7 +45,7 @@ bpy.ops.object.delete(use_global=False)
 bpy.context.scene.render.engine = "CYCLES"
 
 #Import the base scan model
-bpy.ops.bakemyscan.import_scan(filepath = args.input)
+bpy.ops.bakemyscan.import_scan(filepath = args.input, albedo=args.albedo, normal = args.normal)
 
 #Get the interesting stuff
 hr = bpy.context.active_object

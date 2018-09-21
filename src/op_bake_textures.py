@@ -285,7 +285,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             "emission":  getbaked("Emission")   if self.bake_emission else None,
             "opacity":   getbaked("Opacity")    if self.bake_opacity else None
         }
-        
+
         print(importSettings)
 
         #Init the material

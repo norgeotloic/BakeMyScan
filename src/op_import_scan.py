@@ -16,6 +16,8 @@ class import_scan(bpy.types.Operator, ImportHelper):
     )
 
     manifold = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
+    albedo   = bpy.props.StringProperty(name="albedo", description="albedo texture", subtype='FILE_PATH')
+    normal   = bpy.props.StringProperty(name="normal", description="normal texture", subtype='FILE_PATH')
 
     @classmethod
     def poll(cls, context):
@@ -123,36 +125,15 @@ class import_scan(bpy.types.Operator, ImportHelper):
 
         #Find the textures associated with the object
         textures = {}
-
-        #First look in the current directory (not recursive)
-        texture_sets = fn_match.findMaterials(os.path.dirname(path), recursive=False)
-        #If we found nothing, look for a directory called "textures" in the parent directory
-        if len(texture_sets)==0:
-            texDir = os.path.join(os.path.dirname(os.path.dirname(path)), "textures")
-            if os.path.exists(texDir):
-                texture_sets = fn_match.findMaterials(texDir, recursive=False)
-                if len(texture_sets)==1:
-                    textures = texture_sets[list(texture_sets.keys())[0]]
-                elif len(texture_sets)>1:
-                    if name in texture_sets:
-                        textures = texture_sets[name]
-        #If we found multiple materials, check for one with the same base name
-        elif len(texture_sets)>1:
-            if name in texture_sets:
-                textures = texture_sets[name]
-        #If we found one set of textures, then we're all good to go
-        elif len(textures)==1:
-            textures = texture_sets[texture_sets.keys()[0]]
-            pass
-
-        if len(textures)==0:
-            #Look for the textures in the directory, or in a parent texture directory (sketchfab)
-            texture_sets = fn_match.findMaterials(os.path.dirname(path))
+        #If no input was specified
+        if self.albedo == "" and self.normal == "":
+            #First look in the current directory (not recursive)
+            texture_sets = fn_match.findMaterials(os.path.dirname(path), recursive=False)
             #If we found nothing, look for a directory called "textures" in the parent directory
             if len(texture_sets)==0:
                 texDir = os.path.join(os.path.dirname(os.path.dirname(path)), "textures")
                 if os.path.exists(texDir):
-                    texture_sets = fn_match.findMaterials(texDir)
+                    texture_sets = fn_match.findMaterials(texDir, recursive=False)
                     if len(texture_sets)==1:
                         textures = texture_sets[list(texture_sets.keys())[0]]
                     elif len(texture_sets)>1:
@@ -166,6 +147,34 @@ class import_scan(bpy.types.Operator, ImportHelper):
             elif len(textures)==1:
                 textures = texture_sets[texture_sets.keys()[0]]
                 pass
+            #Else, look in t
+            if len(textures)==0:
+                #Look for the textures in the directory, or in a parent texture directory (sketchfab)
+                texture_sets = fn_match.findMaterials(os.path.dirname(path))
+                #If we found nothing, look for a directory called "textures" in the parent directory
+                if len(texture_sets)==0:
+                    texDir = os.path.join(os.path.dirname(os.path.dirname(path)), "textures")
+                    if os.path.exists(texDir):
+                        texture_sets = fn_match.findMaterials(texDir)
+                        if len(texture_sets)==1:
+                            textures = texture_sets[list(texture_sets.keys())[0]]
+                        elif len(texture_sets)>1:
+                            if name in texture_sets:
+                                textures = texture_sets[name]
+                #If we found multiple materials, check for one with the same base name
+                elif len(texture_sets)>1:
+                    if name in texture_sets:
+                        textures = texture_sets[name]
+                #If we found one set of textures, then we're all good to go
+                elif len(textures)==1:
+                    textures = texture_sets[texture_sets.keys()[0]]
+                    pass
+        #If some inputs were specified, then use them
+        else:
+            if self.albedo != "":
+                textures["albedo"] = self.albedo
+            if self.normal != "":
+                textures["normal"] = self.normal
 
         #Reassign a new PBR material to it
         for i,slot in enumerate(obj.material_slots):
