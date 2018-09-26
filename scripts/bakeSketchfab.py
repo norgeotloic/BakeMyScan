@@ -1,3 +1,15 @@
+"""
+Download and process models from Sketchfab
+
+Usage:
+python3.5 bakeSketchfab.py -u URL -o OUTDIR [-m MAIL] [-p PWD] [-t TARGET] [-r RESOLUTION] [-s SUFFIX] [-d]
+
+For instance:
+    python3.5 bakeSketchfab.py -u https://skfb.ly/6AQxO -o /home/loic/tmp -m loic@mail.com -p mypassword -t 500 -r 512
+    python3.5 bakeSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -t 250 -r 1024
+    python3.5 bakeSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -d
+"""
+
 import sys
 import os
 import argparse

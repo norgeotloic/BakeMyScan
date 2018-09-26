@@ -39,16 +39,16 @@ To reprocess [this stick](https://skfb.ly/6AQxO) to a 500 tris mesh associated w
 python3.5 bakeSketchfab.py -u https://skfb.ly/6AQxO -o /home/loic/tmp -m loic@mail.com -p mypassword -t 500 -r 512
 ```
 
-To reprocess all models from [this collection](https://sketchfab.com/norgeotloic/collections/lowpoly-assets) to 250 tris models associated with 1024px textures and stored in */home/loic/tmp*:
+To reprocess all models from [this collection](https://skfb.ly/6yQSW) to 250 tris models associated with 1024px textures and stored in */home/loic/tmp* (you will be prompted for your Sketchfab user name and password if you don't write them in the command):
 
 ```
-python3.5 bakeSketchfab.py -u https://sketchfab.com/norgeotloic/collections/lowpoly-assets -o /home/loic/tmp -m loic@mail.com -p mypassword -t 250 -r 1024
+python3.5 bakeSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -m loic@mail.com -p mypassword -t 250 -r 1024
 ```
 
 To only download the models from the same collection, one would use the command:
 
 ```
-python3.5 bakeSketchfab.py -u https://sketchfab.com/norgeotloic/collections/lowpoly-assets -o /home/loic/tmp -m loic@mail.com -p mypassword -d
+python3.5 bakeSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -d
 ```
 
 Note that the models name, url and license as well as the author name and profile url are dumped to a *credits.md* file in the output directory, to keep track of the objects you downloaded and allow you to give appropriate credit.
