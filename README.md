@@ -1,37 +1,45 @@
 # BakeMyScan
 
-A blender add-on I wrote to process 3D scans (from my own scans or from Sketchfab) into lowpoly assets with blender:
-
 ![grid](https://user-images.githubusercontent.com/37718992/44431859-fabeee00-a59f-11e8-80da-6705b218db81.jpg)
 
-## Download
+This github repository contains:
 
-If you only wish to use the blender add-on, simply [download the .zip archive of the latest release](https://github.com/norgeotloic/BakeMyScan/releases) and install it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File* (do not forget to save your settings!).
+* A blender add-on I wrote to process 3D scans (from my own scans or from Sketchfab) into lowpoly assets with blender.
+* Python scripts, based on the add-on, to batch-process local or remote (from Sketchfab) 3D models.
 
-However, if you wish to use the command line to batch-process scans, you'll need to [download the .zip archive of the full repository](https://github.com/norgeotloic/BakeMyScan/archive/master.zip), which contains python files not included in the add-on release.
+## 1 - Features
 
-## Prerequisites
+The add-on allows to:
 
-The main features of the add-on should work "out of the box", on any linux, MacOS and Windows system.
+* import and clean 3D scans
+* create orthographic projections of a given model
+* smartly remesh the imported models to a given number of faces
+* import and configure Cycles materials based on PBR texture sets from your computer
+* bake texture sets between high and low resolution models
+* export a .fbx model and its associated textures with PBR-friendly names
 
-Some further configuration is however needed if you wish to have access to more advanced functionalities:
+Although I mainly use it to reprocess scans with an associated albedo texture (as on the collection of 1500 triangles fossils above and [visible here](https://sketchfab.com/models/3d1161a5db4244e486de6de0c66f759c)), the add-on is also very useful to create and bake complex Cycles node setups - based on mixes of PBR texture sets for instance - as on the following model:
 
-* To interface blender with [**mmgs**](http://www.mmgtools.org) (a powerful OpenSource remeshing tool for linux and MacOS), you must install mmgs following the instructions on the [mmgtools github repository](https://github.com/MmgTools/mmg)
-* To batch-process models from the command line, you'll need a working installation of **python3** installed on your system. Although you could try using the version of python bundled with blender (untested), the easiest way is to install python3.5 from [**Anaconda**](https://conda.io/docs/user-guide/install/download.html).
-* If you wish to process Sketchfab models and full collections from their url, you'll also need to have **Firefox** installed, as well as a version of [**selenium**](https://www.seleniumhq.org/) matching your python version (see [those instructions](https://selenium-python.readthedocs.io/installation.html))
+![Imgur](https://i.imgur.com/vqIYbxG.jpg)
 
-## Usage
+On the left is the original model, made of 313k triangles with an associated albedo texture. On the right is the reprocessed version, made of 3.6k triangles, with a PBR material baked from a mix of metal PBR texture sets (brass, damaged bronze and bronze patina). This model is visible on [Sketchfab](https://sketchfab.com/models/0f7535dc9dd1492e842cd6b2d23f4885).
 
-To start using this add-on and manually process a 3D scan in blender, please consult the [basic instructions](docs/ADDON_USAGE.md).
+## 2 - Installation
 
-You'll also find instructions to batch-process local 3D models from the command-line on [this page](docs/SCRIPTS_BATCH.md), and to automatically download and process models from Sketchfab [here](docs/SCRIPTS_SKETCHFAB.md).
+To install the add-on in blender, simply [download the .zip archive of the latest release](https://github.com/norgeotloic/BakeMyScan/releases) and install it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File* (do not forget to save your settings!).
 
-## Contributing
+Note that if you wish to interface blender with [**mmgs**](http://www.mmgtools.org) (a powerful OpenSource remeshing tool for linux and MacOS), you must install mmgs following the instructions on the [mmgtools github repository](https://github.com/MmgTools/mmg)
+
+## 3 - Usage
+
+Instructions about the add-on usage can be found on the [usage page](docs/ADDON_USAGE.md).
+
+You'll also find [instructions to process models from the command line](docs/SCRIPTS_BATCH.md), as well as [instructions to automatically download and process Sketchfab models and collections based on their URLs](docs/SCRIPTS_SKETCHFAB.md).
+
+## 4 - Contributing and License
 
 Do not hesitate to [open an issue](https://github.com/norgeotloic/BakeMyScan/issues) if you find a bug, or to [create a pull request](https://github.com/norgeotloic/BakeMyScan/pulls) if you've modified the code and would like to submit your changes.
 
-And if you found this add-on useful and would like to say thanks, you could even consider [buying me a coffee](https://www.buymeacoffee.com/JrxfoZRVy)!
-
-## License
-
 This code is licensed under [GNU GPL v3](LICENSE.md).
+
+And if you found this add-on useful and would like to say thanks, you could even consider [buying me a coffee](https://www.buymeacoffee.com/JrxfoZRVy)!
