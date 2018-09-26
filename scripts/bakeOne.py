@@ -2,10 +2,10 @@
 Remesh one scan to a lowpoly version
 
 Usage:
-blender --background --python bakeOne.py -- -i inputFile -o outputFile -t targetNumberOfFaces -r resolution -a albedoImage -n normalImage
+blender --background --python bakeOne.py -- -i INFILE -o OUTFILE [-t TARGETFACES] [-r RESOLUTION] [-a ALBEDO] [-n NORMAL]
 
-For instance, to remesh scan.obj to 500 triangles and save the resulting mesh to scan01.blend associated with 2048px images:
-blender --background --python bakeOne.py -- -i scan.obj -o scan01.blend -t 500 -r 2048 -a model_albedo.jpg -n model_normals.jpg
+For instance, to remesh scan.obj to 500 triangles and save the resulting mesh to scan01.fbx associated with 2048px images:
+blender --background --python bakeOne.py -- -i scan.obj -o scan01.fbx -t 500 -r 2048 -a model_albedo.jpg -n model_normals.jpg
 """
 
 import bpy
@@ -59,9 +59,9 @@ hr.select=True
 #Bake
 bpy.ops.bakemyscan.bake_textures(
     resolution    = args.resolution,
-    bake_albedo   = True,
+    bake_albedo   = (args.albedo!=""),
     bake_geometry = True,
-    bake_surface  = True
+    bake_surface  = (args.normal!="")
 )
 
 #Export

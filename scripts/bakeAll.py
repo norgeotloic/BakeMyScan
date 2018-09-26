@@ -1,6 +1,11 @@
 """
+Remesh multiple scans in a directory to lowpoly assets
+
 Usage:
-python downloadSkecthfabCollection.py -i 3b9b3fa1685c4cb5937cc0e9653bc0f1 -o /home/loic/tmp -u username@gmail.com -p password
+python3.5 bakeAll.py -i INDIR -o OUTDIR -p PREFIX [-t TARGETFACES] [-r RESOLUTION]
+
+For instance, to rename all models in the /home/loic/Downloads directory into /media/loic/assets/ 1500 triangles / 512px assets, each new model being called statue01.fbx:
+python3.5 bakeAll.py -i /home/loic/Downloads -o /media/loic/assets/ -p statue -t 1500 -r 512
 """
 
 import sys

@@ -1,6 +1,6 @@
 """
 Usage:
-blender --python importAll.py -- -i INPUT -r NROWS
+blender --python importAll.py -- -i INDIR [-r NUMROWS]
 """
 
 import bpy

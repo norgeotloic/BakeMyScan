@@ -106,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--target",     dest="target",         type=int, default=1500,    help="Target number of faces")
     parser.add_argument("-r", "--resolution", dest="resolution",     type=int, default=1024,    help="Baked textures resolution")
     parser.add_argument("-s", "--suffix",     dest="suffix",         type=str, default="asset", help="Suffix name")
+    parser.add_argument("-d", "--download",   dest="download",       action="store_true", help="Download only")
     args = parser.parse_args(sys.argv[1:])
 
     #Check if the output is empty or not
@@ -132,8 +133,6 @@ if __name__ == "__main__":
         args.sketchfab_user = input('Sketchfab e-mail: ')
     if args.sketchfab_pass is None:
         args.sketchfab_pass = input('Sketchfab password: ')
-
-
 
     #Create a context for selenium browser
     profile = setup_Firefox_profile(args.output)
@@ -165,8 +164,10 @@ if __name__ == "__main__":
     #Extract the archives
     extract_all_archives(args.output)
 
-    #Bake all the files in the output directory
-    os.system("python3.5 scripts/bakeAll.py -i " + args.output + " -o " + args.output + " -p " + args.suffix + " -t " + str(args.target) + " -r " + str(args.resolution))
+    if not args.download:
 
-    #Import everything to a new blender file
-    os.system("blender --python scripts/importAll.py -- -i " + args.output + " -r 5")
+        #Bake all the files in the output directory
+        os.system("python3.5 scripts/bakeAll.py -i " + args.output + " -o " + args.output + " -p " + args.suffix + " -t " + str(args.target) + " -r " + str(args.resolution))
+
+        #Import everything to a new blender file
+        os.system("blender --python scripts/importAll.py -- -i " + args.output + " -r 5")
