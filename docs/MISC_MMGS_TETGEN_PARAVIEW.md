@@ -38,10 +38,10 @@ This will create a coarse volumetric mesh inside my surface, which I'll then ref
 mmg3d /path/to/myModel.1.mesh
 ```
 
-The file ```/path/to/myModel.1.o.mesh``` is then ready to be fed to paraview, after having been converted to a .vtk file by using the [convertToVTK.py](/scripts/convertToVTK.py) python script present in the **scripts/** directory of this add-on (which you'll have to uncompress if it is still in a .zip format):
+The file ```/path/to/myModel.1.o.mesh``` is then ready to be fed to paraview, after having been converted to a .vtk file by using the [convertToVTK.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/convertToVTK.py) python script present in the **scripts/** directory of this add-on (which you'll have to uncompress if it is still in a .zip format):
 
 ```
-python /path/to/addon/scripts/convertToVTK.py /path/to/myModel.1.o.mesh
+python convertToVTK.py /path/to/myModel.1.o.mesh
 ```
 
 On success, a file called ```/path/to/myModel.1.o.vtk``` should have been created, which we'll be ready to slice through!

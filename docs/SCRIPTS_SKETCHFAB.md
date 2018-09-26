@@ -4,9 +4,9 @@
 
 The following instructions explain how to automatically download and process either one Sketchfab model or all models from a collection, taking the model's or collection's url as input.
 
-Automation is badass, but as sometimes things don't go as planned (which can happen as those scripts are "wrappers wrapping wrappers" actually wrapping the [bakeAll.py](/scripts/bakeAll.py) file with Sketchfab API calls and browser automation techniques), I also kept an option to only download models without actually reprocessing them.
+Automation is badass, but as sometimes things don't go as planned (which can happen as those scripts are "wrappers wrapping wrappers" actually wrapping the [bakeAll.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeAll.py) file with Sketchfab API calls and browser automation techniques), I also kept an option to only download models without actually reprocessing them.
 
-**IMPORTANT**: as you can check in the source files, the python scripts only use your Sketchfab email adress and password in the *login_to_sketchfab* function (found in [bakeSketchfab.py](/scripts/bakeSketchfab.py)) in order to automatically login to your Sketchfab account as selenium, the tool used to automate web browsing tasks, does not reuse your current Firefox preferences and saved accounts.
+**IMPORTANT**: as you can check in the source files, the python scripts only use your Sketchfab email adress and password in the *login_to_sketchfab* function (found in [bakeSketchfab.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeSketchfab.py)) in order to automatically login to your Sketchfab account as selenium, the tool used to automate web browsing tasks, does not reuse your current Firefox preferences and saved accounts.
 
 ## Prerequisites
 

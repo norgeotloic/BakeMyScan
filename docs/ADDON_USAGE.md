@@ -41,7 +41,7 @@ For instance, if I wanted to create a PBR material for a high resolution photogr
 
 Currently supports .obj, .ply, .stl, .fbx, .dae, .x3d and .wrl files.
 
-This button does not only import a file, but also does a bunch of preprocessing operations on the object (you can check the code [op_import.py](/src/op_import_scan.py)):
+This button does not only import a file, but also does a bunch of preprocessing operations on the object (you can check the code in [op_import_scan.py](https://github.com/norgeotloic/BakeMyScan/blob/master/src/op_import_scan.py)):
 
 1. Remove everything which is not a mesh
 2. Remove the material if one was assigned on import
@@ -54,7 +54,7 @@ Please note that to be matched automatically, the texture files associated with 
 
 **The lowercase name of a texture file must end with a specific pattern corresponding to its role, in order to be associated with the appropriate slot of a Principled shader node**
 
-The functions used to find corresponding textures are available in the file [fn_match.py](/src/fn_match.py), and here is the python dictionnary corresponding to the patterns used:
+The functions used to find corresponding textures are available in the file [fn_match.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/src/fn_match.py), and here is the python dictionnary corresponding to the patterns used:
 
 ```
 patterns = {
@@ -215,7 +215,7 @@ For each baking type the user selected (albedo, metal, roughness...):
   5. Remove the copy of the initial material
 ```
 
-The baking of the normals is treated differently, as the geometric normals are baked using Blender Render, and combined to the "material-induced" normals linked to the Principled shader nodes with quite complex node setups (implemented in the file [fn_nodes.py](/src/fn_nodes.py)).
+The baking of the normals is treated differently, as the geometric normals are baked using Blender Render, and combined to the "material-induced" normals linked to the Principled shader nodes with quite complex node setups (implemented in the file [fn_nodes.py](https://github.com/norgeotloic/BakeMyScan/blob/master/src/fn_nodes.py)).
 
 On success, the operator will load the resulting material and assign it to the active object for you to preview the baking results.
 

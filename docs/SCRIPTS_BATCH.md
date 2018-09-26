@@ -17,7 +17,7 @@ You'll also need a working installation of **python3** on your system. Although 
 
 ## 1 - Process one model
 
-The whole process is automated thanks to the [bakeOne.py](/scripts/bakeOne.py) python script that blender can execute from the command line. To use it, open up your command line interface, navigate to the scripts directory and type in the following command (options between brackets are optional):
+The whole process is automated thanks to the [bakeOne.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeOne.py) python script that blender can execute from the command line. To use it, open up your command line interface, navigate to the scripts directory and type in the following command (options between brackets are optional):
 
 ```
 blender --background --python bakeOne.py -- -i INFILE -o OUTFILE [-t TARGETFACES] [-r RESOLUTION] [-a ALBEDO] [-n NORMAL]
@@ -49,7 +49,7 @@ If this still does not work, have a look at my [TODO list](https://github.com/no
 
 ## 2 - Process multiple models
 
-To process multiple models, you can use the [bakeAll.py](/scripts/bakeAll.py) script, which is a wrapper around [bakeOne.py](/scripts/bakeOne.py).
+To process multiple models, you can use the [bakeAll.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeAll.py) script, which is a wrapper around [bakeOne.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeOne.py).
 
 The command line syntax is as follows:
 
@@ -121,7 +121,7 @@ Upon completion (and after having received info similar to the screenshot above)
 
 ## 3 - Import the results in blender
 
-I also wrote a script ([importAll.py](/scripts/importAll.py)) to import the baked models in blender on a grid layout, similar to the one below:
+I also wrote a script ([importAll.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/importAll.py)) to import the baked models in blender on a grid layout, similar to the one below:
 
 ![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)
 
