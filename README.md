@@ -1,37 +1,37 @@
-## Welcome to GitHub Pages
+# BakeMyScan
 
-You can use the [editor on GitHub](https://github.com/norgeotloic/BakeMyScan/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+A blender add-on I wrote to process 3D scans (from my own scans or from Sketchfab) into lowpoly assets with blender:
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+![grid](https://user-images.githubusercontent.com/37718992/44431859-fabeee00-a59f-11e8-80da-6705b218db81.jpg)
 
-### Markdown
+## Download
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+If you only wish to use the blender add-on, simply [download the .zip archive of the latest release](https://github.com/norgeotloic/BakeMyScan/releases) and install it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File* (do not forget to save your settings!).
 
-```markdown
-Syntax highlighted code block
+However, if you wish to use the command line to batch-process scans, you'll need to [download the .zip archive of the full repository](https://github.com/norgeotloic/BakeMyScan/archive/master.zip), which contains python files not included in the add-on release.
 
-# Header 1
-## Header 2
-### Header 3
+## Prerequisites
 
-- Bulleted
-- List
+The main features of the add-on should work "out of the box", on any linux, MacOS and Windows system.
 
-1. Numbered
-2. List
+Some further configuration is however needed if you wish to have access to more advanced functionalities:
 
-**Bold** and _Italic_ and `Code` text
+* To interface blender with [**mmgs**](http://www.mmgtools.org) (a powerful OpenSource remeshing tool for linux and MacOS), you must install mmgs following the instructions on the [mmgtools github repository](https://github.com/MmgTools/mmg)
+* To batch-process models from the command line, you'll need a working installation of **python3** installed on your system. Although you could try using the version of python bundled with blender (untested), the easiest way is to install python3.5 from [**Anaconda**](https://conda.io/docs/user-guide/install/download.html).
+* If you wish to process Sketchfab models and full collections from their url, you'll also need to have **Firefox** installed, as well as a version of [**selenium**](https://www.seleniumhq.org/) matching your python version (see [those instructions](https://selenium-python.readthedocs.io/installation.html))
 
-[Link](url) and ![Image](src)
-```
+## Usage
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+To start using this add-on and manually process a 3D scan in blender, please consult the [basic instructions](docs/ADDON_USAGE.md).
 
-### Jekyll Themes
+You'll also find instructions to batch-process local 3D models from the command-line on [this page](docs/SCRIPTS_BATCH.md), and to automatically download and process models from Sketchfab [here](docs/SCRIPTS_SKETCHFAB.md).
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/norgeotloic/BakeMyScan/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+## Contributing
 
-### Support or Contact
+Do not hesitate to [open an issue](https://github.com/norgeotloic/BakeMyScan/issues) if you find a bug, or to [create a pull request](https://github.com/norgeotloic/BakeMyScan/pulls) if you've modified the code and would like to submit your changes.
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+And if you found this add-on useful and would like to say thanks, you could even consider [buying me a coffee](https://www.buymeacoffee.com/JrxfoZRVy)!
+
+## License
+
+This code is licensed under [GNU GPL v3](LICENSE.md).
