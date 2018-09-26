@@ -2,7 +2,7 @@
 
 The previous feature therefore allows you to remesh different parts of the model independantly, like I did with [this model of a Napoleon statue on Sketchfab](https://skfb.ly/6xHwD), remeshing details such as the sword separately from the horse's body:
 
-![napo](https://user-images.githubusercontent.com/37718992/44310717-26dd4200-a3db-11e8-953c-2bdf2e6263e8.jpg)
+![napo](https://user-images.githubusercontent.com/37718992/46110737-e72d2580-c1e4-11e8-8814-2bcb6cc57bb5.png)
 
 To do so, you'll have to separate your model into different "submodels", while keeping the boundaries between them intact:
 

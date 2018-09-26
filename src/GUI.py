@@ -3,7 +3,7 @@ import bpy
 class ImportPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category    = "NGL"
+    bl_category    = "BakeMyScan"
     bl_label       = "Import"
 
     def draw(self, context):
@@ -13,7 +13,7 @@ class ImportPanel(bpy.types.Panel):
 class RemeshPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category    = "NGL"
+    bl_category    = "BakeMyScan"
     bl_label       = "Remesh"
 
     def draw(self, context):
@@ -24,7 +24,7 @@ class RemeshPanel(bpy.types.Panel):
 class TexturePanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category    = "NGL"
+    bl_category    = "BakeMyScan"
     bl_label       = "Texture"
 
     def draw(self, context):
@@ -34,7 +34,7 @@ class TexturePanel(bpy.types.Panel):
 class BakingPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category    = "NGL"
+    bl_category    = "BakeMyScan"
     bl_label       = "Baking"
 
     def draw(self, context):

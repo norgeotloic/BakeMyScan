@@ -20,7 +20,7 @@ modulesFiles = [
     "op_import_mesh", "op_export_mesh"                                  # .mesh format operators
 ]
 modulesNames = ["src." + f for f in modulesFiles]
-modulesNames += ["GUI"]
+modulesNames += ["src.GUI"]
 
 modulesFullNames = {}
 for currentModuleName in modulesNames:

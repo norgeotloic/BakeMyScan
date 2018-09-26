@@ -3,7 +3,7 @@ import os
 
 class remove_all_but_selected(bpy.types.Operator):
     bl_idname = "bakemyscan.remove_all_but_selected"
-    bl_label  = "Removes unused objects, textures..."
+    bl_label  = "Removes non selected objects and unused materials, textures and images"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod

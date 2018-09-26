@@ -2,7 +2,7 @@
 
 *Warning: you'll have to be familiar with the terminal to reproduce the following example!*
 
-![lion](https://user-images.githubusercontent.com/37718992/44309665-62bbdb80-a3ca-11e8-909e-c98561aacffe.jpg)
+![lionmmgs](https://user-images.githubusercontent.com/37718992/46110735-e72d2580-c1e4-11e8-9938-846fa8f6af8f.jpg)
 
 Here is a way to use other tools to recreate a model similar to the one above, which will require:
 

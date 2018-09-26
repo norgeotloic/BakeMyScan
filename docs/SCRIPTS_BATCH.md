@@ -94,7 +94,7 @@ The command used would be:
 python3.5 scripts/bakeAll.py -i /home/loic/tmp -o /home/loic/lowpoly -p elephants -t 2500 -r 2048
 ```
 
-![screenshot from 2018-08-22 00-07-43](https://user-images.githubusercontent.com/37718992/44431860-fb578480-a59f-11e8-89a0-4807b0e76128.jpg)
+![terminal](https://user-images.githubusercontent.com/37718992/46111093-ff517480-c1e5-11e8-9e58-e9e979c56415.jpg)
 
 Upon completion (and after having received info similar to the screenshot above), the directory */home/loic/lowpoly* should look like so:
 
@@ -121,7 +121,7 @@ Upon completion (and after having received info similar to the screenshot above)
 
 I also wrote a script ([importAll.py](scripts/importAll.py)) to import the baked models in blender on a grid layout, similar to the one below:
 
-![grid](https://user-images.githubusercontent.com/37718992/44431859-fabeee00-a59f-11e8-80da-6705b218db81.jpg)
+![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)
 
 It is used like so:
 

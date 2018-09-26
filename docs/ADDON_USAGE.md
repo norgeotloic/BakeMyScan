@@ -4,13 +4,13 @@
 
 Once the add-on is installed, you'll have a new tab available in your **Tool shelf** (the panel on the left of the 3D view, which you can open with **T**), called "BakeMyScan" and containing a few operators:
 
-![UI](https://user-images.githubusercontent.com/37718992/44631841-e436df00-a971-11e8-8588-9c540e290c4d.png)
+![gui](https://user-images.githubusercontent.com/37718992/46110732-e6948f00-c1e4-11e8-8112-1b571120d0bb.jpg)
 
 ## 1 - Workflow
 
 #### 1.1 - Transform a high resolution mesh to a lowpoly asset
 
-![Imgur](https://i.imgur.com/nZuT2pV.jpg)
+![ramses](https://user-images.githubusercontent.com/37718992/46110741-e7c5bc00-c1e4-11e8-966e-fa9a9761f01b.jpeg)
 
 During the photogrammetry process, I often end up with .obj or .ply files made of hundreds of thousands of triangles (often between 200k and 5M depending on the software and quality settings used), which are way too heavy to use in game engines or for web visualization.
 
@@ -23,7 +23,7 @@ I therefore wrote the BakeMyScan add-on to be able to reprocess such models to a
 
 #### 1.2 - Mix PBR textures in a new Cycles material and bake the result
 
-![Imgur](https://i.imgur.com/b1V93Th.jpg)
+![death](https://user-images.githubusercontent.com/37718992/46110730-e5fbf880-c1e4-11e8-8a62-de2ca2f96445.jpeg)
 
 I also use this add-on to bake complex mixes of PBR textures between objects.
 
@@ -37,7 +37,7 @@ For instance, if I wanted to create a PBR material for a high resolution photogr
 
 ## 2 - Operators
 
-#### 2.1 - Import
+### 2.1 - Import
 
 Currently supports .obj, .ply, .stl, .fbx, .dae, .x3d and .wrl files.
 
@@ -102,15 +102,17 @@ model-123456789ABCDEF/
 
 **AS A CONCLUSION**: if your textures are named in a sensible manner, your material should be correctly imported in blender and be ready for render or for baking. However, if you encounter a problem or some textures are not found, you can still jump into the Node editor mode and manually assign the image files to the texture nodes.
 
-#### 2.2 - Ortho view
+### 2.2 - Ortho view
 
 This operator exports an orthographic projection of the selected object, as on the following image:
 
-![lion_ortho](https://user-images.githubusercontent.com/37718992/44480043-8ab57400-a642-11e8-8a53-894a398114c3.jpg)
+![lion_ortho](https://user-images.githubusercontent.com/37718992/46110736-e72d2580-c1e4-11e8-95cd-af5fba1ef1f0.jpg)
 
 On completion, the active 3D view window will be split in two horizontal parts. You'll have to collapse the top part in order to retrieve your initial settings (I can't figure how to do this using python API from an add-on, blender tells me that the two areas "do not share an edge"...).
 
-#### 2.3 - Decimate
+### 2.3 - Decimate
+
+![hand](https://user-images.githubusercontent.com/37718992/46110734-e6948f00-c1e4-11e8-8f38-5e03497d2ad9.gif)
 
 This operator first performs a coarse decimation on the mesh depending on the target number of faces you specified. This step is done in order to speed-up the iterative remeshing process, and is equivalent to using a relatively "medium-poly" version of your object.
 
@@ -120,7 +122,9 @@ The operator then iteratively performs a sequence of *Planar decimation*, *Trian
 
 The last iteration is then cancelled, and a last decimation step is finally applied to stick to the exact number of faces you aimed for, before unwrapping the object.
 
-#### 2.4 - MMGS
+### 2.4 - MMGS
+
+![napo](https://user-images.githubusercontent.com/37718992/46110737-e72d2580-c1e4-11e8-8814-2bcb6cc57bb5.png)
 
 *This section presents the basic usage of mmgs in blender. "Advanced" usages include remeshing separate parts of a model with different precisions (as explained [here](MISC_MMGS_SEPARATED_PARTS.md)), or interfacing with tetgen and paraview to create volumetric meshes (shown [here](MISC_MMGS_TETGEN_PARAVIEW.md))*
 
@@ -134,7 +138,7 @@ It uses a specific file format for input and output, the MEDIT .mesh format. As 
 
 The **MMGS** button (*only active on linux and MacOS if mmgs is installed*) will reveal two options on click (although mmgs used as a command-line program has much more): the Hausdorff ratio and a "Smooth" checkbox.
 
-###### 2.4.1 - Hausdorff ratio
+#### 2.4.1 - Hausdorff ratio
 
 In a few words, mmgs processes an object by constraining the maximal distance between the resulting surface and the original one. This maximal distance is called the Hausdorff distance:
 
@@ -145,11 +149,11 @@ To ignore the impact of the size of the model, I have set the Hausdorff paramete
 
 Therefore, a 3 meters object with a Hausdorff Ratio set to 0.002 will return a surface approximation constrained to a 0.6cm distance from the original mesh. Here is an example using Suzanne as the original model:
 
-![suzanne](https://user-images.githubusercontent.com/37718992/44310074-b3cece00-a3d0-11e8-82dd-1fe016e1c638.jpg)
+![suzanne](https://user-images.githubusercontent.com/37718992/46110743-e7c5bc00-c1e4-11e8-8057-a783c55e3f0e.jpg)
 
 More precise info about the Hausdorff parameter is available on [MMGPlatform website](https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hausd)
 
-###### 2.4.2 - Smooth surface
+#### 2.4.2 - Smooth surface
 
 Keep that checked if your model is "organic", without sharp edges, for instance for the result from a 3D scan.
 
@@ -157,9 +161,9 @@ If your model contains sharp angles, you'll want to uncheck that button.
 
 Below is the effect of this parameter on a model containing sharp edges, with a hausdorff ratio set to 0.001. Note that it went way better for the non-smooth model:
 
-![smooth](https://user-images.githubusercontent.com/37718992/44310211-c813ca80-a3d2-11e8-9271-c3ec4c47e327.jpg)
+![smoothcube](https://user-images.githubusercontent.com/37718992/46110742-e7c5bc00-c1e4-11e8-8bba-66277341da9a.jpg)
 
-#### 2.5 - Set textures path
+### 2.5 - Set textures path
 
 This operator creates a library of PBR texture sets from a directory on your computer.
 
@@ -182,7 +186,7 @@ I personally use (mostly) free PBR textures from the following resources:
 * [Sungwoo Lee's gumroad](https://gumroad.com/l/HEZvu)
 * [3dtextures.me](https://3dtextures.me/tag/pbr/)
 
-#### 2.6 - Import PBR material
+### 2.6 - Import PBR material
 
 Once having selected a directory to look for textures, you will be prompted to select the material base name that you wish to import. A new PBR material (based on a "Principled" shader node) will then be created and assigned to the active object, and the associated textures will be linked to the node's correct inputs.
 
@@ -190,9 +194,9 @@ Once having selected a directory to look for textures, you will be prompted to s
 
 For instance, here is a dummy example of the search pop-up in the node editor, of a simple mix of texture sets based on Cycles nodes, as well as a render of the corresponding material:
 
-![screenshot from 2018-08-26 21-39-22](https://user-images.githubusercontent.com/37718992/44632333-27e11700-a979-11e8-84b5-7ce2b7f86a5f.jpg)
+![nodesetup](https://user-images.githubusercontent.com/37718992/46110739-e72d2580-c1e4-11e8-8375-e9a095be04b2.jpg)
 
-#### 2.7 - Bake Textures
+### 2.7 - Bake Textures
 
 If executed correctly, this operator allows to bake the result of complex Cycles node setups, for instance multiple PBR texture sets mixed according to noise textures.
 
@@ -215,8 +219,8 @@ The baking of the normals is treated differently, as the geometric normals are b
 
 On success, the operator will load the resulting material and assign it to the active object for you to preview the baking results.
 
-**NOTE:** The behaviour of this operator is not 100% stable yet, and I should improve on the mixing of geometric and surface normals, as well as on the roughness and metallic maps which do not always seem to bake correctly. However, the baking of geometry and albedo textures works fine, and is usually sufficient for most conversion to lowpoly assets.
+**NOTE:** The behavior of this operator is not 100% stable yet, and I should improve on the mixing of geometric and surface normals, as well as on the roughness and metallic maps which do not always seem to bake correctly. However, the baking of geometry and albedo textures works fine, and is usually sufficient for most conversion to lowpoly assets.
 
-#### 2.8 - Export to fbx
+### 2.8 - Export to fbx
 
 More information on this later...

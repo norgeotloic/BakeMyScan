@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# .zip addon file
+BakeMyScan/
+*.zip
