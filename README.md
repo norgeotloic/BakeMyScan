@@ -1,28 +1,21 @@
 # BakeMyScan
 
-![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)
-
-This github repository contains:
+Source code for:
 
 * A blender add-on I wrote to process 3D scans (from my own scans or from Sketchfab) into lowpoly assets with blender.
-* Python scripts, based on the add-on, to batch-process local or remote (from Sketchfab) 3D models.
+* Python scripts, based on the add-on, to batch-process local or remote (from Sketchfab) 3D models into lowpoly assets.
 
-## 1 - Features
+## 1 - What for?
 
-The add-on allows to:
+I mainly use this add-on to reprocess 3D photogrammetry scans with an associated albedo texture (as on the [collection of lowpoly fossils](https://sketchfab.com/models/3d1161a5db4244e486de6de0c66f759c) shown below (remeshed to 1.5k triangles, when the original models were between 100k and 5M polygons):
 
-* import and clean 3D scans
-* create orthographic projections of a given model
-* smartly remesh the imported models to a given number of faces
-* import and configure Cycles materials based on PBR texture sets from your computer
-* bake texture sets between high and low resolution models
-* export a .fbx model and its associated textures with PBR-friendly names
+![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)
 
-Although I mainly use it to reprocess scans with an associated albedo texture (as on the collection of 1500 triangles fossils above and [visible here](https://sketchfab.com/models/3d1161a5db4244e486de6de0c66f759c)), the add-on is also very useful to create and bake complex Cycles node setups - based on mixes of PBR texture sets for instance - as on the following model:
+But this add-on is also very useful to create and bake complex Cycles node setups - based on mixes of PBR texture sets for instance - as on the following model:
 
 ![oldman](https://user-images.githubusercontent.com/37718992/46110740-e7c5bc00-c1e4-11e8-9dbe-096f42d8875a.jpeg)
 
-On the left is the original model, made of 313k triangles with an associated albedo texture. On the right is the reprocessed version, made of 3.6k triangles, with a PBR material baked from a mix of metal PBR texture sets (brass, damaged bronze and bronze patina). This model is visible on [Sketchfab](https://sketchfab.com/models/0f7535dc9dd1492e842cd6b2d23f4885).
+On the left is the original object, made of 313k triangles with an associated albedo texture. On the right is the reprocessed version (visible on [Sketchfab](https://sketchfab.com/models/0f7535dc9dd1492e842cd6b2d23f4885)), made of 3.6k triangles, with a PBR material baked from a mix of metal PBR texture sets (brass, damaged bronze and bronze patina).
 
 ## 2 - Installation
 
