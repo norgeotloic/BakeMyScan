@@ -2,12 +2,12 @@
 Download and process models from Sketchfab
 
 Usage:
-python3.5 bakeSketchfab.py -u URL -o OUTDIR [-m MAIL] [-p PWD] [-t TARGET] [-r RESOLUTION] [-s SUFFIX] [-d]
+python3.5 downloadSketchfab.py -u URL -o OUTDIR [-m MAIL] [-p PWD] [-t TARGET] [-r RESOLUTION] [-s SUFFIX] [-d]
 
 For instance:
-    python3.5 bakeSketchfab.py -u https://skfb.ly/6AQxO -o /home/loic/tmp -m loic@mail.com -p mypassword -t 500 -r 512
-    python3.5 bakeSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -t 250 -r 1024
-    python3.5 bakeSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -d
+    python3.5 downloadSketchfab.py -u https://skfb.ly/6AQxO -o /home/loic/tmp -m loic@mail.com -p mypassword -t 500 -r 512
+    python3.5 downloadSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -t 250 -r 1024
+    python3.5 downloadSketchfab.py -u https://skfb.ly/6yQSW -o /home/loic/tmp -d
 """
 
 import sys
@@ -17,6 +17,7 @@ import imghdr
 import argparse
 import zipfile
 import tempfile
+import time
 
 #API request
 import urllib.request
@@ -57,6 +58,7 @@ def get_collection_uid(browser, url):
     uid = elt.get_attribute("data-collection-uid")
     return uid
 def download_sketchfab_model(browser, url):
+    oldFiles = os.listdir(args.output)
     browser.get(url)
     browser.find_element_by_css_selector('.c-model-actions__button.--download').click()
     try:
@@ -64,6 +66,14 @@ def download_sketchfab_model(browser, url):
     finally:
         pass
     browser.find_element_by_css_selector('.button-source').click()
+    #Wait until no file is ending in ".part", which means download finished
+    finished = False
+    while not finished:
+        time.sleep(1)
+        newFiles = [f for f in os.listdir(args.output) if f.endswith("part")]
+        if len(newFiles)==0:
+            finished = True
+
 
 #Functions to recursively extract archives in a directory
 def list_archives(_directory):
@@ -112,13 +122,9 @@ if __name__ == "__main__":
     #Parse and check the arguments
     parser = argparse.ArgumentParser(description="Process all models from a Sketchfab collection to lowpoly")
     parser.add_argument("-u", "--url",        dest="url",            type=str, required=True, help="Model or collection url")
-    parser.add_argument("-o", "--output",     dest="output",         type=str, required=True, help="Output folder")
+    parser.add_argument("-o", "--output",     dest="output",         type=str, required=True, help="Output folder (must be empty)")
     parser.add_argument("-m", "--mail",       dest="sketchfab_user", type=str, help="Sketchfab e-mail adress")
     parser.add_argument("-p", "--pass",       dest="sketchfab_pass", type=str, help="Sketchfab password")
-    parser.add_argument("-t", "--target",     dest="target",         type=int, default=1500,    help="Target number of faces")
-    parser.add_argument("-r", "--resolution", dest="resolution",     type=int, default=1024,    help="Baked textures resolution")
-    parser.add_argument("-s", "--suffix",     dest="suffix",         type=str, default="asset", help="Suffix name")
-    parser.add_argument("-d", "--download",   dest="download",       action="store_true", help="Download only")
     args = parser.parse_args(sys.argv[1:])
 
     #Check if the output is empty or not
@@ -141,8 +147,17 @@ if __name__ == "__main__":
             print("Can't create " + args.output + ", exiting")
             sys.exit(1)
 
+    #Check the url
+    if "models" not in args.url and "collection" not in args.url:
+        print("You must provide a full url (not a 'Share' link)")
+        sys.exit(0)
+
+    #Prompt the user and password
     if args.sketchfab_user is None:
         args.sketchfab_user = input('Sketchfab e-mail: ')
+    if "@" not in args.sketchfab_user:
+        print("You must provide an e-mail, not a username")
+        sys.exit(0)
     if args.sketchfab_pass is None:
         args.sketchfab_pass = input('Sketchfab password: ')
 
@@ -150,22 +165,20 @@ if __name__ == "__main__":
     profile = setup_Firefox_profile(args.output)
     browser = webdriver.Firefox(firefox_profile=profile)
 
+    #Create the list of urls depending on model or collection
     isCollection = "collection" in args.url
-
     urls = []
-
     if isCollection:
         with open(os.path.join(args.output, "credits.md"), "w") as f:
             uid = get_collection_uid(browser, args.url)
             data = make_API_request("https://api.sketchfab.com/v3/collections/" + uid + "/models")
-            for r in data['results'][:2]:
+            for r in data['results']:
                 if r["isDownloadable"]:
                     urls.append(r["viewerUrl"])
                     license = make_API_request(r["uri"])["license"]["label"]
                     f.write( "* [%s](%s) by [%s](%s), licensed under %s\n" % (r["name"], r["viewerUrl"], r["user"]["displayName"], r["user"]["profileUrl"], license) )
     else:
         urls.append(args.url)
-
 
     #Download the models
     login_to_sketchfab(browser, args.sketchfab_user, args.sketchfab_pass)
@@ -175,11 +188,3 @@ if __name__ == "__main__":
 
     #Extract the archives
     extract_all_archives(args.output)
-
-    if not args.download:
-
-        #Bake all the files in the output directory
-        os.system("python3.5 scripts/bakeAll.py -i " + args.output + " -o " + args.output + " -p " + args.suffix + " -t " + str(args.target) + " -r " + str(args.resolution))
-
-        #Import everything to a new blender file
-        os.system("blender --python scripts/importAll.py -- -i " + args.output + " -r 5")

@@ -1,5 +1,7 @@
 # Batch process models
 
+*NOTE: These scripts are still VERY unstable, and might not work in many cases: python or patience required!*
+
 In order to reprocess multiple scans in the blender GUI, you'd have to execute the relevant operators shown in the [add-on usage page](ADDON_USAGE.md) over and over again, which would (obviously) get tedious for a big number of models. Plus you would have to stay in front of your screen(s) during the whole process, spending more time waiting than actually clicking stuff.
 
 On this page you'll therefore find details about scripts allowing you to:

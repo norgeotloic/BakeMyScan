@@ -27,7 +27,7 @@ Note that if you wish to interface blender with [**mmgs**](http://www.mmgtools.o
 
 Instructions about the add-on usage can be found on the [usage page](docs/ADDON_USAGE.md).
 
-You'll also find [instructions to process models from the command line](docs/SCRIPTS_BATCH.md), as well as [instructions to automatically download and process Sketchfab models and collections based on their URLs](docs/SCRIPTS_SKETCHFAB.md).
+You'll also find [instructions to process models from the command line](docs/SCRIPTS_BATCH.md), as well as [instructions to automatically download Sketchfab models and collections based on their URLs](docs/SCRIPTS_SKETCHFAB.md).
 
 ## 4 - Contributing and License
 
