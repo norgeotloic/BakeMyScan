@@ -359,7 +359,9 @@ class Mesh:
                 print("Error while writing array", head, array)
             f.close()
     def write(self, path):
-        self.writeArray(path, "MeshVersionFormatted 2\nDimension 3\n\nVertices\n" + str(len(self.verts)), self.verts, '%.8f %.8f %.8f %i', firstOpening=True)
+        dim = "2" if len(self.verts[0]) == 3 else "3"
+        fmt = '%.8f %.8f %i' if len(self.verts[0]) == 3 else '%.8f %.8f %.8f %i'
+        self.writeArray(path, "MeshVersionFormatted 2\nDimension " + dim + "\n\nVertices\n" + str(len(self.verts)), self.verts, fmt, firstOpening=True)
         self.writeArray(path, "Triangles\n"+ str(len(self.tris)), self.tris, '%i %i %i %i', incrementIndex=True)
         self.writeArray(path, "Quadrilaterals\n"+str(len(self.quads)), self.quads, '%i %i %i %i %i', incrementIndex=True)
         self.writeArray(path, "Tetrahedra\n"+str(len(self.tets)), self.tets, '%i %i %i %i %i', incrementIndex=True)
@@ -368,7 +370,8 @@ class Mesh:
         with open(path,"a") as f:
             f.write("\nEnd")
     def writeSol(self,path):
-        self.writeArray(path,"MeshVersionFormatted 2\nDimension 3\n\nSolAtVertices\n"+str(len(self.scalars))+"\n1 1", self.scalars, '%.8f', firstOpening=True)
+        dim = "2" if len(self.verts[0]) == 3 else "3"
+        self.writeArray(path,"MeshVersionFormatted 2\nDimension " + dim + "\n\nSolAtVertices\n"+str(len(self.scalars))+"\n1 1", self.scalars, '%.8f', firstOpening=True)
 
     # other export functions
     def writeOBJ(self, path):

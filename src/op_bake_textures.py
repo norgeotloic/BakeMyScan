@@ -49,7 +49,6 @@ class bake_textures(bpy.types.Operator, ExportHelper):
     bl_label  = "Bake textures"
     bl_options = {"REGISTER", "UNDO"}
 
-
     filepath  = bpy.props.StringProperty(
         name="File Path",
         description="Filepath used for exporting the file",
@@ -196,6 +195,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             bakeWithBlender(targetMat, "baked_normal_geometric", self.resolution, self.directory, self.imgFormat)
 
         #Imagemagick... magic : removing the blue channel from the material image
+        """
         if fn_soft.convertExe is not None and source != target and self.bake_geometry and self.bake_surface:
             rmBlue  = fn_soft.convertExe
             rmBlue += os.path.join(self.directory, "baked_normal." + self.imgFormat.lower())
@@ -209,7 +209,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             overlay += " -compose overlay -composite "
             overlay += os.path.join(self.directory, "baked_normals." + self.imgFormat.lower())
             os.system(overlay)
-
+        """
 
         #Bake the geometric and surface normals to one (Imagemagick or node setup)
         if source != target and self.bake_geometry and self.bake_surface:

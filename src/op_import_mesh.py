@@ -84,10 +84,14 @@ def meshImport(operator, context, filepath):
     bpy.ops.object.select_all(action='DESELECT')
     for o in objects:
         o.select=True
-    bpy.ops.object.join()
-    bpy.ops.object.editmode_toggle()
-    bpy.ops.mesh.remove_doubles()
-    bpy.ops.object.editmode_toggle()
+    if len(objects)>1:
+        bpy.ops.object.join()
+
+    remove_doubles = False
+    if remove_doubles:
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.remove_doubles()
+        bpy.ops.object.editmode_toggle()
 
     #Solutions according to the weight paint mode (0 to 1 by default)
     if len(MESH.vectors) > 0:
@@ -131,12 +135,6 @@ def meshImport(operator, context, filepath):
 
         vgrp=bpy.context.active_object.vertex_groups.keys()
         vcolgrp=bpy.context.active_object.data.vertex_colors
-
-        #Check to see if we have at least one vertex group and one vertex color group
-        if len(vgrp) > 0 and len(vcolgrp) > 0:
-            print ("enough parameters")
-
-
 
         colored = False
         #Colored

@@ -69,7 +69,7 @@ class do_one_iteration(bpy.types.Operator):
 
 class remesh_iterative(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_iterative"
-    bl_label  = "Remesh to a target number of faces"
+    bl_label  = "Remesh with an iterative method"
     bl_options = {"REGISTER", "UNDO"}
 
     limit    = bpy.props.IntProperty(name="limit",    description="Target faces", default=1500, min=50, max=500000)
@@ -86,7 +86,7 @@ class remesh_iterative(bpy.types.Operator):
     def execute(self, context):
         #Duplicate the original mesh and make it active
         hr = context.scene.objects.active
-        bpy.ops.object.duplicate_move()
+        bpy.ops.object.duplicate()
         lr = context.scene.objects.active
 
         #First coarse decimate or mmgs or meshlabserver to get a medium poly
@@ -102,7 +102,7 @@ class remesh_iterative(bpy.types.Operator):
         iterate = True
         while(iterate):
             lr = context.scene.objects.active
-            bpy.ops.object.duplicate_move()
+            bpy.ops.object.duplicate()
             bpy.ops.bakemyscan.remesh_one_iteration(manifold=self.manifold, vertex_group=self.vertex_group)
             tmp = context.scene.objects.active
             print(self.limit, len(tmp.data.polygons), len(lr.data.polygons))

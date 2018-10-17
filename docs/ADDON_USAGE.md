@@ -2,9 +2,9 @@
 
 *Some of the add-on functions are quite unstable, and might only work in specific contexts and circumstances. Reading the information on this page is therefore highly recommended*
 
-Once the add-on is installed, you'll have a new tab available in your **Tool shelf** (the panel on the left of the 3D view, which you can open with **T**), called "BakeMyScan" and containing a few operators:
+Once the add-on is installed, you'll have a new tab available in your **Tool shelf** (the panel on the left of the 3D view, which you can open with **T**), called "BakeMyScan" and containing a few operators (subject to changes!):
 
-![gui](https://user-images.githubusercontent.com/37718992/46110732-e6948f00-c1e4-11e8-8112-1b571120d0bb.jpg)
+![ui](https://user-images.githubusercontent.com/37718992/47118077-82ef0600-d266-11e8-938c-9a9147d620ad.png)
 
 ## 1 - Workflow
 
@@ -36,6 +36,8 @@ For instance, if I wanted to create a PBR material for a high resolution photogr
 5. Export the lowpoly mesh and its associated textures to a .fbx file along with smartly named image files.
 
 ## 2 - Operators
+
+**Some documentation is missing here!**
 
 ### 2.1 - Import
 

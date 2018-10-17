@@ -4,7 +4,6 @@ from mathutils import Vector
 import os
 
 from . import fn_ortho
-from . import fn_soft
 
 class export_orthoview(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.export_orthoview"
@@ -25,8 +24,6 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
 
     @classmethod
     def poll(self, context):
-        if fn_soft.convertExe is None or fn_soft.composeExe is None or fn_soft.montageExe is None:
-            return 0
         #If more than two objects are selected
         if len(context.selected_objects)!=1:
             return 0

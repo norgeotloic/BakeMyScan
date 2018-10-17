@@ -1,7 +1,6 @@
 import bpy
 import os
-from bpy_extras.io_utils import ImportHelper
-
+import tempfile
 from . import fn_soft
 
 class remesh_mmgs(bpy.types.Operator):
@@ -10,12 +9,12 @@ class remesh_mmgs(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     hausd  = bpy.props.FloatProperty( name="hausd", description="Haussdorf distance as a ratio", default=0.01, min=0.0001, max=1)
-    smooth = bpy.props.BoolProperty( name="smooth", description="Smooth surface", default=True)
+    smooth = bpy.props.BoolProperty(  name="smooth", description="Smooth surface", default=True)
 
     @classmethod
     def poll(self, context):
         #mmgs must be installed
-        if fn_soft.mmgsExe is None:
+        if context.user_preferences.addons["BakeMyScan"].preferences.mmgs == "":
             return 0
         #If more than two objects are selected
         if len(context.selected_objects)!=1 or context.active_object is None:
@@ -42,24 +41,31 @@ class remesh_mmgs(bpy.types.Operator):
         maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
 
         #Export
-        bpy.ops.bakemyscan.export_mesh(filepath="tmp.mesh")
+        tmpDir = tempfile.TemporaryDirectory()
+        IN  = os.path.join(tmpDir.name, "tmp.mesh")
+        OUT = os.path.join(tmpDir.name, "tmp.o.mesh")
+        bpy.ops.bakemyscan.export_mesh(filepath=IN)
 
         #Remesh
-        cmd = fn_soft.mmgsExe + "tmp.mesh -o tmp.o.mesh -hausd " + str( float(self.hausd * maxDim) )
-        if self.smooth:
-            cmd+=" -nr"
-        err = fn_soft.execute(cmd)
+        exe = context.user_preferences.addons["BakeMyScan"].preferences.mmgs
+        output, error, code = fn_soft.mmgs(
+            executable  = exe,
+            input_mesh  = IN,
+            output_mesh = OUT,
+            hausd       = self.hausd * maxDim,
+            nr          = True if self.smooth else False
+        )
 
-        #Clean and import
-        if not err:
-            bpy.ops.bakemyscan.import_mesh(filepath="tmp.o.mesh")
+        #Check the status
+        if code != 0:
+            self.report({"ERROR"}, "MMGS error, look in the console...")
+            print("MMGS OUTPUT:\n%s\nMMGS ERROR:\n%s" % (output, error))
+            return{"CANCELLED"}
         else:
-            self.report({'INFO'}, "MMGS failure")
-        for f in ["tmp.mesh", "tmp.o.mesh", "tmp.sol", "tmp.o.sol"]:
-            if os.path.exists(f):
-                os.remove(f)
-
-        return{'FINISHED'}
+            #Reimport
+            bpy.ops.bakemyscan.import_mesh(filepath=OUT)
+            self.report({"INFO"}, "MMGS success")
+            return{'FINISHED'}
 
 def register() :
     bpy.utils.register_class(remesh_mmgs)
