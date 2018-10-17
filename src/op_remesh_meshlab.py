@@ -48,18 +48,20 @@ class remesh_meshlab(bpy.types.Operator):
         obj    = context.active_object
         #maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
 
+
+
+        #Temporary directory
+        tmpDir = tempfile.TemporaryDirectory()
+
         #Create a temporary meshlab script with custom variables
         original_script = os.path.join(os.path.dirname(__file__), os.path.pardir, "scripts_meshlab", "quadricedgecollapse.mlx")
-        new_script      = "tmp.mlx"
+        new_script      = os.path.join(tmpDir.name, "tmp.mlx")
         with open(original_script, 'r') as infile :
             filedata = infile.read()
             newdata  = filedata.replace("FACESCOUNT", str(self.facescount))
             with open(new_script, 'w') as outfile:
                 outfile.write(newdata)
 
-        #Export
-        #Export
-        tmpDir = tempfile.TemporaryDirectory()
         IN  = os.path.join(tmpDir.name, "tmp.obj")
         OUT = os.path.join(tmpDir.name, "tmp.o.obj")
         bpy.ops.export_scene.obj(filepath=IN, use_selection=True)
