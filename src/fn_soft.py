@@ -11,6 +11,7 @@ def run(cmd):
     )
     return result.stdout.decode('utf-8'), result.stderr.decode('utf-8'), result.returncode
 
+#Remeshers
 def mmgs(
     input_mesh,
     output_mesh=None,
@@ -47,7 +48,6 @@ def mmgs(
     #Execute it, and return stdout, stderr and exit code
     print("Running %s" % cmd)
     return run(cmd)
-
 def meshlabserver(
     input_mesh,
     script_file,
@@ -67,7 +67,6 @@ def meshlabserver(
     #Execute it, and return stdout, stderr and exit code
     print("Running %s" % cmd)
     return run(cmd)
-
 def instant_meshes_cmd(
     input_mesh,
     output_mesh=None,
@@ -107,8 +106,22 @@ def quadriflow(
     #Execute it, and return stdout, stderr and exit code
     print("Running %s" % cmd)
     return run(cmd)
-
 def meshlab(input_mesh):
     return run("meshlab %s" % input_mesh)
 def instant_meshes_gui(input_mesh, executable="instantMeshes"):
     return run(executable + " %s" % input_mesh)
+
+#Imagemagick
+def convert(
+    input1,
+    output,
+    arguments,
+    input2=None,
+    executable="convert"
+    ):
+    #Create the command
+    cmd = executable + " %s %s %s %s" % (input1, input2 if input2 is not None else "", arguments, output)
+
+    #Execute it, and return stdout, stderr and exit code
+    print("Running %s" % cmd)
+    return run(cmd)

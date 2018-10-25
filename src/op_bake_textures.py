@@ -1,7 +1,6 @@
 import bpy
 import os
 from bpy_extras.io_utils import ExportHelper
-
 from . import fn_nodes
 from . import fn_soft
 
@@ -35,6 +34,7 @@ def bakeWithBlender(mat, nam, res, dir, fmt):
     mtex.texture_coords = 'UV'
     bpy.context.scene.render.use_bake_selected_to_active = True
     bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_all(action='SELECT')
     bpy.data.screens['UV Editing'].areas[1].spaces[0].image = image
     bpy.context.object.active_material.use_textures[0] = False
     bpy.context.scene.render.bake_type = "NORMALS"
@@ -43,6 +43,14 @@ def bakeWithBlender(mat, nam, res, dir, fmt):
     bpy.ops.object.editmode_toggle()
     mat.use_nodes = restore
     bpy.context.scene.render.engine=engine
+
+def copy_material(mat):
+    tmpMat = mat.copy()
+    for n in tmpMat.node_tree.nodes:
+        if n.type=="GROUP":
+            if n.node_tree.users>1:
+                n.node_tree = n.node_tree.copy()
+    return tmpMat
 
 class bake_textures(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.bake_textures"
@@ -98,20 +106,27 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                 return 0
         if context.mode!="OBJECT":
             return 0
+        #mmgs must be installed
+        if context.user_preferences.addons["BakeMyScan"].preferences.convert == "":
+            return 0
         return 1
 
     def execute(self, context):
+        #Get the directory to save the images to
         self.directory = os.path.abspath(os.path.dirname(self.properties.filepath))
-        #Find which is the source and which is the target, plus material
+
+        #Find which object is the source and which is the target
         source, target = None, None
         if len(context.selected_objects) == 1:
             source = target = context.selected_objects[0]
         if len(context.selected_objects) == 2:
             target = [o for o in context.selected_objects if o==context.active_object][0]
             source = [o for o in context.selected_objects if o!=target][0]
+
+        #Get the source material
         material  = source.material_slots[0].material
 
-        # Set the cycles baking parameters
+        # Set the baking parameters
         if source != target:
             bpy.data.scenes["Scene"].render.bake.use_selected_to_active = True
         bpy.data.scenes["Scene"].cycles.bake_type = 'EMIT'
@@ -129,25 +144,46 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             "Roughness": self.bake_roughness,
             "Normal": self.bake_surface,
             "Emission": self.bake_emission,
-            "Opacity": self.bake_opacity}
+            "Opacity": self.bake_opacity
+        }
 
+        #Bake the Principled shader slots by transforming them to temporary emission shaders
         for baketype in toBake:
             if toBake[baketype]:
-                #Prepare a copy of the material which will be used as baking input
-                tmpMat = material.copy()
+
+                #Copy the active material, and assign it
+                tmpMat = copy_material(material)
                 tmpMat.name = material.name + "_" + baketype
                 source.material_slots[0].material = tmpMat
-                for n in tmpMat.node_tree.nodes:
-                    if n.type=="GROUP":
-                        if n.node_tree.users>1:
-                            n.node_tree = n.node_tree.copy()
 
+                #Get the material output node
+                _matOut = [_n for _n in tmpMat.node_tree.nodes if _n.type == 'OUTPUT_MATERIAL' and _n.is_active_output][0]
+
+                #Convert the node tree to an emission shader with the texture
                 if baketype != "Emission" and baketype!= "Opacity":
                     fn_nodes.convert(tmpMat.node_tree, baketype)
 
-                _matOut = [_n for _n in tmpMat.node_tree.nodes if _n.type == 'OUTPUT_MATERIAL' and _n.is_active_output][0]
-                # Create a new image and image node for the baking in the target
-                suffix   = baketype.replace(" ", "").lower()
+                #Connect the correct group to the material output
+                else:
+                    #If we bake the emission, the shader should be good as it is
+                    if baketype == "Emission":
+                        pass
+                    #If we bake the opacity, look for a mix factor for a transparent shader
+                    elif baketype == "Opacity":
+                        alphaMixNode = None
+                        for n in tmpMat.node_tree.nodes:
+                            if n.type == 'BSDF_TRANSPARENT':
+                                for link in n.outputs["BSDF"].links:
+                                    if link.to_node.type == "MIX_SHADER":
+                                        for l in link.to_node.inputs["Fac"].links:
+                                            alphaMixNode = l.from_node
+                                            _emission = tmpMat.node_tree.nodes.new(type="ShaderNodeEmission")
+                                            tmpMat.node_tree.links.new(alphaMixNode.outputs[0], _emission.inputs["Color"])
+                                            tmpMat.node_tree.links.new(_emission.outputs["Emission"], _matOut.inputs["Surface"])
+                        if alphaMixNode is None:
+                            continue
+
+                #Add a new material called "baking" to the target
                 targetMat = tmpMat
                 if target != source:
                     if len(target.material_slots)>0:
@@ -161,30 +197,15 @@ class bake_textures(bpy.types.Operator, ExportHelper):
                         targetMat = bpy.data.materials.new("baking")
                         target.material_slots[0].material = targetMat
                     targetMat.use_nodes = True
+
                 #Add an image node to the material with the baked result image assigned
+                suffix   = baketype.replace(" ", "").lower()
                 imgNode = addImageNode(targetMat, "baked_" + suffix, self.resolution, self.directory, self.imgFormat)
-                #Connect the correct group to the material output
-                if baketype == "Emission":
-                    pass
-                elif baketype == "Opacity":
-                    alphaMixNode = None
-                    for n in tmpMat.node_tree.nodes:
-                        if n.type == 'BSDF_TRANSPARENT':
-                            for link in n.outputs["BSDF"].links:
-                                if link.to_node.type == "MIX_SHADER":
-                                    for l in link.to_node.inputs["Fac"].links:
-                                        alphaMixNode = l.from_node
-                                        _emission = tmpMat.node_tree.nodes.new(type="ShaderNodeEmission")
-                                        tmpMat.node_tree.links.new(alphaMixNode.outputs[0], _emission.inputs["Color"])
-                                        tmpMat.node_tree.links.new(_emission.outputs["Emission"], _matOut.inputs["Surface"])
-                    if alphaMixNode is None:
-                        continue
-                #else:
-                #    tmpMat.node_tree.links.new(group.outputs[0], _matOut.inputs[0])
-                #bake
+
+                #Do the baking and save the image
                 bpy.ops.object.bake(type="EMIT")
-                #Save the image
                 imgNode.image.save()
+
                 #Remove the material and reassign the original one
                 targetMat.node_tree.nodes.remove(imgNode)
                 source.material_slots[0].material = material
@@ -192,101 +213,40 @@ class bake_textures(bpy.types.Operator, ExportHelper):
 
         #Bake the geometric normals with blender render
         if source != target and self.bake_geometry:
+
+            #Bake the normals with blender
+            GEOM = os.path.join(os.path.abspath(self.directory), "baked_normal_geometric." + self.imgFormat.lower())
+            NORM = os.path.join(os.path.abspath(self.directory), "baked_normal." + self.imgFormat.lower())
             bakeWithBlender(targetMat, "baked_normal_geometric", self.resolution, self.directory, self.imgFormat)
 
-        #Imagemagick... magic : removing the blue channel from the material image
-        """
-        if fn_soft.convertExe is not None and source != target and self.bake_geometry and self.bake_surface:
-            rmBlue  = fn_soft.convertExe
-            rmBlue += os.path.join(self.directory, "baked_normal." + self.imgFormat.lower())
-            rmBlue += " -channel Blue -evaluate set 0 "
-            rmBlue += os.path.join(self.directory, "baked_tmp_normals." + self.imgFormat.lower())
-            os.system(rmBlue)
-            #And appending the two images together
-            overlay  = fn_soft.convertExe
-            overlay += os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower())
-            overlay += " " + os.path.join(self.directory, "baked_tmp_normals." + self.imgFormat.lower())
-            overlay += " -compose overlay -composite "
-            overlay += os.path.join(self.directory, "baked_normals." + self.imgFormat.lower())
-            os.system(overlay)
-        """
+            #Merging the normal maps with Imagemagick
+            if self.bake_surface:
+                #Removing the blue channel from the material image
+                TMP  = os.path.join(self.directory, "baked_tmp_normals." + self.imgFormat.lower())
+                ARGS = "-channel Blue -evaluate set 0"
+                output, error, code = fn_soft.convert(NORM, TMP, ARGS, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
+                #And appending the two images together
+                OUT  = os.path.join(self.directory, "baked_normals." + self.imgFormat.lower())
+                ARGS = "-compose overlay -composite"
+                output, error, code = fn_soft.convert(GEOM, OUT, ARGS, input2=TMP, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
+                #Remove the old normal images (no blue channel, geometric normals...)
+                os.remove(GEOM)
+                os.remove(TMP)
+                os.rename(OUT, NORM)
+            else:
+                os.rename(GEOM, NORM)
 
-        #Bake the geometric and surface normals to one (Imagemagick or node setup)
-        if source != target and self.bake_geometry and self.bake_surface:
-            bpy.ops.object.select_all(action="DESELECT")
-            target.select = True
-            context.scene.objects.active = target
-            bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
-            #Add a material for the normals mixing
-            normalMat = bpy.data.materials.new("normalMat")
-            target.material_slots[0].material = normalMat
-            normalMat.use_nodes = True
-            normalMat.node_tree.nodes.remove(normalMat.node_tree.nodes['Diffuse BSDF'])
-            AN = normalMat.node_tree.nodes.new
-            #Add the two normal maps
-            _normal_geometric = AN(type="ShaderNodeTexImage")
-            _normal_geometric.color_space = "NONE"
-            _normal_geometric.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower()), check_existing=False)
-            _normal_surface = AN(type="ShaderNodeTexImage")
-            _normal_surface.color_space = "NONE"
-            _normal_surface.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal." + self.imgFormat.lower()), check_existing=False)
-            #Add a mixing group
-            _mix = AN(type="ShaderNodeGroup")
-            _mix.label = "Mix Normals"
-            _mix.node_tree = fn_nodes.node_tree_combine_normals_2()
-            _mix.inputs["Factor"].default_value=1.0
-            #Add a normal map node
-            _nmap = AN(type="ShaderNodeNormalMap")
-            #Add the normal to color node
-            _normal_to_color = AN(type="ShaderNodeGroup")
-            _normal_to_color.label = "Normals to color"
-            _normal_to_color.node_tree = fn_nodes.node_tree_normal_to_color()
-            #And an emission shader
-            _emission = AN(type="ShaderNodeEmission")
-            #Link everything
-            LN = normalMat.node_tree.links.new
-            LN(_normal_geometric.outputs["Color"], _mix.inputs["Geometry"])
-            LN(_normal_surface.outputs["Color"], _mix.inputs["Surface"])
-            LN(_mix.outputs["Color"], _nmap.inputs["Color"])
-            LN(_nmap.outputs["Normal"], _normal_to_color.inputs["Normal"])
-            LN(_normal_to_color.outputs["Color"], _emission.inputs["Color"])
-            LN(_emission.outputs["Emission"], normalMat.node_tree.nodes["Material Output"].inputs["Surface"])
-
-            #Add the image for the baking
-            imgNode = addImageNode(normalMat, "baked_normal_combined", self.resolution, self.directory, self.imgFormat)
-            #Bake, save and restore
-            bpy.ops.object.bake(type="EMIT")
-            imgNode.image.save()
-            #bpy.data.materials.remove(normalMat)
-
-        #Import the resulting baked material
-
+        # Import the resulting material
         def getbaked(baketype):
-            name = "baked_" + baketype.replace(" ", "").lower()
-            if baketype == "Normal" and source!=target:
-                if os.path.exists( os.path.join(self.directory, "baked_normals." + self.imgFormat.lower()) ):
-                    name = "baked_normals"
-            image = os.path.join(self.directory, name + "." + self.imgFormat.lower())
-            return image
-
-        bakedNormal = None
-        if self.bake_geometry and not self.bake_surface:
-            bakedNormal = os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower())
-        if not self.bake_geometry and self.bake_surface:
-            bakedNormal = os.path.join(self.directory, "baked_normal." + self.imgFormat.lower())
-        if self.bake_geometry and self.bake_surface:
-            bakedNormal = os.path.join(self.directory, "baked_normal_combined." + self.imgFormat.lower())
-
+            return os.path.join(self.directory, "baked_" + baketype.replace(" ", "").lower() + "." + self.imgFormat.lower())
         importSettings = {
             "albedo":    getbaked("Base Color") if self.bake_albedo else None,
             "metallic":  getbaked("Metallic")   if self.bake_metallic else None,
             "roughness": getbaked("Roughness")  if self.bake_roughness else None,
-            "normal":    bakedNormal            if self.bake_geometry or self.bake_surface else None,
+            "normal":    getbaked("Normal")     if self.bake_geometry or self.bake_surface else None,
             "emission":  getbaked("Emission")   if self.bake_emission else None,
             "opacity":   getbaked("Opacity")    if self.bake_opacity else None
         }
-
-        print(importSettings)
 
         #Init the material
         if bpy.data.materials.get("baked_result") is not None:
@@ -317,3 +277,54 @@ def register() :
 
 def unregister() :
     bpy.utils.unregister_class(bake_textures)
+
+
+
+"""
+#Bake the geometric and surface normals to one (Imagemagick or node setup)
+if source != target and self.bake_geometry and self.bake_surface:
+    bpy.ops.object.select_all(action="DESELECT")
+    target.select = True
+    context.scene.objects.active = target
+    bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
+    #Add a material for the normals mixing
+    normalMat = bpy.data.materials.new("normalMat")
+    target.material_slots[0].material = normalMat
+    normalMat.use_nodes = True
+    normalMat.node_tree.nodes.remove(normalMat.node_tree.nodes['Diffuse BSDF'])
+    AN = normalMat.node_tree.nodes.new
+    #Add the two normal maps
+    _normal_geometric = AN(type="ShaderNodeTexImage")
+    _normal_geometric.color_space = "NONE"
+    _normal_geometric.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower()), check_existing=False)
+    _normal_surface = AN(type="ShaderNodeTexImage")
+    _normal_surface.color_space = "NONE"
+    _normal_surface.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal." + self.imgFormat.lower()), check_existing=False)
+    #Add a mixing group
+    _mix = AN(type="ShaderNodeGroup")
+    _mix.label = "Mix Normals"
+    _mix.node_tree = fn_nodes.node_tree_combine_normals_2()
+    _mix.inputs["Factor"].default_value=1.0
+    #Add a normal map node
+    _nmap = AN(type="ShaderNodeNormalMap")
+    #Add the normal to color node
+    _normal_to_color = AN(type="ShaderNodeGroup")
+    _normal_to_color.label = "Normals to color"
+    _normal_to_color.node_tree = fn_nodes.node_tree_normal_to_color()
+    #And an emission shader
+    _emission = AN(type="ShaderNodeEmission")
+    #Link everything
+    LN = normalMat.node_tree.links.new
+    LN(_normal_geometric.outputs["Color"], _mix.inputs["Geometry"])
+    LN(_normal_surface.outputs["Color"], _mix.inputs["Surface"])
+    LN(_mix.outputs["Color"], _nmap.inputs["Color"])
+    LN(_nmap.outputs["Normal"], _normal_to_color.inputs["Normal"])
+    LN(_normal_to_color.outputs["Color"], _emission.inputs["Color"])
+    LN(_emission.outputs["Emission"], normalMat.node_tree.nodes["Material Output"].inputs["Surface"])
+    #Add the image for the baking
+    imgNode = addImageNode(normalMat, "baked_normal_combined", self.resolution, self.directory, self.imgFormat)
+    #Bake, save and restore
+    bpy.ops.object.bake(type="EMIT")
+    imgNode.image.save()
+    #bpy.data.materials.remove(normalMat)
+"""

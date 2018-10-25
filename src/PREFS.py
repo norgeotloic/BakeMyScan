@@ -8,6 +8,7 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
     instant       = bpy.props.StringProperty(name="Instant Meshes Executable", subtype='FILE_PATH')
     quadriflow    = bpy.props.StringProperty(name="Quadriflow Executable", subtype='FILE_PATH')
     meshlabserver = bpy.props.StringProperty(name="Meshlabserver Executable", subtype='FILE_PATH')
+    convert       = bpy.props.StringProperty(name="Convert Executable", subtype='FILE_PATH')
 
     def draw(self, context):
         layout = self.layout
@@ -16,6 +17,7 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
         layout.prop(self, "mmgs")
         layout.prop(self, "quadriflow")
         layout.prop(self, "meshlabserver")
+        layout.prop(self, "convert")
 
 def register():
     bpy.utils.register_class(BakeMyScanPrefs)
