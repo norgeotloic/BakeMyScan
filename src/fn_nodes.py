@@ -301,11 +301,14 @@ def parameter_to_node(tree, parameter):
         pass
     #print(parameter, _node)
     return _node
-def node_tree_pbr(settings, name):
+
+def node_tree_pbr(settings, name="Material"):
     #Get the group if it already exists
+    """
     if bpy.data.node_groups.get(name):
         _node_tree = bpy.data.node_groups.get(name)
         return _node_tree
+    """
     #Create the group and its input/output sockets
     _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name=name)
     _node_tree.inputs.new('NodeSocketFloat','UV scale')
@@ -318,8 +321,11 @@ def node_tree_pbr(settings, name):
     #Inputs and outputs
     _input     = AN(type="NodeGroupInput")
     _output    = AN(type="NodeGroupOutput")
+    _input.name = _input.label = "input"
+    _output.name = _output.label = "output"
     #Nodes
     _principled  = AN(type="ShaderNodeBsdfPrincipled")
+    _principled.name = _principled.label = "BakeMyScan PBR"
     _albedo      = parameter_to_node(_node_tree, settings["albedo"])     if "albedo"     in settings else None
     _ao          = parameter_to_node(_node_tree, settings["ao"])         if "ao"         in settings else None
     _metallic    = parameter_to_node(_node_tree, settings["metallic"])   if "metallic"   in settings else None
@@ -330,8 +336,9 @@ def node_tree_pbr(settings, name):
     _height      = parameter_to_node(_node_tree, settings["height"])     if "height"     in settings else None
     _opacity     = parameter_to_node(_node_tree, settings["opacity"])    if "opacity"    in settings else None
     _emission    = parameter_to_node(_node_tree, settings["emission"])   if "emission"   in settings else None
+    _vertexcolors = AN(type="ShaderNodeAttribute") if "vertexcolors" in settings else None
     #If the dictionnary is empty, create images for each of them
-    if not settings:
+    if len(settings)==0:
         _albedo     = AN(type="ShaderNodeTexImage")
         _ao         = AN(type="ShaderNodeTexImage")
         _metallic   = AN(type="ShaderNodeTexImage")
@@ -341,7 +348,18 @@ def node_tree_pbr(settings, name):
         _height     = AN(type="ShaderNodeTexImage")
         _opacity    = AN(type="ShaderNodeTexImage")
         _emission   = AN(type="ShaderNodeTexImage")
-    _vertexcolors      = AN(type="ShaderNodeAttribute") if "vertexcolors" in settings else None
+        _vertexcolors = AN(type="ShaderNodeAttribute")
+    #Set the nodes names to get them later
+    _albedo.name     = _albedo.label     = "albedo"
+    _ao.name         = _ao.label         = "ao"
+    _metallic.name   = _metallic.label   = "metallic"
+    _roughness.name  = _roughness.label  = "roughness"
+    _glossiness.name = _glossiness.label = "glossiness"
+    _normal.name     = _normal.label     = "normal"
+    _height.name     = _height.label     = "height"
+    _opacity.name    = _opacity.label    = "opacity"
+    _emission.name   = _emission.label   = "emission"
+    #Add te other nodes (mix, inverts, maps...)
     _bump              = AN(type="ShaderNodeBump") if (_normal is not None or _height is not None) else None
     _nmap              = AN(type="ShaderNodeNormalMap") if (_normal is not None) else None
     _ao_mix            = AN(type="ShaderNodeMixRGB") if (_ao is not None) else None
@@ -358,6 +376,25 @@ def node_tree_pbr(settings, name):
     _scaley   = AN(type="ShaderNodeMath")
     _scalez   = AN(type="ShaderNodeMath")
     _combine  = AN(type="ShaderNodeCombineXYZ")
+    #Other nodes names to fill them in
+    if len(settings)==0:
+        _vertexcolors.label = _vertexcolors.name = "vertexcolors"
+        _bump.label = _bump.name = "bump"
+        _nmap.label = _nmap.name = "nmap"
+        _ao_mix.label = _ao_mix.name = "ao_mix"
+        _opacity_mix.label = _opacity_mix.name = "opacity_mix"
+        _opacity_shader.label = _opacity_shader.name = "opacity_shader"
+        _emission_mix.label = _emission_mix.name = "emission_mix"
+        _emission_shader.label = _emission_shader.name = "emission_shader"
+        _glossiness_invert.label = _glossiness_invert.name = "glossiness_invert"
+        _reroute.label = _reroute.name = "reroute"
+        _uv.label = _uv.name = "uv"
+        _mapping.label = _mapping.name = "mapping"
+        _separate.label = _separate.name = "separate"
+        _scalex.label = _scalex.name = "scalex"
+        _scaley.label = _scaley.name = "scaley"
+        _scalez.label = _scalez.name = "scalez"
+        _combine.label = _combine.name = "combine"
     #Parameters
     _scalex.operation = _scaley.operation = _scalez.operation = 'MULTIPLY'
     _scalex.inputs[1].default_value = _scaley.inputs[1].default_value = _scalez.inputs[1].default_value = 1
@@ -388,7 +425,7 @@ def node_tree_pbr(settings, name):
         LN(_albedo.outputs["Color"], _ao_mix.inputs[1])
         LN(_ao.outputs["Color"], _ao_mix.inputs[2])
         LN(_ao_mix.outputs["Color"], _principled.inputs["Base Color"])
-    if _vertexcolors is not None:
+    if _vertexcolors is not None and "vertexcolors" in settings:
         LN(_vertexcolors.outputs["Color"], _principled.inputs["Base Color"])
     if _metallic is not None and "metallic" in settings:
         LN(_metallic.outputs["Color"], _principled.inputs["Metallic"])
@@ -480,14 +517,10 @@ def node_tree_pbr(settings, name):
         _output.location = [400,200]
     if _emission is not None and _opacity is not None:
         _output.location = [800,400]
-    #Collapse all the texture nodes
-    nodes = _node_tree.nodes
-    while len([n for n in nodes if n.type=="GROUP"])>0:
-        for n in nodes:
-            if n.type == "TEX_IMAGE":
-                n.hide = True
-            if n.type=="GROUP":
-                nodes = n.node_tree
+    #Collapse all the nodes
+    for n in _node_tree.nodes:
+        if n.type!="BSDF_PRINCIPLED":
+            n.hide = True
     #Return
     return _node_tree
 

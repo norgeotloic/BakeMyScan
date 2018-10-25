@@ -75,6 +75,9 @@ class remesh_instant(bpy.types.Operator):
         else:
             #Reimport
             bpy.ops.import_scene.obj(filepath=OUT)
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.mark_sharp(clear=True)
+            bpy.ops.object.editmode_toggle()
             self.report({"INFO"}, "INSTANTMESHES success")
             return{'FINISHED'}
 

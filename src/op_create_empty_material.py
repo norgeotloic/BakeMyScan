@@ -2,26 +2,15 @@
 import bpy
 from . import fn_nodes
 
-def get_materials_list_callback(scene, context):
-    mats = [m for m in bpy.types.Scene.pbrtextures.keys()]
-    mats.sort()
-    return [(m, m, "", i) for i,m in enumerate(mats)]
-
-class import_material(bpy.types.Operator):
-    bl_idname = "bakemyscan.import_material"
+class create_empty_material(bpy.types.Operator):
+    bl_idname = "bakemyscan.create_empty_material"
     bl_label  = "Import a PBR material"
     bl_options = {"REGISTER", "UNDO"}
-    bl_property = "enum"
-
-    enum = bpy.props.EnumProperty(
-        name="PBR textures",
-        description="",
-        items=get_materials_list_callback
-        )
 
     @classmethod
     def poll(self, context):
-        if len(bpy.types.Scene.pbrtextures.keys())==0:
+        #Need to be in Cycles render mode
+        if bpy.context.scene.render.engine != "CYCLES":
             return 0
         if bpy.context.area.type != "NODE_EDITOR" and bpy.context.area.type != "VIEW_3D" :
             return 0
@@ -29,25 +18,14 @@ class import_material(bpy.types.Operator):
             return 0
         return 1
 
-    def invoke(self, context, event):
-        if context.area.type == "NODE_EDITOR":
-            context.space_data.cursor_location_from_region(event.mouse_region_x, event.mouse_region_y)
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
     def execute(self, context):
-        materials = bpy.types.Scene.pbrtextures
-
         #Get the active object if there is one
         obj = context.active_object
 
         #If we are in view_3d, import the material and add it to active object
         if context.area.type == "VIEW_3D":
             #Init the material
-            if bpy.data.materials.get(self.enum):
-                bpy.data.materials.remove(bpy.data.materials.get(self.enum))
-            _material = bpy.data.materials.new(self.enum)
+            _material = bpy.data.materials.new("PBR")
             _material.use_nodes = True
             _materialOutput = [_n for _n in _material.node_tree.nodes if _n.type=='OUTPUT_MATERIAL'][0]
             for _n in _material.node_tree.nodes:
@@ -55,8 +33,8 @@ class import_material(bpy.types.Operator):
                     _material.node_tree.nodes.remove(_n)
             #Create and link the PBR group node
             _group = _material.node_tree.nodes.new(type="ShaderNodeGroup")
-            _group.label = self.enum
-            _group.node_tree = fn_nodes.node_tree_pbr(materials[self.enum], name=self.enum)
+            _group.label = "PBR"
+            _group.node_tree = fn_nodes.node_tree_pbr(settings={}, name="PBR")
             #Set the default height to 2% of the object size and the UV scale factor to 1
             _group.inputs["UV scale"].default_value = 1.0
             if obj is not None:
@@ -78,8 +56,8 @@ class import_material(bpy.types.Operator):
             mat = obj.material_slots[0].material
             #Create the group
             _group = mat.node_tree.nodes.new(type="ShaderNodeGroup")
-            _group.node_tree = fn_nodes.node_tree_pbr(materials[self.enum], name=self.enum)
-            _group.label = self.enum
+            _group.node_tree = fn_nodes.node_tree_pbr(settings={}, name="PBR")
+            _group.label = "PBR"
             #Set the default height to 2% of the object size and the UV scale factor to 1
             _group.inputs["UV scale"].default_value = 1.0
             _group.inputs["Height"].default_value = 0.02 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
@@ -93,7 +71,7 @@ class import_material(bpy.types.Operator):
         return{'FINISHED'}
 
 def register() :
-    bpy.utils.register_class(import_material)
+    bpy.utils.register_class(create_empty_material)
 
 def unregister() :
-    bpy.utils.unregister_class(import_material)
+    bpy.utils.unregister_class(create_empty_material)

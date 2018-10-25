@@ -1,6 +1,6 @@
 <!DOCTYPE FilterScript>
 <FilterScript>
- <filter name="Quadric Edge Collapse Decimation">
+ <filter name="FILTERNAME">
   <Param type="RichInt"   value="FACESCOUNT" name="TargetFaceNum"/>
   <Param type="RichFloat" value="0" name="TargetPerc"/>
   <Param type="RichFloat" value="0.3" name="QualityThr"/>

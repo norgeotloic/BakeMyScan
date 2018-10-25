@@ -8,15 +8,16 @@ class remesh_meshlab(bpy.types.Operator):
     bl_label  = "Remesh with meshlab"
     bl_options = {"REGISTER", "UNDO"}
 
+    """
     items = [
         ("quadratic_notexture", "quadratic_no_texture", "Quadratic Edge Collapse Decimation (no texture)"),
         ("quadratic_texture",   "quadratic_texture",    "Quadratic Edge Collapse Decimation (texture)"),
         ("quadratic_color",     "quadratic_color",      "Quadratic Edge Collapse Decimation (vertex color)"),
     ]
     method = bpy.props.EnumProperty(items=items, name="method", description="Method to use")
+    """
 
     facescount = bpy.props.IntProperty( name="facescount", description="Number of faces", default=5000, min=10, max=1000000 )
-    gt = bpy.props.IntProperty( name="gt", description="gt", default=14, min=10, max=1000000 )
     #smooth = bpy.props.BoolProperty(  name="smooth", description="Smooth surface", default=True)
 
     @classmethod
@@ -48,8 +49,6 @@ class remesh_meshlab(bpy.types.Operator):
         obj    = context.active_object
         #maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
 
-
-
         #Temporary directory
         tmpDir = tempfile.TemporaryDirectory()
 
@@ -59,6 +58,10 @@ class remesh_meshlab(bpy.types.Operator):
         with open(original_script, 'r') as infile :
             filedata = infile.read()
             newdata  = filedata.replace("FACESCOUNT", str(self.facescount))
+            if os.name == "nt":
+                newdata = newdata.replace("FILTERNAME", "Simplification: Quadric Edge Collapse Decimation")
+            else:
+                newdata = newdata.replace("FILTERNAME", "Quadric Edge Collapse Decimation")
             with open(new_script, 'w') as outfile:
                 outfile.write(newdata)
 

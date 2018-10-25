@@ -21,7 +21,9 @@ modulesFiles = [
 ]
 modulesFiles = [
     "fn_match", "fn_nodes", "fn_ortho", "fn_msh", "fn_soft",    # Functions
-    "op_import_scan",       # "Smart" import
+    "op_import_scan",           # "Smart" import
+    "op_create_empty_material", # Create an empty PBR material
+    "op_assign_texture",        # Assign textures to a PBR material
     "op_export_orthoview",  # Orthographic projection
     "op_remesh_decimate",   # Simple decimate
     "op_remesh_quads",      # Naive quadrilaterals

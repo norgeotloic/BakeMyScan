@@ -7,8 +7,10 @@ class ImportPanel(bpy.types.Panel):
     bl_label       = "Import"
 
     def draw(self, context):
-        self.layout.operator("bakemyscan.import_scan",      icon="IMPORT",       text="Import")
-        self.layout.operator("bakemyscan.export_orthoview", icon="RENDER_STILL", text="Ortho View")
+        self.layout.operator("bakemyscan.import_scan",           icon="IMPORT",       text="Import")
+        self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL",     text="Assign an empty material")
+        self.layout.operator("bakemyscan.assign_texture",        icon="TEXTURE",      text="Assign PBR textures")
+        self.layout.operator("bakemyscan.export_orthoview",      icon="RENDER_STILL", text="Ortho View")
 
 class RemeshPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"

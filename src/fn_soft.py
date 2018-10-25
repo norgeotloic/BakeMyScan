@@ -6,7 +6,6 @@ DEBUG = False
 def run(cmd):
     result = subprocess.run(
         cmd,
-        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
