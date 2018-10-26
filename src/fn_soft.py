@@ -1,13 +1,14 @@
-import platform
 import subprocess
+import os
 
 DEBUG = False
 
 def run(cmd):
     result = subprocess.run(
-        cmd,
+        ' '.join(cmd.split()),
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
+        shell= os.name!="nt"
     )
     return result.stdout.decode('utf-8'), result.stderr.decode('utf-8'), result.returncode
 

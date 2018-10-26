@@ -22,8 +22,27 @@ class create_empty_material(bpy.types.Operator):
         #Get the active object if there is one
         obj = context.active_object
 
+        #If we are in material mode, we just add a group to the node editor
+        if context.area.type == "NODE_EDITOR":
+            #Get the active material
+            mat = obj.material_slots[0].material
+            #Create the group
+            _group = mat.node_tree.nodes.new(type="ShaderNodeGroup")
+            _group.node_tree = fn_nodes.node_tree_pbr(settings={}, name="PBR")
+            _group.label = "PBR"
+            #Set the default height to 2% of the object size and the UV scale factor to 1
+            _group.inputs["UV scale"].default_value = 1.0
+            _group.inputs["Height"].default_value = 0.02 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
+            #Select the group and link it to the mouse for better placement
+            for n in mat.node_tree.nodes:
+                n.select = False
+            _group.select = True
+            _group.location = context.space_data.cursor_location
+            mat.node_tree.nodes.active = _group
+            bpy.ops.node.translate_attach_remove_on_cancel('INVOKE_DEFAULT')
+
         #If we are in view_3d, import the material and add it to active object
-        if context.area.type == "VIEW_3D":
+        else:
             #Init the material
             _material = bpy.data.materials.new("PBR")
             _material.use_nodes = True
@@ -50,24 +69,7 @@ class create_empty_material(bpy.types.Operator):
                      bpy.ops.uv.smart_project()
                 obj.material_slots[0].material = _material
 
-        #If we are in material mode, we just add a group to the node editor
-        if context.area.type == "NODE_EDITOR":
-            #Get the active material
-            mat = obj.material_slots[0].material
-            #Create the group
-            _group = mat.node_tree.nodes.new(type="ShaderNodeGroup")
-            _group.node_tree = fn_nodes.node_tree_pbr(settings={}, name="PBR")
-            _group.label = "PBR"
-            #Set the default height to 2% of the object size and the UV scale factor to 1
-            _group.inputs["UV scale"].default_value = 1.0
-            _group.inputs["Height"].default_value = 0.02 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
-            #Select the group and link it to the mouse for better placement
-            for n in mat.node_tree.nodes:
-                n.select = False
-            _group.select = True
-            _group.location = context.space_data.cursor_location
-            mat.node_tree.nodes.active = _group
-            bpy.ops.node.translate_attach_remove_on_cancel('INVOKE_DEFAULT')
+
         return{'FINISHED'}
 
 def register() :

@@ -69,7 +69,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
 
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
     imgFormat      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
-    cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.01, min=0.00001, max=0.5)
+    cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.1, min=0.00001, max=5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
     bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=True)
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
@@ -222,7 +222,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
             #Merging the normal maps with Imagemagick
             if self.bake_surface:
                 #Removing the blue channel from the material image
-                TMP  = os.path.join(self.directory, "baked_tmp_normals." + self.imgFormat.lower())
+                TMP  = os.path.join(self.directory, "baked_normal_noblue." + self.imgFormat.lower())
                 ARGS = "-channel Blue -evaluate set 0"
                 output, error, code = fn_soft.convert(NORM, TMP, ARGS, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
                 #And appending the two images together
@@ -239,6 +239,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
         # Import the resulting material
         def getbaked(baketype):
             return os.path.join(self.directory, "baked_" + baketype.replace(" ", "").lower() + "." + self.imgFormat.lower())
+
         importSettings = {
             "albedo":    getbaked("Base Color") if self.bake_albedo else None,
             "metallic":  getbaked("Metallic")   if self.bake_metallic else None,
@@ -249,6 +250,14 @@ class bake_textures(bpy.types.Operator, ExportHelper):
         }
 
         #Init the material
+        for o in context.selected_objects:
+            if o!=context.active_object:
+                o.select=False
+        bpy.ops.bakemyscan.create_empty_material()
+        for _type in importSettings:
+            if importSettings[_type] is not None:
+                bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type])
+        """
         if bpy.data.materials.get("baked_result") is not None:
             bpy.data.materials.remove(bpy.data.materials.get("baked_result"))
         _material = bpy.data.materials.new("baked_result")
@@ -269,7 +278,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
         if len(target.material_slots)==0:
             bpy.ops.object.material_slot_add()
         target.material_slots[0].material = _material
-
+        """
         return{'FINISHED'}
 
 def register() :

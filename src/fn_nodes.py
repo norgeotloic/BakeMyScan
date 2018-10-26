@@ -350,15 +350,24 @@ def node_tree_pbr(settings, name="Material"):
         _emission   = AN(type="ShaderNodeTexImage")
         _vertexcolors = AN(type="ShaderNodeAttribute")
     #Set the nodes names to get them later
-    _albedo.name     = _albedo.label     = "albedo"
-    _ao.name         = _ao.label         = "ao"
-    _metallic.name   = _metallic.label   = "metallic"
-    _roughness.name  = _roughness.label  = "roughness"
-    _glossiness.name = _glossiness.label = "glossiness"
-    _normal.name     = _normal.label     = "normal"
-    _height.name     = _height.label     = "height"
-    _opacity.name    = _opacity.label    = "opacity"
-    _emission.name   = _emission.label   = "emission"
+    if _albedo is not None:
+        _albedo.name     = _albedo.label     = "albedo"
+    if _ao is not None:
+        _ao.name         = _ao.label         = "ao"
+    if _metallic is not None:
+        _metallic.name   = _metallic.label   = "metallic"
+    if _roughness is not None:
+        _roughness.name  = _roughness.label  = "roughness"
+    if _glossiness is not None:
+        _glossiness.name = _glossiness.label = "glossiness"
+    if _normal is not None:
+        _normal.name     = _normal.label     = "normal"
+    if _height is not None:
+        _height.name     = _height.label     = "height"
+    if _opacity is not None:
+        _opacity.name    = _opacity.label    = "opacity"
+    if _emission is not None:
+        _emission.name   = _emission.label   = "emission"
     #Add te other nodes (mix, inverts, maps...)
     _bump              = AN(type="ShaderNodeBump") if (_normal is not None or _height is not None) else None
     _nmap              = AN(type="ShaderNodeNormalMap") if (_normal is not None) else None
