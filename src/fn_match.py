@@ -61,7 +61,8 @@ def ignore_trailing_variations(images):
         except:
             pass
     return images
-def material_names_in_images(images):
+
+def find_pattern_in_image(f):
     patterns = {
         "albedo"      : ["albedo", "diffuse", "dif", "alb", "basecolor", "color", "_d", "_col","tex"],
         "ao"          : ["ao", "occlusion", "occ"],
@@ -73,23 +74,21 @@ def material_names_in_images(images):
         "emission"    : ["emission", "emit", "emissive"],
         "opacity"     : ["alpha", "transparent", "opacity", "transp", "mask"],
     }
+    for slot in patterns:
+        for suffix in patterns[slot]:
+            name = os.path.splitext(f)[0].lower().strip()
+            if name.endswith(suffix):
+                name = name.replace(suffix,"")
+                while name.endswith("_"):
+                    name = name[:-1]
+                return slot, name
+    return None, None
+
+def material_names_in_images(images):
     for i in images:
-        #Look for one of the patterns in the image name
-        patternFound = False
-        for type in patterns:
-            for suffix in patterns[type]:
-                #If the image contains one of the suffixes, set its type and its material
-                if i["name"].endswith(suffix):
-                    i["type"] = type
-                    i["material"] = i["name"].replace(suffix,"")
-                    if i["material"].endswith("_"):
-                        i["material"] = i["material"][:-1]
-                    patternFound = True
-                    break
-        #If we found nothing, set the variables to None for later usage
-        if not patternFound:
-            i["type"]     = None
-            i["material"] = None
+        slot, name = find_pattern_in_image(i["name"])
+        i["type"] = slot
+        i["material"] = name
     return images
 def material_dictionnary(images):
     materials = {}
@@ -169,3 +168,45 @@ def findMaterials(directory, recursive = True):
 
     materials = material_dictionnary(images)
     return materials
+
+def findMaterialFromTexture(texture):
+    """Find textures similar to the one passed as argument in a directory"""
+
+    #Normalize names and paths
+    texture   = os.path.abspath(texture)
+    directory = os.path.dirname(texture)
+    name      = os.path.splitext(texture)[0]
+
+    #All other images in the directory
+    candidates = [os.path.join(directory, f) for f in os.listdir(directory) if imghrd.what(os.path.join(directory, f))]
+
+    #Create the appropriate structure to match materials
+    images = [{"file": f, "dir": directory, "name": normalize_name(name)} for f in candidates]
+
+    #Sort them
+    images.sort(key = lambda image : image["file"])
+
+    #Assign materials to them
+    images    = ignore_trailing_variations(images)
+    images    = material_names_in_images(images)
+
+    #Display some information about how it went
+    print( "Found %d images corresponding to a pattern" % (len([i for i in images if i["type"] is not None])) )
+    if(len([ i for i in images if i["type"] is None ])):
+        print("%d images still not matched:" % (len([i for i in images if i["type"] is None])) )
+        print(", ".join([ i["name"] for i in images if i["type"] is None ]))
+
+    #Create the dictionnary
+    materials = material_dictionnary(images)
+
+    #Return the material containing the texture
+    for m in materials:
+        print(m, materials[m])
+
+    return materials[0]
+
+
+
+
+def images_in_directory(directory):
+    return [os.path.join(directory, f) for f in os.listdir(directory) if imghdr.what(os.path.join(directory, f)) is not None]

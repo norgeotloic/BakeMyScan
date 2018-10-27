@@ -56,16 +56,16 @@ class remesh_mmgs(bpy.types.Operator):
             nr          = True if self.smooth else False
         )
 
-        #Check the status
-        if code != 0:
+        #Reimport
+        try:
+            bpy.ops.bakemyscan.import_mesh(filepath=OUT)
+            self.report({"INFO"}, "MMGS success")
+            print("MMGS OUTPUT:\n%s\nMMGS ERROR:\n%s" % (output, error))
+            return{'FINISHED'}
+        except:
             self.report({"ERROR"}, "MMGS error, look in the console...")
             print("MMGS OUTPUT:\n%s\nMMGS ERROR:\n%s" % (output, error))
             return{"CANCELLED"}
-        else:
-            #Reimport
-            bpy.ops.bakemyscan.import_mesh(filepath=OUT)
-            self.report({"INFO"}, "MMGS success")
-            return{'FINISHED'}
 
 def register() :
     bpy.utils.register_class(remesh_mmgs)

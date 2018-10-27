@@ -8,17 +8,7 @@ class remesh_meshlab(bpy.types.Operator):
     bl_label  = "Remesh with meshlab"
     bl_options = {"REGISTER", "UNDO"}
 
-    """
-    items = [
-        ("quadratic_notexture", "quadratic_no_texture", "Quadratic Edge Collapse Decimation (no texture)"),
-        ("quadratic_texture",   "quadratic_texture",    "Quadratic Edge Collapse Decimation (texture)"),
-        ("quadratic_color",     "quadratic_color",      "Quadratic Edge Collapse Decimation (vertex color)"),
-    ]
-    method = bpy.props.EnumProperty(items=items, name="method", description="Method to use")
-    """
-
     facescount = bpy.props.IntProperty( name="facescount", description="Number of faces", default=5000, min=10, max=1000000 )
-    #smooth = bpy.props.BoolProperty(  name="smooth", description="Smooth surface", default=True)
 
     @classmethod
     def poll(self, context):
