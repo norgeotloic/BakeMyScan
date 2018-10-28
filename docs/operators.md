@@ -45,15 +45,16 @@ Operators used to import Cycles materials from a local library of PBR textures.
 
 Operators used to create PBR materials. They must be used in order to use the baking operators hereafter.
 
-* [New empty material](operators/51_empty_material.md): Creates an empty PBR material (needed for later steps)
-* [Assign PBR textures](operators/52_assign_texture.md): Assign a texture to a slot (albedo, roughness, normal) of a PBR material
-* [Load material from texture](operators/53_material_from_texture.md): Loads a material from one PBR texture (by looking for similary-named textures)
+* [UV unwrapping](operators/51_unwrap.md): Unwraps the model, with a user-selected method
+* [New empty material](operators/52_empty_material.md): Creates an empty PBR material (needed for later steps)
+* [Assign PBR textures](operators/53_assign_texture.md): Assign a texture to a slot (albedo, roughness, normal) of a PBR material
+* [Load material from texture](operators/54_material_from_texture.md): Loads a material from one PBR texture (by looking for similary-named textures)
 
 ### Baking operators
 
 Operators simplifying baking operations between two models (usually a high resolution and a lowpoly one). They must be used in conjunction with the material operators.
 
-* [Bake textures to images](operators/61_bake_to_images.md): Bake textures from a PBR material to images
+* [Bake textures to images](operators/61_bake_textures.md): Bake textures from a PBR material to images
 * [Bake textures to vertex colors](operators/62_bake_to_vertex_colors.md): Bake textures to vertex colors
 
 ### Export operators
