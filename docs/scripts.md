@@ -1,4 +1,4 @@
-# Batch process models
+# 1 - Batch process models
 
 *NOTE: These scripts are still VERY unstable, and might not work in many cases: python or patience required!*
 
@@ -9,7 +9,7 @@ On this page you'll therefore find details about scripts allowing you to:
 2. Process multiple models
 3. Import the results in blender
 
-## 0 - Prerequisites
+### 1.0 - Prerequisites
 
 To use the command line to batch-process scans, you'll need to have the add-on installed as explained in [README.md](/README.md) (and your User Preferences saved).
 
@@ -17,7 +17,7 @@ Then download and extract the [scripts.zip archive from the latest release](http
 
 You'll also need a working installation of **python3** on your system. Although you could try using the version of python bundled with blender - which I have not tested and do not recommend - the easiest way is to install python3.5 from [**Anaconda**](https://conda.io/docs/user-guide/install/download.html) for instance.
 
-## 1 - Process one model
+### 1.1 - Process one model
 
 The whole process is automated thanks to the [bakeOne.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeOne.py) python script that blender can execute from the command line. To use it, open up your command line interface, navigate to the scripts directory and type in the following command (options between brackets are optional):
 
@@ -49,7 +49,7 @@ If the command failed, you can try to:
 
 If this still does not work, have a look at my [TODO list](https://github.com/norgeotloic/BakeMyScan/issues/1) to see if you can relate to something I'm working on or planning to implement, and if you think you found a bug, do not hesitate to [open a new issue](https://github.com/norgeotloic/BakeMyScan/issues).
 
-## 2 - Process multiple models
+### 1.2 - Process multiple models
 
 To process multiple models, you can use the [bakeAll.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeAll.py) script, which is a wrapper around [bakeOne.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/bakeOne.py).
 
@@ -121,7 +121,7 @@ Upon completion (and after having received info similar to the screenshot above)
 
 **IMPORTANT**: The last files are the logs from blender, which you can inspect if something went wrong during the transformation to lowpoly, and the **list.csv** file keeps track of the models previously processed, so that existing models are not overridden when running the script multiple times in a row (to modify problematic models or add new ones for instance).
 
-## 3 - Import the results in blender
+### 1.3 - Import the results in blender
 
 I also wrote a script ([importAll.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/importAll.py)) to import the baked models in blender on a grid layout, similar to the one below:
 
@@ -141,3 +141,50 @@ with:
 Note that as I did not specify the *--background* option, a new blender window will open, in which you'll be able to adjust the grid layout (using for instance *Individual origins as pivot point* to scale and rotate objects, or *Manipulate center points* to change the margin).
 
 I would advice you to save the newly (and nicely!) created scene by packing the textures using *File* -> *External data* -> *Pack all in .blend*, which will then allow you to remove the temporary directories and models which were created in the process.
+
+
+
+
+
+# 2 - Batch download models from Sketchfab
+
+The following instructions explain how to automatically download either one Sketchfab model or all models from a collection, taking the model's or collection's url as input.
+
+**IMPORTANT**: as you can check in the source files, the python scripts only use your Sketchfab email adress and password in the *login_to_sketchfab* function (found in [downloadSketchfab.py](https://github.com/norgeotloic/BakeMyScan/blob/master/scripts/downloadSketchfab.py)) in order to automatically login to your Sketchfab account as selenium, the tool used to automate web browsing tasks, does not reuse your current Firefox preferences and saved accounts.
+
+### 2.0 - Prerequisites
+
+After having installed the add-on, extracted the scripts and checked that you have a correct version of python3 on your system - as explained on [this page](SCRIPTS_BATCH.md), you'll also need to make sure to:
+
+* Install **Firefox**.
+* Install a version of [**selenium**](https://www.seleniumhq.org/) matching your python version ([instructions here](https://selenium-python.readthedocs.io/installation.html)).
+* Install the python library **urllib** (```pip install urllib``` or ```conda install urllib```).
+
+### 2.1 - Usage
+
+The script is used as follows:
+
+```
+python3.5 downloadSketchfab.py -u URL -o OUTDIR [-m MAIL] [-p PWD]
+```
+with:
+
+* **URL**: Sketchfab model's url
+* **OUTDIR**: Directory for the lowpoly model(s) (must be empty!!)
+* **MAIL**: Sketchfab account e-mail
+* **PWD**: Sketchfab account password
+
+To download [this stick](https://sketchfab.com/models/644fb3e8dc134d8f994f4446bfaf1718) in */home/loic/tmp*:
+```
+python3.5 downloadSketchfab.py -u https://sketchfab.com/models/644fb3e8dc134d8f994f4446bfaf1718 -o /home/loic/tmp -m loic@mail.com -p mypassword
+```
+
+To download all models from [this collection](https://sketchfab.com/norgeotloic/collections/lowpoly-assets) stored in */home/loic/tmp* (you will be prompted for your Sketchfab user name and password if you don't write them in the command):
+
+```
+python3.5 downloadSketchfab.py -u https://sketchfab.com/norgeotloic/collections/lowpoly-assets -o /home/loic/tmp
+```
+
+Note that the models name, url and license as well as the author name and profile url are dumped to a *credits.md* file in the output directory, to keep track of the objects you downloaded and allow you to give appropriate credit.
+
+Once the downloads are complete, you can then use the [bakeAll.py](/scripts/bakeAll.py) script to process your models!

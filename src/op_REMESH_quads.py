@@ -53,14 +53,6 @@ class remesh_quads(bpy.types.Operator):
         bpy.context.object.modifiers["Shrinkwrap"].target = hr
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
 
-        #One last smoothing?
-        """
-        bpy.ops.object.modifier_add(type='SMOOTH')
-        bpy.context.object.modifiers["Smooth"].factor = 0.
-        bpy.context.object.modifiers["Smooth"].iterations = 1.
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
-        """
-
         #Subdivision
         bpy.ops.object.modifier_add(type='SUBSURF')
         bpy.context.object.modifiers["Subsurf"].levels = 1

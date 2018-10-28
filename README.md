@@ -6,54 +6,62 @@
 
 # BakeMyScan
 
-A blender add-on I wrote to process 3D scans (from my own scans or from Sketchfab) into lowpoly assets, along with Python scripts to automate the process on local or remote (from Sketchfab) 3D models.
+[![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)](https://skfb.ly/6yUtB)
 
-## 1 - What do I use this add-on for?
+A blender add-on I use to transform high resolution 3D scans into lowpoly assets, manually or through python scripts.
 
-* Generate collections of lowpoly assets from high resolution scans
-* Interface with advanced remeshing techniques (a.k.a never use the "Decimate modifier" again!)
-* One click texture baking (supporting Cycles nodes)
-* Download all models from a Sketchfab collection
+1. [Installation](#installation)
+2. [Features & usage](#features-and-usage)
+3. [Contributing](#contributing)
+4. [License](#license)
 
-I mainly use this add-on to reprocess 3D photogrammetry scans with an associated albedo texture (as on the [collection of lowpoly fossils](https://sketchfab.com/models/3d1161a5db4244e486de6de0c66f759c) shown below (remeshed to 1.5k triangles, when the original models were between 100k and 5M polygons):
+## Installation
 
-![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)
+To setup the add-on, first [download this .zip](https://github.com/norgeotloic/BakeMyScan/archive/dev.zip) and select it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File*.
 
-But this add-on is also very useful to create and bake complex Cycles node setups - based on mixes of PBR texture sets for instance - as on the following model:
+Although a few remeshing options are available "out of the box", BakeMyScan provides interfaces to various opensource remeshing software. To use them, you'll first have to install them on your system:
+* **[MMGtools](https://www.mmgtools.org/)**: A powerful surface remesher, available as [binaries](http://www.mmgtools.org/mmg-remesher-downloads) or from [sources](https://github.com/MmgTools/mmg).
+* **[Meshlab](http://www.meshlab.net/)**: An all-around 3D toolbox, which you can [download here]([there](http://www.meshlab.net/#download)) or [compile from sources](https://github.com/cnr-isti-vclab/meshlab).
+* **[InstantMeshes](http://igl.ethz.ch/projects/instant-meshes/)**, very useful to get quads topology. Binaries and sources are [available on github](https://github.com/wjakob/instant-meshes).
+* **[Quadriflow](http://stanford.edu/~jingweih/papers/quadriflow/)**: A recent quadrilateral meshes generator, similar to Instant Meshes in its results, but without any GUI. You'll need to compile it yourself from [the project's github repository](https://github.com/hjwdzh/QuadriFlow) as no binaries are available. [Yet...](https://github.com/hjwdzh/QuadriFlow/issues/22)
 
-![oldman](https://user-images.githubusercontent.com/37718992/46110740-e7c5bc00-c1e4-11e8-9dbe-096f42d8875a.jpeg)
+To interface the software in blender, open the add-on preferences, and fill in the paths to the executables. On windows, you'll need to select the *.exe* executable files, while you can simply specify the command used to run the programs on MacOS and linux systems.
 
-On the left is the original object, made of 313k triangles with an associated albedo texture. On the right is the reprocessed version (visible on [Sketchfab](https://sketchfab.com/models/0f7535dc9dd1492e842cd6b2d23f4885)), made of 3.6k triangles, with a PBR material baked from a mix of metal PBR texture sets (brass, damaged bronze and bronze patina).
-
-And as a bonus, you'll get an easy interface to powerful remeshing solutions!
-
-## 2 - Installation
-
-To install the add-on in blender, simply [download the BakeMyScan.zip archive contained in the latest release](https://github.com/norgeotloic/BakeMyScan/releases/latest) and install it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File* (do not forget to save your settings!).
-
-A few external remeshing software can be used through this addon:
-
-* **[MMGtools](https://www.mmgtools.org/)**: A very powerful surface remesher, try it!
-* [Meshlab](http://www.meshlab.net/): I guess you know that one already.
-* [InstantMeshes](http://igl.ethz.ch/projects/instant-meshes/): very nice to work with quadrilaterals.
-* [Quadriflow](https://github.com/hjwdzh/QuadriFlow): supposedly fixes some Instant Meshes inconsistencies. No GUI though...
-
-To interface them, you'll first have to install them (Duh!). You can download binaries for Instant Meshes [here](https://github.com/wjakob/instant-meshes#pre-compiled-binaries), Meshlab [there](http://www.meshlab.net/#download) (we'll actually need meshlabserver, the command-line interface to Meshlab, which comes with the download) and MMGtools [over here](http://www.mmgtools.org/mmg-remesher-downloads), but you will have to compile Quadriflow yourself... I managed to do so on a linux computer, but not yet on Windows. So good luck with that one ;) !
-
-Once the software you wish to use is installed, you'll have to open the add-on preferences, and fill in the paths to the executable (either the "path" as on the first three examples below, or the command used to run the software, as for meshlabserver which i have to run with an additional variable on my system. On Windows, those paths will end up with .exe):
+For instance, to setup "meshlabserver" (the command line version of Meshlab), I could type "meshlabserver" on Linux or MacOS (as the executables should be available in the PATH), while on Windows I would have to select the file "C://Program Files/VCG/Meshlab/meshlabserver.exe".
 
 ![preferences](https://user-images.githubusercontent.com/37718992/47116936-538aca00-d263-11e8-8d7a-e428bc8b9c2d.png)
 
-## 3 - Usage
+## Features and usage
 
-Instructions about the add-on usage can be found on the [usage page](docs/ADDON_USAGE.md).
+#### blender add-on
 
-You'll also find [instructions to process models from the command line](docs/SCRIPTS_BATCH.md), as well as [instructions to automatically download Sketchfab models and collections based on their URLs](docs/SCRIPTS_SKETCHFAB.md).
+This add-on allows to easily:
 
-## 4 - Contributing and License
+* Remesh a high resolution object into a lowpoly model.
+* Bake texure and normal maps between the original and remeshed models
+* Bake complex Cycles node setups (procedural textures, color ramps, mixing nodes...) to images
+* Load PBR materials from an offline texture "library"
+* Create orthographic projection images of a model
 
-Do not hesitate to [open an issue](https://github.com/norgeotloic/BakeMyScan/issues) if you find a bug, or to [create a pull request](https://github.com/norgeotloic/BakeMyScan/pulls) if you've modified the code and would like to submit your changes.
+Typical BakeMyScan usages are demonstrated [on this page](docs/workflows.md), and you'll find a description of every available operator [here](docs/operators.md).
 
-This code is licensed under [GNU GPL v3](LICENSE.md).
+#### python scripts
 
-And if you found this add-on useful and would like to say thanks, you could even consider [buying me a coffee](https://www.buymeacoffee.com/JrxfoZRVy)!
+BakeMyScan also comes bundled with useful python scripts allowing to:
+* Automatically download all objects from a Sketchfab collection
+* Batch process models from the command-line
+* Import multiple models in a grid layout in blender
+
+You'll find instructions on batch-processing through python scripts [on this page](docs/batch.md).
+
+## Contributing
+
+Do not hesitate to [open an issue](https://github.com/norgeotloic/BakeMyScan/issues) if you find a bug or feel that an important feature is missing.
+
+You could also [create a pull request](https://github.com/norgeotloic/BakeMyScan/pulls) if you've modified and improved the code and would like to submit your changes.
+
+And as another way to contribute, feel free to [buy me a coffee](https://www.buymeacoffee.com/JrxfoZRVy) if you found this add-on useful and would like to say thanks!
+
+## License
+
+This code is licensed under [GNU GPL v3](LICENSE.md), which is quite permissive, but I would still be glad if you could drop a link to this github repository alongside content created with this add-on!

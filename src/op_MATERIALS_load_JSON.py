@@ -30,7 +30,7 @@ class load_json_library(bpy.types.Operator, ImportHelper):
         with open(self.filepath, 'r') as fp:
             bpy.types.Scene.pbrtextures = json.load(fp)
 
-        self.report({'INFO'}, 'Read the library from a JSON file')
+        self.report({'INFO'}, 'Found %d materials in the JSON file' % len(bpy.types.Scene.pbrtextures.keys()))
         return{'FINISHED'}
 
 def register() :
