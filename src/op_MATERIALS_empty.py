@@ -25,7 +25,7 @@ class create_empty_material(bpy.types.Operator):
         obj = context.active_object
 
         #If we are in material mode, we just add a group to the node editor
-        if context.area.type == "NODE_EDITOR":
+        if bpy.context.area.type == "NODE_EDITOR":
             #Get the active material
             mat = obj.material_slots[0].material
             #Create the group
@@ -67,10 +67,7 @@ class create_empty_material(bpy.types.Operator):
             if obj is not None:
                 if len(obj.material_slots)==0:
                     bpy.ops.object.material_slot_add()
-                if len(obj.data.uv_layers) == 0:
-                     bpy.ops.uv.smart_project()
                 obj.material_slots[0].material = _material
-
 
         return{'FINISHED'}
 

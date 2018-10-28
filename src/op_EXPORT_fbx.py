@@ -10,9 +10,6 @@ class export_fbx(bpy.types.Operator, ExportHelper):
 
     filename_ext = ".fbx"
     filter_glob = bpy.props.StringProperty(default="*.fbx", options={'HIDDEN'})
-
-    imgFormat = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
-
     filepath = bpy.props.StringProperty(
         name="Export fbx file",
         description="New fbx file to export to",

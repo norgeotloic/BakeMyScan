@@ -71,8 +71,6 @@ class material_from_library(bpy.types.Operator):
             if obj is not None:
                 if len(obj.material_slots)==0:
                     bpy.ops.object.material_slot_add()
-                if len(obj.data.uv_layers) == 0:
-                     bpy.ops.uv.smart_project()
                 obj.material_slots[0].material = _material
 
         #If we are in material mode, we just add a group to the node editor

@@ -48,7 +48,7 @@ class bake_to_vertex_colors(bpy.types.Operator):
         target = context.active_object
 
         #Bake the albedo to an image
-        bake_textures
+        #bake_textures
 
         #Switch to blender render and adapt the materials
         bpy.context.scene.render.engine = 'BLENDER_RENDER'

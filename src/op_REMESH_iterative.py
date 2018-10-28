@@ -143,16 +143,6 @@ class remesh_iterative(bpy.types.Operator):
                 if i>0:
                     bpy.ops.object.material_slot_remove()
 
-        #Smart unwrapping
-        bpy.ops.uv.smart_project()
-        #UV "optimization"
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.uv.select_all(action='SELECT')
-        for i in range(5):
-            bpy.ops.uv.average_islands_scale()
-            bpy.ops.uv.pack_islands(margin=0.005)
-        bpy.ops.object.editmode_toggle()
-
         return{'FINISHED'}
 
 def register() :

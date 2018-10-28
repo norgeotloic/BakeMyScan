@@ -95,6 +95,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
                 return 0
         #The source object must have correct materials
         source = [o for o in context.selected_objects if o!=context.active_object][0] if len(context.selected_objects)==2 else context.active_object
+        target = context.active_object
         #it must have slots
         if len(source.material_slots)==0:
             return 0
@@ -106,7 +107,10 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
                 return 0
         if context.mode!="OBJECT":
             return 0
-        #mmgs must be installed
+        #The target object must have a UV layout
+        if len(target.data.uv_layers) == 0:
+            return 0
+        #convert must be installed
         if context.user_preferences.addons["BakeMyScan"].preferences.convert == "":
             return 0
         return 1
@@ -215,26 +219,26 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         if source != target and self.bake_geometry:
 
             #Bake the normals with blender
-            GEOM = os.path.join(os.path.abspath(self.directory), "baked_normal_geometric." + self.imgFormat.lower())
-            NORM = os.path.join(os.path.abspath(self.directory), "baked_normal." + self.imgFormat.lower())
-            bakeWithBlender(targetMat, "baked_normal_geometric", self.resolution, self.directory, self.imgFormat)
+            D    = os.path.abspath(self.directory)
+            GEOM = os.path.join(D, "baked_geometry." + self.imgFormat.lower())
+            NORM = os.path.join(D, "baked_normal."   + self.imgFormat.lower())
+            TMP  = os.path.join(D, "baked_tmp."      + self.imgFormat.lower())
+            OUT  = os.path.join(D, "baked_normals."  + self.imgFormat.lower())
+            bakeWithBlender(targetMat, "baked_geometry", self.resolution, D, self.imgFormat)
 
             #Merging the normal maps with Imagemagick
             if self.bake_surface:
                 #Removing the blue channel from the material image
-                TMP  = os.path.join(self.directory, "baked_normal_noblue." + self.imgFormat.lower())
                 ARGS = "-channel Blue -evaluate set 0"
                 output, error, code = fn_soft.convert(NORM, TMP, ARGS, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
-                #And appending the two images together
-                OUT  = os.path.join(self.directory, "baked_normals." + self.imgFormat.lower())
                 ARGS = "-compose overlay -composite"
                 output, error, code = fn_soft.convert(GEOM, OUT, ARGS, input2=TMP, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
                 #Remove the old normal images (no blue channel, geometric normals...)
-                os.remove(GEOM)
-                os.remove(TMP)
-                os.rename(OUT, NORM)
+                #os.remove(GEOM)
+                #os.remove(TMP)
+                #os.remove(NORM)
             else:
-                os.rename(GEOM, NORM)
+                os.rename(GEOM, OUT)
 
         # Import the resulting material
         def getbaked(baketype):
@@ -244,7 +248,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
             "albedo":    getbaked("Base Color") if self.bake_albedo else None,
             "metallic":  getbaked("Metallic")   if self.bake_metallic else None,
             "roughness": getbaked("Roughness")  if self.bake_roughness else None,
-            "normal":    getbaked("Normal")     if self.bake_geometry or self.bake_surface else None,
+            "normal":    getbaked("Normals")    if self.bake_geometry or self.bake_surface else None,
             "emission":  getbaked("Emission")   if self.bake_emission else None,
             "opacity":   getbaked("Opacity")    if self.bake_opacity else None
         }
@@ -257,28 +261,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         for _type in importSettings:
             if importSettings[_type] is not None:
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type])
-        """
-        if bpy.data.materials.get("baked_result") is not None:
-            bpy.data.materials.remove(bpy.data.materials.get("baked_result"))
-        _material = bpy.data.materials.new("baked_result")
-        _material.use_nodes = True
-        _materialOutput = [_n for _n in _material.node_tree.nodes if _n.type=='OUTPUT_MATERIAL'][0]
-        for _n in _material.node_tree.nodes:
-            if _n!=_materialOutput:
-                _material.node_tree.nodes.remove(_n)
-        #Create and link the PBR group node
-        _group = _material.node_tree.nodes.new(type="ShaderNodeGroup")
-        _group.label = "baked_result"
-        _group.node_tree = fn_nodes.node_tree_pbr(settings = importSettings, name="baking_result")
-        #Set the default height to 2% of the object size and the UV scale factor to 1
-        _group.inputs["UV scale"].default_value = 1.0
-        _group.inputs["Height"].default_value = 0.02 * max( max(target.dimensions[0], target.dimensions[1]), target.dimensions[2] )
-        _material.node_tree.links.new(_group.outputs["BSDF"], _materialOutput.inputs[0] )
-        #Assign the object after unwrapping and adding a material if none is present
-        if len(target.material_slots)==0:
-            bpy.ops.object.material_slot_add()
-        target.material_slots[0].material = _material
-        """
+
         return{'FINISHED'}
 
 def register() :
@@ -289,8 +272,9 @@ def unregister() :
 
 
 
-"""
+
 #Bake the geometric and surface normals to one (Imagemagick or node setup)
+"""
 if source != target and self.bake_geometry and self.bake_surface:
     bpy.ops.object.select_all(action="DESELECT")
     target.select = True

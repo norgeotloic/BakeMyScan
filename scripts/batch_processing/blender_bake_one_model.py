@@ -45,13 +45,26 @@ bpy.ops.object.delete(use_global=False)
 bpy.context.scene.render.engine = "CYCLES"
 
 #Import the base scan model
-bpy.ops.bakemyscan.import_scan(filepath = args.input, albedo=args.albedo, normal = args.normal)
+bpy.ops.bakemyscan.import_scan(filepath = args.input)
+
+#Preprocess it
+bpy.ops.bakemyscan.clean_object()
+
+#Add a material with the albedo and normal slots
+bpy.ops.bakemyscan.create_empty_material()
+if args.albedo is not None:
+    bpy.ops.bakemyscan.assign_texture(slot="albedo", filepath=args.albedo)
+if args.normal is not None:
+    bpy.ops.bakemyscan.assign_texture(slot="normal", filepath=args.normal)
 
 #Get the interesting stuff
 hr = bpy.context.active_object
-mat = hr.material_slots[0].material
 
+#Remesh the object
 bpy.ops.bakemyscan.remesh_iterative(limit=args.target)
+
+#Unwrap the lowpoly model
+bpy.ops.bakemyscan.unwrap(method="smarter")
 
 #Select the two models to bake
 hr.select=True

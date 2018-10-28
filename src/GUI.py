@@ -25,7 +25,7 @@ class MaterialPanel(bpy.types.Panel):
         self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
         #Other operations on materials
         self.layout.label("Other operations")
-
+        self.layout.operator("bakemyscan.unwrap", icon="GROUP_UVS", text="UV Unwrapping")
         self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
         self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
         self.layout.operator("bakemyscan.material_from_texture", icon="TEXTURE",  text="Load material from texture")
