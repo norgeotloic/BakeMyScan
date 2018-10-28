@@ -1,9 +1,7 @@
 import bpy
 
 class BakeMyScanPrefs(bpy.types.AddonPreferences):
-
-    bl_idname = 'BakeMyScan'
-
+    bl_idname     = 'BakeMyScan'
     mmgs          = bpy.props.StringProperty(name="MMGS  Executable", subtype='FILE_PATH')
     instant       = bpy.props.StringProperty(name="Instant Meshes Executable", subtype='FILE_PATH')
     quadriflow    = bpy.props.StringProperty(name="Quadriflow Executable", subtype='FILE_PATH')
