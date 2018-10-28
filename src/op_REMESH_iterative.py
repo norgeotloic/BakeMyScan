@@ -20,6 +20,8 @@ class do_one_iteration(bpy.types.Operator):
         for o in context.selected_objects:
             if o.type != "MESH":
                 return 0
+        if context.mode!="OBJECT":
+            return 0
         return 1
 
     def execute(self, context):
@@ -75,6 +77,19 @@ class remesh_iterative(bpy.types.Operator):
     limit    = bpy.props.IntProperty(name="limit",    description="Target faces", default=1500, min=50, max=500000)
     manifold = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
     vertex_group = bpy.props.BoolProperty(name="vertex_group", description="Use vertex group", default=True)
+
+    @classmethod
+    def poll(self, context):
+        #If more than two objects are selected
+        if len(context.selected_objects)!=1 or context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        if context.mode!="OBJECT":
+            return 0
+        return 1
 
     def draw(self, context):
         self.layout.prop(self, "limit", text="target triangles")

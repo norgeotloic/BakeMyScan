@@ -14,7 +14,9 @@ class create_empty_material(bpy.types.Operator):
             return 0
         if bpy.context.area.type != "NODE_EDITOR" and bpy.context.area.type != "VIEW_3D" :
             return 0
-        if bpy.context.active_object is None or len(bpy.context.selected_objects)!=1:
+        if bpy.context.active_object is None:
+            return 0
+        if len([o for o in bpy.context.selected_objects if o.type=="MESH"])!=1:
             return 0
         return 1
 

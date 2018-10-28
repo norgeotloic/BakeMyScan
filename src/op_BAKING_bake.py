@@ -52,7 +52,7 @@ def copy_material(mat):
                 n.node_tree = n.node_tree.copy()
     return tmpMat
 
-class bake_textures(bpy.types.Operator, ExportHelper):
+class bake_cycles_textures(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.bake_textures"
     bl_label  = "Bake textures"
     bl_options = {"REGISTER", "UNDO"}
@@ -71,7 +71,7 @@ class bake_textures(bpy.types.Operator, ExportHelper):
     imgFormat      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
     cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.1, min=0.00001, max=5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
-    bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=True)
+    bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=False)
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
     bake_metallic  = bpy.props.BoolProperty(name="bake_metallic",  description="metalness", default=False)
     bake_roughness = bpy.props.BoolProperty(name="bake_roughness", description="roughness", default=False)
@@ -282,10 +282,10 @@ class bake_textures(bpy.types.Operator, ExportHelper):
         return{'FINISHED'}
 
 def register() :
-    bpy.utils.register_class(bake_textures)
+    bpy.utils.register_class(bake_cycles_textures)
 
 def unregister() :
-    bpy.utils.unregister_class(bake_textures)
+    bpy.utils.unregister_class(bake_cycles_textures)
 
 
 

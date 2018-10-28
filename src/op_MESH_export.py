@@ -49,7 +49,7 @@ class export_mesh(bpy.types.Operator, ExportHelper):
         bpy.ops.object.convert(target='MESH')
         bpy.ops.object.editmode_toggle()
         bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.mesh.select_face_by_sides(number=4, type='GREATER')
+        bpy.ops.mesh.select_face_by_sides(number=3, type='GREATER')
         bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
         bpy.ops.object.editmode_toggle()
 

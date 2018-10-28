@@ -9,6 +9,19 @@ class remesh_quads(bpy.types.Operator):
     ratio  = bpy.props.FloatProperty(name="ratio",  description="Decimate ratio",  default=0.01, min=0.0001, max=1)
     smooth = bpy.props.IntProperty(  name="smooth", description="Smoothing steps", default=1, min=0, max=15)
 
+    @classmethod
+    def poll(self, context):
+        #If more than two objects are selected
+        if len(context.selected_objects)!=1 or context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        if context.mode!="OBJECT":
+            return 0
+        return 1
+
     def draw(self, context):
         self.layout.prop(self, "ratio",  text="Decimation ratio")
         self.layout.prop(self, "smooth", text="Smoothing iterations")

@@ -7,8 +7,8 @@ def get_materials_list_callback(scene, context):
     mats.sort()
     return [(m, m, "", i) for i,m in enumerate(mats)]
 
-class import_material(bpy.types.Operator):
-    bl_idname = "bakemyscan.import_material"
+class material_from_library(bpy.types.Operator):
+    bl_idname = "bakemyscan.material_from_library"
     bl_label  = "Import a PBR material"
     bl_options = {"REGISTER", "UNDO"}
     bl_property = "enum"
@@ -21,6 +21,9 @@ class import_material(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
+        #Need to be in Cycles render mode
+        if bpy.context.scene.render.engine != "CYCLES":
+            return 0
         if len(bpy.types.Scene.pbrtextures.keys())==0:
             return 0
         if bpy.context.area.type != "NODE_EDITOR" and bpy.context.area.type != "VIEW_3D" :
@@ -93,7 +96,7 @@ class import_material(bpy.types.Operator):
         return{'FINISHED'}
 
 def register() :
-    bpy.utils.register_class(import_material)
+    bpy.utils.register_class(material_from_library)
 
 def unregister() :
-    bpy.utils.unregister_class(import_material)
+    bpy.utils.unregister_class(material_from_library)

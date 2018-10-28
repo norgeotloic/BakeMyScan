@@ -8,8 +8,16 @@ class remesh_mmgs(bpy.types.Operator):
     bl_label  = "Remesh with mmgs"
     bl_options = {"REGISTER", "UNDO"}
 
-    hausd  = bpy.props.FloatProperty( name="hausd", description="Haussdorf distance as a ratio", default=0.01, min=0.0001, max=1)
-    smooth = bpy.props.BoolProperty(  name="smooth", description="Smooth surface", default=True)
+    #Basic options
+    smooth = bpy.props.BoolProperty(  name="smooth", description="Ignore angle detection (smooth)", default=True)
+    hausd  = bpy.props.FloatProperty( name="hausd", description="Haussdorf distance (ratio)", default=0.01, min=0.0001, max=1)
+    #Advanced options
+    angle  = bpy.props.FloatProperty( name="hausd",  description="Angle detection (°)", default=30, min=0.01, max=180.)
+    hmin   = bpy.props.FloatProperty( name="hmin",   description="Minimal edge size (ratio)", default=0.01, min=0.0001, max=1)
+    hmax   = bpy.props.FloatProperty( name="hmax",   description="Maximal edge size (ratio)", default=1, min=0.0001, max=5)
+    hgrad  = bpy.props.FloatProperty( name="hgrad",  description="Gradation parameter", default=1.3, min=1., max=5.)
+    aniso  = bpy.props.BoolProperty(  name="aniso",  description="Enable anisotropy", default=False)
+    nreg   = bpy.props.BoolProperty(  name="nreg",   description="Normal regulation", default=False)
 
     @classmethod
     def poll(self, context):
@@ -31,8 +39,18 @@ class remesh_mmgs(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
-        self.layout.prop(self, "hausd",  text="Haussdorf ratio")
-        self.layout.prop(self, "smooth", text="Smooth surface")
+        box = self.layout.box()
+        box.label('Basic options')
+        box.prop(self, "hausd",  text="Haussdorf distance (ratio)")
+        box.prop(self, "smooth", text="Ignore angle detection (smooth)")
+        box = self.layout.box()
+        box.label('Advanced options')
+        box.prop(self, "angle",  text="Angle detection (°)")
+        box.prop(self, "hmin",   text="Minimal edge size (ratio)")
+        box.prop(self, "hmax",   text="Maximal edge size (ratio)")
+        box.prop(self, "hgrad",  text="Gradation parameter")
+        box.prop(self, "aniso",  text="Enable anisotropy")
+        box.prop(self, "nreg",   text="Normal regulation")
         col = self.layout.column(align=True)
 
     def execute(self, context):
@@ -53,7 +71,13 @@ class remesh_mmgs(bpy.types.Operator):
             input_mesh  = IN,
             output_mesh = OUT,
             hausd       = self.hausd * maxDim,
-            nr          = True if self.smooth else False
+            hgrad       = self.hgrad,
+            hmin        = self.hmin * maxDim,
+            hmax        = self.hmax * maxDim,
+            ar          = self.angle,
+            nr          = True if self.smooth else False,
+            aniso       = True if self.aniso else False,
+            nreg        = True if self.nreg else False
         )
 
         #Reimport

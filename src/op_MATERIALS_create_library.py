@@ -4,16 +4,23 @@ import bpy
 
 from . import fn_match
 
-class list_textures(bpy.types.Operator):
-    bl_idname = "bakemyscan.list_textures"
+class create_library(bpy.types.Operator):
+    bl_idname = "bakemyscan.create_library"
     bl_label  = "List available materials"
     bl_options = {"REGISTER", "UNDO"}
 
     filepath = bpy.props.StringProperty(
-        name="File Path",
+        name="filepath",
         description="Filepath used for importing the file",
         maxlen=1024,
         subtype='DIR_PATH')
+
+    @classmethod
+    def poll(self, context):
+        #Need to be in Cycles render mode
+        if bpy.context.scene.render.engine != "CYCLES":
+            return 0
+        return 1
 
     def execute(self, context):
 
@@ -26,9 +33,12 @@ class list_textures(bpy.types.Operator):
         return{'FINISHED'}
 
 def register() :
-    bpy.utils.register_class(list_textures)
+    bpy.utils.register_class(create_library)
     bpy.types.Scene.pbrtextures = {}
 
 def unregister() :
-    bpy.utils.unregister_class(list_textures)
-    del bpy.types.Scene.pbrtextures
+    bpy.utils.unregister_class(create_library)
+    try:
+        del bpy.types.Scene.pbrtextures
+    except:
+        pass

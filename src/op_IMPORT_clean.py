@@ -26,6 +26,21 @@ class clean_object(bpy.types.Operator):
             return 0
         return 1
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        self.layout.prop(self, "materials", text="Clean materials")
+        self.layout.prop(self, "doubles",   text="Remove duplicate vertices")
+        self.layout.prop(self, "loose",     text="Delete loose geometry")
+        self.layout.prop(self, "sharp",     text="Remove sharp marks")
+        self.layout.prop(self, "normals",   text="Clean normals")
+        self.layout.prop(self, "center",    text="Center the object")
+        self.layout.prop(self, "scale",     text="Scale to unit box")
+        self.layout.prop(self, "smooth",    text="Smoothing iterations")
+        self.layout.prop(self, "manifold",  text="Make manifold")
+        col = self.layout.column(align=True)
+
     def execute(self, context):
 
         #Get the mesh objects currently selected

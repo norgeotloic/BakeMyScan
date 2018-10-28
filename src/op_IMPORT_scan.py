@@ -11,16 +11,6 @@ class import_scan(bpy.types.Operator, ImportHelper):
         options={'HIDDEN'},
     )
 
-    materials   = bpy.props.BoolProperty(name="materials",   description="Materials", default=True)
-    doubles     = bpy.props.BoolProperty(name="doubles",     description="Duplicate vertices", default=True)
-    loose       = bpy.props.BoolProperty(name="loose",       description="Loose geometry", default=True)
-    sharp       = bpy.props.BoolProperty(name="sharp",       description="Sharp", default=True)
-    normals     = bpy.props.BoolProperty(name="normals",     description="Normals", default=True)
-    center      = bpy.props.BoolProperty(name="center",      description="Center", default=True)
-    scale       = bpy.props.BoolProperty(name="scale",       description="Scale", default=True)
-    smooth      = bpy.props.IntProperty( name="smooth",      description="Smoothing iterations", default=0, min=0, max=10)
-    manifold    = bpy.props.BoolProperty(name="manifold",    description="Make manifold", default=False)
-
     @classmethod
     def poll(cls, context):
         #Object mode

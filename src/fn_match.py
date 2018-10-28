@@ -64,8 +64,8 @@ def ignore_trailing_variations(images):
 
 def find_pattern_in_image(f):
     patterns = {
-        "albedo"      : ["albedo", "diffuse", "dif", "alb", "basecolor", "color", "_d", "_col","tex"],
-        "ao"          : ["ao", "occlusion", "occ"],
+        "albedo"      : ["albedo", "diffuse", "dif", "alb", "base_color", "basecolor", "color", "_d", "_col","tex"],
+        "ao"          : ["ao", "ambient_occlusion", "occlusion", "occ"],
         "metallic"    : ["metallic", "metal", "metalness"],
         "roughness"   : ["roughness", "rou", "rough", "_r"],
         "glossiness"  : ["specular", "ref", "spec", "glossiness", "reflect", "refl", "gloss"],
@@ -175,13 +175,14 @@ def findMaterialFromTexture(texture):
     #Normalize names and paths
     texture   = os.path.abspath(texture)
     directory = os.path.dirname(texture)
-    name      = os.path.splitext(texture)[0]
+    name      = os.path.splitext(os.path.basename(texture))[0]
 
     #All other images in the directory
-    candidates = [os.path.join(directory, f) for f in os.listdir(directory) if imghrd.what(os.path.join(directory, f))]
+    candidates = [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    candidates = [f for f in candidates if imghdr.what(f)]
 
     #Create the appropriate structure to match materials
-    images = [{"file": f, "dir": directory, "name": normalize_name(name)} for f in candidates]
+    images = [{"file": f, "dir": directory, "name": normalize_name(os.path.splitext(os.path.basename(f))[0])} for f in candidates]
 
     #Sort them
     images.sort(key = lambda image : image["file"])
@@ -190,20 +191,27 @@ def findMaterialFromTexture(texture):
     images    = ignore_trailing_variations(images)
     images    = material_names_in_images(images)
 
+    #Get the matching ones
+    image     = [i for i in images if i["file"]==texture][0]
+    images    = [i for i in images if i["material"] == image["material"]]
+
     #Display some information about how it went
+    """
     print( "Found %d images corresponding to a pattern" % (len([i for i in images if i["type"] is not None])) )
     if(len([ i for i in images if i["type"] is None ])):
         print("%d images still not matched:" % (len([i for i in images if i["type"] is None])) )
         print(", ".join([ i["name"] for i in images if i["type"] is None ]))
+    """
 
     #Create the dictionnary
     materials = material_dictionnary(images)
 
     #Return the material containing the texture
-    for m in materials:
-        print(m, materials[m])
-
-    return materials[0]
+    if len(materials.keys()) == 1:
+        n = list(materials.keys())[0]
+        return n, materials[n]
+    else:
+        return None, None
 
 
 
