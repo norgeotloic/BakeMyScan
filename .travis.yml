@@ -1,0 +1,47 @@
+# taken from https://github.com/michaeldegroot/cats-blender-plugin/blob/master/.travis.yml
+
+language: python
+cache:
+  apt: true
+  pip: true
+
+python:
+  - "3.5.3"
+
+before_install:
+  - sudo apt-get update -qq
+  # Install and old blender from official sources to fix dependencies
+  - sudo apt-get install blender
+  - sudo apt-get install unzip
+  - sudo apt-get install meshlab
+  - sudo apt-get install imagemagick
+
+install:
+  # Update blender
+  - wget https://download.blender.org/release/Blender2.79/blender-2.79b-linux-glibc219-x86_64.tar.bz2
+  - tar -xvf blender-2.79b-linux-glibc219-x86_64.tar.bz2
+  - mv blender-2.79b-linux-glibc219-x86_64 blender
+  # Install the BakeMyScan add-on
+  - wget https://github.com/norgeotloic/BakeMyScan/archive/master.zip
+  - unzip master.zip
+  - mv BakeMyScan-master/ BakeMyScan/
+  - cp -r BakeMyScan/ blender/2.79/scripts/addons/BakeMyScan/
+  # Download InstantMeshes
+  - wget https://instant-meshes.s3.eu-central-1.amazonaws.com/instant-meshes-linux.zip
+  - unzip instant-meshes-linux.zip -d Instant
+  #Download mmgs_O3
+  - wget https://www.mmgtools.org/files/2018/09/mmg-5.3.11-Linux-4.9.0-3-amd64-appli.tar.gz
+  - tar -xvzf mmg-5.3.11-Linux-4.9.0-3-amd64-appli.tar.gz
+  #List the files
+  - pwd
+  - ls
+  - ls bin/
+  - ls Instant/
+  - ls blender/
+  - ls BakeMyScan/
+
+script:
+  #Try to set the user preferences
+  - blender/blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/userprefs.py -- --mmgs "bin/mmgs_O3" --instant "Instant/Instant Meshes" --convert "convert" --meshlabserver "LC_ALL=C meshlabserver"
+  #Run the tests
+  - blender/blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/tests.py

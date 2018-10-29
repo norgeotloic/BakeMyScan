@@ -4,7 +4,7 @@
 
 *Concerning the add-on, all of the remeshing methods should work correctly - provided the external software are correctly installed - and you should also be able to export an orthographic view of your model, as well as use a texture directory to import PBR materials ("Texture panel")*
 
-# BakeMyScan
+# BakeMyScan [![Build Status](https://travis-ci.org/norgeotloic/BakeMyScan.svg?branch=master)](https://travis-ci.org/norgeotloic/BakeMyScan)
 
 [![fossils](https://user-images.githubusercontent.com/37718992/46110731-e6948f00-c1e4-11e8-9e2a-ffcacb201f69.jpg)](https://skfb.ly/6yUtB)
 
@@ -17,7 +17,7 @@ A blender add-on I use to transform high resolution 3D scans into lowpoly assets
 
 ## Installation
 
-To setup the add-on, first [download this .zip](https://github.com/norgeotloic/BakeMyScan/archive/dev.zip) and select it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File*.
+To setup the add-on, first [download this .zip](https://github.com/norgeotloic/BakeMyScan/releases/download/0.2/BakeMyScan.zip) and select it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File*.
 
 Although a few remeshing options are available "out of the box", BakeMyScan provides interfaces to various opensource remeshing software. To use them, you'll first have to install them on your system:
 * **[MMGtools](https://www.mmgtools.org/)**: A powerful surface remesher, available as [binaries](http://www.mmgtools.org/mmg-remesher-downloads) or from [sources](https://github.com/MmgTools/mmg).
@@ -52,7 +52,7 @@ BakeMyScan also comes bundled with useful python scripts allowing to:
 * Batch process models from the command-line
 * Import multiple models in a grid layout in blender
 
-You'll find instructions on batch-processing through python scripts [on this page](docs/batch.md).
+You'll find instructions on batch-processing through python scripts [on this page](docs/scripts.md).
 
 ## Contributing
 

@@ -6,7 +6,7 @@ from . import fn_nodes
 
 class assign_texture(bpy.types.Operator, ImportHelper):
     bl_idname = "bakemyscan.assign_texture"
-    bl_label  = "Import a PBR material"
+    bl_label  = "Assign PBR textures to a material"
     bl_options = {"REGISTER", "UNDO"}
 
     filter_glob = bpy.props.StringProperty(
@@ -35,9 +35,6 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         #Need to be in Cycles render mode
         if bpy.context.scene.render.engine != "CYCLES":
             return 0
-        #Node editor or view 3D context
-        if bpy.context.area.type != "NODE_EDITOR" and bpy.context.area.type != "VIEW_3D" :
-            return 0
         #Only one selected object
         if context.active_object is None or len(context.selected_objects)!=1:
             return 0
@@ -54,7 +51,7 @@ class assign_texture(bpy.types.Operator, ImportHelper):
             if node.type=="GROUP":
                 group = node
                 nGroups += 1
-        if group is None or nGroups>1:
+        if group is None:
             return 0
         #Containing a "BakeMyScan PBR" principled node
         nodes = group.node_tree.nodes
@@ -69,8 +66,19 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         obj   = context.active_object
         mat   = context.active_object.active_material
 
-        #Get the PBR node, and its nodes under
-        group = [n for n in mat.node_tree.nodes if n.type=="GROUP"][0]
+        #Get the active group (multiple can arise while adding groups)
+        groups = [n for n in mat.node_tree.nodes if n.type=="GROUP"]
+        group = None
+        if len(groups) == 1:
+            group = groups[0]
+        else:
+            for g in groups:
+                if g == mat.node_tree.nodes.active:
+                    group = g
+                    break
+            if group is None:
+                group = groups[0]
+
         nodes = group.node_tree.nodes
 
         #Load the image in the image node

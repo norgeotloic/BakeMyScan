@@ -73,8 +73,15 @@ class remesh_meshlab(bpy.types.Operator):
             print("MESHLABSERVER OUTPUT:\n%s\MESHLABSERVER ERROR:\n%s" % (output, error))
             return{"CANCELLED"}
         else:
+            #Get the old objects
+            old = [o for o in bpy.data.objects]
             #Reimport
             bpy.ops.import_scene.obj(filepath=OUT)
+            #Make active
+            obj = [o for o in bpy.data.objects if o not in old][0]
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select=True
+            bpy.context.scene.objects.active = obj
             self.report({"INFO"}, "MESHLABSERVER success")
             return{'FINISHED'}
 
