@@ -10,22 +10,21 @@ import sys
 
 if __name__ == "__main__":
 
+    #Create the parser
+    parser = argparse.ArgumentParser(description="Tests the BakeMyScan add-on")
+
+    #Create the arguments
+    parser.add_argument("--mmgs",          type=str, required=True, help="Path to mmgs executable")
+    parser.add_argument("--instant",       type=str, required=True, help="Path to Instant Meshes executable")
+    parser.add_argument("--meshlabserver", type=str, required=True, help="Path to meshlabserver executable")
+    parser.add_argument("--convert",       type=str, required=True, help="Path to ImageMagick convert executable")
+
+    #Parse
+    argv = sys.argv[sys.argv.index("--") + 1:]
+    args = parser.parse_args(argv)
+
+    #Make the executable paths absolute
     try:
-
-        #Create the parser
-        parser = argparse.ArgumentParser(description="Tests the BakeMyScan add-on")
-
-        #Create the arguments
-        parser.add_argument("--mmgs",          type=str, required=True, help="Path to mmgs executable")
-        parser.add_argument("--instant",       type=str, required=True, help="Path to Instant Meshes executable")
-        parser.add_argument("--meshlabserver", type=str, required=True, help="Path to meshlabserver executable")
-        parser.add_argument("--convert",       type=str, required=True, help="Path to ImageMagick convert executable")
-
-        #Parse
-        argv = sys.argv[sys.argv.index("--") + 1:]
-        args = parser.parse_args(argv)
-
-        #Make the executable paths absolute
         if os.path.exists(args.mmgs):
             args.mmgs = os.path.abspath(args.mmgs)
         if os.path.exists(args.instant):
@@ -34,21 +33,38 @@ if __name__ == "__main__":
             args.meshlabserver = os.path.abspath(args.meshlabserver)
         if os.path.exists(args.convert):
             args.convert = os.path.abspath(args.convert)
+    except:
+        print("Did not managed to make the paths absolute")
+        sys.exit(1)
 
-        #Activate the addon
+    #print everything
+    print(args.mmgs)
+    print(args.instant)
+    print(args.meshlabserver)
+    print(args.convert)
+
+    #Activate the addon
+    try:
         bpy.ops.wm.addon_enable(module="BakeMyScan")
+    except:
+        print("Error enabling the addon")
+        sys.exit(2)
 
-        #Set the executables in the addon user preferences
+    #Set the executables in the addon user preferences
+    try:
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.mmgs          = args.mmgs
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.instant       = args.instant
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.meshlabserver = args.meshlabserver
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.convert       = args.convert
-
-        #Save the user preferences
-        bpy.ops.wm.save_userpref()
-
-        sys.exit(0)
-
     except:
+        print("Error setting the paths in preferences")
+        sys.exit(3)
 
-        sys.exit(1)
+    #Save the user preferences
+    try:
+        bpy.ops.wm.save_userpref()
+    except:
+        print("Error saving the user preferences")
+        sys.exit(3)
+
+    sys.exit(0)

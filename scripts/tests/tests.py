@@ -228,14 +228,16 @@ if __name__ == "__main__":
         reset=True,
         args={"interactive":False, "method":"faces", "facescount":1000}
     )
-    TESTS.add_operator(
-        name="remesh_meshlab",
-        operator="remesh_meshlab",
-        before=create_suzanne,
-        after=assert_suzanne_remeshed,
-        reset=True,
-        args={"facescount":1500}
-    )
+    #Do not run meshlabserver on Travis, as it needs a X server to run
+    if not "travis" in os.path.abspath(os.getcwd()):
+        TESTS.add_operator(
+            name="remesh_meshlab",
+            operator="remesh_meshlab",
+            before=create_suzanne,
+            after=assert_suzanne_remeshed,
+            reset=True,
+            args={"facescount":1500}
+        )
 
     #Interact with the material library
     TESTS.add_operator(
