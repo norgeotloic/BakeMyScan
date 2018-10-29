@@ -117,7 +117,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         #Get the directory to save the images to
-        self.directory = os.path.abspath(os.path.dirname(self.properties.filepath))
+        self.directory = os.path.abspath(os.path.dirname(self.properties.filepath)) if os.path.isfile(self.properties.filepath) else os.path.abspath(self.properties.filepath)
 
         #Find which object is the source and which is the target
         source, target = None, None
@@ -234,9 +234,9 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
                 ARGS = "-compose overlay -composite"
                 output, error, code = fn_soft.convert(GEOM, OUT, ARGS, input2=TMP, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
                 #Remove the old normal images (no blue channel, geometric normals...)
-                #os.remove(GEOM)
-                #os.remove(TMP)
-                #os.remove(NORM)
+                os.remove(GEOM)
+                os.remove(TMP)
+                os.remove(NORM)
             else:
                 os.rename(GEOM, OUT)
 

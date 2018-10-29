@@ -161,6 +161,7 @@ def create_axio_array(a01, a10, a11, a12, a13, a21, M=50):
     #Third line
     A[3*M+a01.shape[0]+a10.shape[0]:-M,2*M+a10.shape[1]:2*M+a10.shape[1]+a11.shape[1],:] = a21
     return A
+    
 def array_to_image(arr, path):
     img = bpy.data.images.new("tmp", arr.shape[1], arr.shape[0], alpha=1)
     img.file_format = "PNG"

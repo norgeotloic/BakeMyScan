@@ -59,7 +59,6 @@ def meshImport(operator, context, filepath):
         mesh.validate()
         mesh.update()
 
-
     if not meshes:
         return 1
 
@@ -142,13 +141,11 @@ def meshImport(operator, context, filepath):
             for poly in me.data.polygons:
                 for loop in poly.loop_indices:
                     vertindex=me.data.loops[loop].vertex_index
-
                     #Check to see if the vertex has any geoup association
                     try:
                         weight=me.vertex_groups.active.weight(vertindex)
                     except:
                        continue
-
                     #col=Color ((r, g, b ))
                     col.h=0.66*weight
                     col.s=1
@@ -161,20 +158,15 @@ def meshImport(operator, context, filepath):
                 for loop in poly.loop_indices:
                     vertindex=me.data.loops[loop].vertex_index
                     #weight=me.vertex_groups['Group'].weight(vertindex)
-
                     #Check to see if the vertex has any geoup association
                     try:
                         weight=me.vertex_groups.active.weight(vertindex)
                     except:
                         continue
-
                     col.r=weight
                     col.g=col.r
                     col.b=col.r
                     me.data.vertex_colors.active.data[loop].color = (col.b, col.g, col.r)
-
-
-
 
         #update
         context.active_object.data.update()
