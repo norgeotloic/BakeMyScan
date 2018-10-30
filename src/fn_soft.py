@@ -29,7 +29,7 @@ def mmgs(
     ):
 
     #Create the command
-    cmd = "'" + executable + "' %s " % input_mesh
+    cmd = '"' + executable + '" %s ' % input_mesh
     if output_mesh is None:
         output_mesh = input_mesh
     cmd += "-out %s " % output_mesh
@@ -64,7 +64,7 @@ def meshlabserver(
     ):
 
     #Create the command
-    cmd = "'" + executable + "' -i %s -s %s " % (input_mesh, script_file)
+    cmd = '"' + executable + '" -i %s -s %s ' % (input_mesh, script_file)
     if output_mesh is None:
         output_mesh = input_mesh
     cmd += "-o %s" % output_mesh
@@ -93,7 +93,7 @@ def instant_meshes_cmd(
     ):
 
     #Create the command
-    cmd = "'" + executable + "' %s " % input_mesh
+    cmd = '"' + executable + '" %s ' % input_mesh
     if output_mesh is None:
         output_mesh = input_mesh
     cmd += "-o %s " % output_mesh
@@ -133,7 +133,7 @@ def quadriflow(
     ):
 
     #Create the command
-    cmd = "'" + executable + "' -i %s " % input_mesh
+    cmd = '"' + executable + '" -i %s ' % input_mesh
     if output_mesh is None:
         output_mesh = input_mesh
     cmd += "-o %s " % output_mesh
@@ -146,7 +146,7 @@ def quadriflow(
 def meshlab(input_mesh):
     return run("meshlab %s" % input_mesh)
 def instant_meshes_gui(input_mesh, executable="instantMeshes"):
-    return run("'" + executable + "' %s" % input_mesh)
+    return run('"' + executable + '" %s' % input_mesh)
 
 #Imagemagick
 def convert(
@@ -157,7 +157,7 @@ def convert(
     executable="convert"
     ):
     #Create the command
-    cmd = "'" + executable + "' %s %s %s %s" % (input1, input2 if input2 is not None else "", arguments, output)
+    cmd = '"' + executable + '" %s %s %s %s' % (input1, input2 if input2 is not None else "", arguments, output)
 
     #Execute it, and return stdout, stderr and exit code
     print("Running %s" % cmd)
