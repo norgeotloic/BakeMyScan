@@ -3,6 +3,7 @@ import os
 from bpy_extras.io_utils import ExportHelper
 from . import fn_nodes
 from . import fn_soft
+from . import fn_bake
 
 def addImageNode(mat, nam, res, dir, fmt):
     if bpy.data.images.get(nam):
@@ -43,14 +44,6 @@ def bakeWithBlender(mat, nam, res, dir, fmt):
     bpy.ops.object.editmode_toggle()
     mat.use_nodes = restore
     bpy.context.scene.render.engine=engine
-
-def copy_material(mat):
-    tmpMat = mat.copy()
-    for n in tmpMat.node_tree.nodes:
-        if n.type=="GROUP":
-            if n.node_tree.users>1:
-                n.node_tree = n.node_tree.copy()
-    return tmpMat
 
 class bake_cycles_textures(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.bake_textures"
@@ -131,8 +124,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         material  = source.material_slots[0].material
 
         # Set the baking parameters
-        if source != target:
-            bpy.data.scenes["Scene"].render.bake.use_selected_to_active = True
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = True
         bpy.data.scenes["Scene"].cycles.bake_type = 'EMIT'
         bpy.data.scenes["Scene"].cycles.samples   = 1
         bpy.data.scenes["Scene"].render.bake.margin = 8
@@ -155,56 +147,17 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         for baketype in toBake:
             if toBake[baketype]:
 
-                #Copy the active material, and assign it
-                tmpMat = copy_material(material)
+                #Copy the active material, and assign it to the source
+                tmpMat      = fn_bake.create_source_baking_material(material, baketype)
                 tmpMat.name = material.name + "_" + baketype
                 source.material_slots[0].material = tmpMat
 
-                #Get the material output node
-                _matOut = [_n for _n in tmpMat.node_tree.nodes if _n.type == 'OUTPUT_MATERIAL' and _n.is_active_output][0]
-
-                #Convert the node tree to an emission shader with the texture
-                if baketype != "Emission" and baketype!= "Opacity":
-                    fn_nodes.convert(tmpMat.node_tree, baketype)
-
-                #Connect the correct group to the material output
-                else:
-                    #If we bake the emission, the shader should be good as it is
-                    if baketype == "Emission":
-                        pass
-                    #If we bake the opacity, look for a mix factor for a transparent shader
-                    elif baketype == "Opacity":
-                        alphaMixNode = None
-                        for n in tmpMat.node_tree.nodes:
-                            if n.type == 'BSDF_TRANSPARENT':
-                                for link in n.outputs["BSDF"].links:
-                                    if link.to_node.type == "MIX_SHADER":
-                                        for l in link.to_node.inputs["Fac"].links:
-                                            alphaMixNode = l.from_node
-                                            _emission = tmpMat.node_tree.nodes.new(type="ShaderNodeEmission")
-                                            tmpMat.node_tree.links.new(alphaMixNode.outputs[0], _emission.inputs["Color"])
-                                            tmpMat.node_tree.links.new(_emission.outputs["Emission"], _matOut.inputs["Surface"])
-                        if alphaMixNode is None:
-                            continue
-
-                #Add a new material called "baking" to the target
-                targetMat = tmpMat
-                if target != source:
-                    if len(target.material_slots)>0:
-                        if target.material_slots[0].material is not None:
-                            targetMat = target.material_slots[0].material
-                        else:
-                            targetMat = bpy.data.materials.new("baking")
-                            target.material_slots[0].material = targetMat
-                    else:
-                        bpy.ops.object.material_slot_add()
-                        targetMat = bpy.data.materials.new("baking")
-                        target.material_slots[0].material = targetMat
-                    targetMat.use_nodes = True
+                #Create a material for the target
+                targetMat = fn_bake.create_target_baking_material(target)
 
                 #Add an image node to the material with the baked result image assigned
                 suffix   = baketype.replace(" ", "").lower()
-                imgNode = addImageNode(targetMat, "baked_" + suffix, self.resolution, self.directory, self.imgFormat)
+                imgNode  = addImageNode(targetMat, "baked_" + suffix, self.resolution, self.directory, self.imgFormat)
 
                 #Do the baking and save the image
                 bpy.ops.object.bake(type="EMIT")
