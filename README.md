@@ -17,7 +17,7 @@ A blender add-on I use to transform high resolution 3D scans into lowpoly assets
 
 ## Installation
 
-To setup the add-on, first [download this .zip](https://github.com/norgeotloic/BakeMyScan/releases/download/0.2/BakeMyScan.zip) and select it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File*.
+To setup the add-on, first [download this .zip](https://github.com/norgeotloic/BakeMyScan/releases/download/0.3/BakeMyScan.zip) and select it in blender with the menu *File* -> *User Preferences* -> *Add-ons* -> *Install Add-on from File*.
 
 Although a few remeshing options are available "out of the box", BakeMyScan provides interfaces to various opensource remeshing software. To use them, you'll first have to install them on your system:
 * **[MMGtools](https://www.mmgtools.org/)**: A powerful surface remesher, available as [binaries](http://www.mmgtools.org/mmg-remesher-downloads) or from [sources](https://github.com/MmgTools/mmg).
