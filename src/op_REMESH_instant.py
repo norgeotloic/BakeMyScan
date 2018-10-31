@@ -120,11 +120,11 @@ class remesh_instant(bpy.types.Operator):
             for o in context.selected_objects:
                 o.select=True
                 bpy.context.scene.objects.active = o
-            """
+
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.mark_sharp(clear=True)
             bpy.ops.object.editmode_toggle()
-            """
+            
             self.report({"INFO"}, "INSTANTMESHES success")
             return{'FINISHED'}
 
