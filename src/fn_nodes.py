@@ -63,7 +63,6 @@ def node_tree_combine_normals():
     _output.location    = [1200,0]
     #Return
     return _node_tree
-
 #A new version, trying to reproduce the Imagemagick overlay behaviour
 def node_tree_combine_normals_2():
     #cf https://blenderartists.org/t/baking-normals-within-other-maps/621625/22

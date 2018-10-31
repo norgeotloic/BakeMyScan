@@ -52,8 +52,8 @@ class export_fbx(bpy.types.Operator, ExportHelper):
         directory = os.path.dirname(os.path.abspath(self.properties.filepath))
         name      = os.path.splitext(os.path.basename(os.path.abspath(self.properties.filepath)))[0]
 
-        #function to save all images in a tree
-        def save_images(tree, directory, name, fmt):
+        #function to recursively save all images in a tree
+        def save_images(tree, directory, name):
             for node in tree.nodes:
                 if node.type=="TEX_IMAGE":
                     img = node.image
@@ -68,12 +68,12 @@ class export_fbx(bpy.types.Operator, ExportHelper):
                             img.filepath_raw = path
                             img.save()
                 elif node.type == "GROUP":
-                    save_images(node.node_tree, directory, name, fmt)
+                    save_images(node.node_tree, directory, name)
 
         #Move and update the textures
         bpy.ops.export_scene.fbx(filepath = self.filepath, use_selection=True)
         mat = obj.material_slots[0].material
-        save_images(mat.node_tree, directory, name, self.imgFormat)
+        save_images(mat.node_tree, directory, name)
 
         return {'FINISHED'}
 
