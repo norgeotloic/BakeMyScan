@@ -531,3 +531,23 @@ def node_tree_pbr(settings, name="Material"):
             n.hide = True
     #Return
     return _node_tree
+
+def cycles_material_to_vertex_color(material):
+    """Transforms a Cycles material into a blender one"""
+
+    material.use_nodes = False
+    material.use_vertex_color_paint = True
+
+    #Bake the color to the vertex color
+    if not bpy.data.images.get("vc"):
+        bpy.data.images.new("vc", 4, 4)
+    image = bpy.data.images.get("vc")
+    tex = None
+    if not bpy.data.textures.get("baking"):
+        bpy.data.textures.new( "baking", type = 'IMAGE')
+    tex = bpy.data.textures.get("baking")
+    tex.image = image
+    slots = mat.texture_slots
+    slots.clear(0)
+    mtex = slots.add()
+    mtex.texture = tex

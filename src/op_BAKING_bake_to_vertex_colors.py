@@ -1,10 +1,11 @@
 import bpy
 import os
 from bpy_extras.io_utils import ExportHelper
-from . import fn_nodes
-from . import fn_soft
+
+from . import fn_bake
 
 class bake_to_vertex_colors(bpy.types.Operator):
+    """Assume a PBR material is present, will bake from cycles"""
     bl_idname = "bakemyscan.bake_to_vertex_colors"
     bl_label  = "Bake textures"
     bl_options = {"REGISTER", "UNDO"}
@@ -15,22 +16,19 @@ class bake_to_vertex_colors(bpy.types.Operator):
         if bpy.context.scene.render.engine!="CYCLES":
             return 0
         #If more than two objects are selected
-        if len(context.selected_objects)>2:
+        if len(context.selected_objects)!=1:
             return 0
         #If no object is active
         if context.active_object is None:
             return 0
         #If something other than a MESH is selected
-        for o in context.selected_objects:
-            if o.type != "MESH":
-                return 0
+        if context.active_object.type != "MESH":
+            return 0
         #The source object must have correct materials
-        source = [o for o in context.selected_objects if o!=context.active_object][0] if len(context.selected_objects)==2 else context.active_object
-        #it must have slots
-        if len(source.material_slots)==0:
+        if len(context.active_object.material_slots)==0:
             return 0
         #Each material must be not None and have nodes
-        for slot in source.material_slots:
+        for slot in context.active_object.material_slots:
             if slot.material is None:
                 return 0
             if slot.material.use_nodes == False:
@@ -40,41 +38,35 @@ class bake_to_vertex_colors(bpy.types.Operator):
         return 1
 
     def execute(self, context):
+        obj = context.active_object
+        mat = obj.active_material
 
-        objects = [o for o in bpy.context.selected_objects if o.type == "MESH"]
+        #Get the image from the PBR material
+        image_nodes = fn_bake.get_all_nodes_in_material(mat, node_type="TEX_IMAGE")
+        albedo      = [a["node"] for a in image_nodes if a["node"].name == "albedo"]
+        if len(albedo)!=1:
+            print("Material is not correct!")
+            return{'CANCELLED'}
 
-        #Get the source and the target
-        source = [o for o in context.selected_objects if o!=context.active_object][0] if len(context.selected_objects)==2 else context.active_object
-        target = context.active_object
-
-        #Bake the albedo to an image
-        #bake_textures
+        image = albedo[0].image
 
         #Switch to blender render and adapt the materials
         bpy.context.scene.render.engine = 'BLENDER_RENDER'
-        source.active_material.use_nodes = False
 
         #Set some baking parameters
-        bpy.context.scene.render.use_bake_selected_to_active = True
+        bpy.context.scene.render.use_bake_selected_to_active = False
+        bpy.context.scene.render.use_bake_to_vertex_color    = True
         bpy.context.scene.render.bake_type = "TEXTURE"
-        bpy.context.scene.render.use_bake_to_vertex_color = True
 
-        #Add a vertex color group to the target
-        target.data.vertex_colors.new()
+        #Add a vertex color group to the object
+        obj.data.vertex_colors.new()
         bpy.ops.object.vertex_group_add()
 
-        #And a new material
-        if not bpy.data.materials.get("vertexcolors"):
-            bpy.data.materials.new("vertexcolors")
-        mat = bpy.data.materials.get("vertexcolors")
+        #Prepare the material
+        mat.use_nodes              = False
         mat.use_vertex_color_paint = True
-        target.material_slots[0].material = mat
 
-        #Prepare the baking parameters in blender internal
-        if not bpy.data.images.get("tmp_vertexcolors"):
-            bpy.data.images.new("tmp_vertexcolors", 512, 512)
-        image = bpy.data.images.get("tmp_vertexcolors")
-        tex = None
+        #Assign the image to a texture slot
         if not bpy.data.textures.get("tmp_vertexcolors"):
             bpy.data.textures.new( "tmp_vertexcolors", type = 'IMAGE')
         tex = bpy.data.textures.get("tmp_vertexcolors")
@@ -92,10 +84,14 @@ class bake_to_vertex_colors(bpy.types.Operator):
         #And add the image in edit mode to the image editor
         bpy.ops.object.editmode_toggle()
         bpy.data.screens['UV Editing'].areas[1].spaces[0].image = image
-        bpy.context.object.active_material.use_textures[0] = False
+        #bpy.context.object.active_material.use_textures[0] = False
         bpy.ops.object.bake_image()
         bpy.ops.object.editmode_toggle()
         bpy.ops.object.bake_image()
+
+        #Reset to Cycles
+        bpy.context.scene.render.engine = 'CYCLES'
+        mat.use_nodes = True
 
         return{'FINISHED'}
 
