@@ -1,35 +1,16 @@
 import bpy
 
-class ImportPanel(bpy.types.Panel):
+class BakeMyScanPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_category    = "BakeMyScan"
-    bl_label       = "Import"
+    bl_options     = {"DEFAULT_CLOSED"}
 
+class ImportPanel(BakeMyScanPanel):
+    bl_label       = "Import"
     def draw(self, context):
         self.layout.operator("bakemyscan.import_scan",  icon="IMPORT",       text="Import")
         self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Clean")
-
-class MaterialPanel(bpy.types.Panel):
-    bl_space_type  = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category    = "BakeMyScan"
-    bl_label       = "Material"
-
-    def draw(self, context):
-        #Manage a material library
-        self.layout.label("PBR library")
-        self.layout.prop(context.scene.textures_path, "texturepath", text="Textures path", icon="TEXTURE")
-        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load a JSON library")
-        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save library to JSON")
-        self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
-        #Other operations on materials
-        self.layout.label("Other operations")
-        self.layout.operator("bakemyscan.unwrap", icon="GROUP_UVS", text="UV Unwrapping")
-        self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
-        self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
-        self.layout.operator("bakemyscan.material_from_texture", icon="TEXTURE",  text="Load material from texture")
-
 
 def updatepath(self, context):
     print(self.texturepath)
@@ -43,11 +24,61 @@ class MyCustomProperties(bpy.types.PropertyGroup):
         subtype='DIR_PATH',
         update=updatepath
     )
+class MaterialPanel(BakeMyScanPanel):
+    bl_label       = "Material"
 
-class RemeshPanel(bpy.types.Panel):
-    bl_space_type  = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category    = "BakeMyScan"
+    @classmethod
+    def poll(self, context):
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        return 1
+
+    def draw(self, context):
+        #Manage a material library
+        self.layout.label("PBR library")
+        self.layout.prop(context.scene.textures_path, "texturepath", text="Textures path", icon="TEXTURE")
+        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load a JSON library")
+        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save library to JSON")
+        self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
+        #Other operations on materials
+        self.layout.label("Other operations")
+        self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
+        self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
+        self.layout.operator("bakemyscan.material_from_texture", icon="TEXTURE",  text="Load material from texture")
+
+def setworldintensity(self, context):
+    bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
+    return None
+class IntensityProperty(bpy.types.PropertyGroup):
+    intensity =  bpy.props.FloatProperty(name="intensity", description="HDRI intensity", default=1, min=0., max=10000., update=setworldintensity)
+class HDRIPanel(BakeMyScanPanel):
+    """Creates a Panel in the Object properties window"""
+    bl_label       = "HDRI"
+
+    @classmethod
+    def poll(self, context):
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        #There must be a world called "World"
+        if bpy.data.worlds.get("World") is None:
+            return 0
+        return 1
+
+    def draw(self, context):
+        layout = self.layout
+        wm = context.window_manager
+
+        row = layout.row()
+        row.prop(wm, "my_previews_dir")
+
+        row = layout.row()
+        row.template_icon_view(wm, "my_previews")
+
+        layout.prop(context.scene.intensity, "intensity", text="HDRI intensity", icon="WORLD")
+
+class RemeshPanel(BakeMyScanPanel):
     bl_label       = "Remesh"
 
     def draw(self, context):
@@ -61,43 +92,69 @@ class RemeshPanel(bpy.types.Panel):
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
 
-class BakingPanel(bpy.types.Panel):
-    bl_space_type  = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category    = "BakeMyScan"
-    bl_label       = "Baking"
+class UnwrapPanel(BakeMyScanPanel):
+    bl_label       = "UV unwrap"
 
     def draw(self, context):
-        self.layout.operator("bakemyscan.bake_textures", icon="OUTLINER_OB_CAMERA", text="Bake textures")
-        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="OUTLINER_OB_CAMERA", text="Bake textures")
+        self.layout.operator("bakemyscan.unwrap", icon="GROUP_UVS", text="UV Unwrapping")
 
-class ExportPanel(bpy.types.Panel):
+class BakingPanel(BakeMyScanPanel):
+    bl_label       = "Baking"
+
+    @classmethod
+    def poll(self, context):
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        return 1
+
+    def draw(self, context):
+        self.layout.operator("bakemyscan.bake_textures",         icon="RENDER_STILL", text="Bake to textures")
+        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Bake to vertex color")
+
+class ExportPanel(BakeMyScanPanel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_category    = "BakeMyScan"
     bl_label       = "Export"
 
     def draw(self, context):
-        self.layout.operator("bakemyscan.export_orthoview",      icon="RENDER_STILL", text="Ortho View")
-        self.layout.operator("bakemyscan.remove_all_but_selected",  icon="ERROR", text="Clean not used")
-        self.layout.operator("bakemyscan.export_fbx",    icon="EXPORT", text="Export to FBX")
-
-
-
+        self.layout.operator("bakemyscan.export_orthoview",        icon="OUTLINER_OB_CAMERA", text="Ortho View")
+        self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean not used")
+        self.layout.operator("bakemyscan.export_fbx",              icon="EXPORT", text="Export to FBX")
 
 def register():
-    bpy.utils.register_class(MyCustomProperties)
-    bpy.types.Scene.textures_path = bpy.props.PointerProperty(type=MyCustomProperties)
+
     bpy.utils.register_class(ImportPanel)
-    bpy.utils.register_class(RemeshPanel)
     bpy.utils.register_class(MaterialPanel)
+    bpy.utils.register_class(HDRIPanel)
+    bpy.utils.register_class(RemeshPanel)
+    bpy.utils.register_class(UnwrapPanel)
     bpy.utils.register_class(BakingPanel)
     bpy.utils.register_class(ExportPanel)
+
+    #Add the custom intensity slider
+    bpy.utils.register_class(IntensityProperty)
+    bpy.types.Scene.intensity = bpy.props.PointerProperty(type=IntensityProperty)
+
+    #Add the custom path to texture library
+    bpy.utils.register_class(MyCustomProperties)
+    bpy.types.Scene.textures_path = bpy.props.PointerProperty(type=MyCustomProperties)
+
 def unregister():
-    bpy.utils.unregister_class(MyCustomProperties)
-    del bpy.types.Scene.textures_path
+
     bpy.utils.unregister_class(ImportPanel)
-    bpy.utils.unregister_class(RemeshPanel)
     bpy.utils.unregister_class(MaterialPanel)
+    bpy.utils.unregister_class(HDRIPanel)
+    bpy.utils.unregister_class(RemeshPanel)
+    bpy.utils.unregister_class(UnwrapPanel)
     bpy.utils.unregister_class(BakingPanel)
     bpy.utils.unregister_class(ExportPanel)
+
+    #Clear the custom intensity slider
+    bpy.utils.unregister_class(IntensityProperty)
+    del bpy.types.Scene.intensity
+
+    #Clear the custom path to textures
+    bpy.utils.unregister_class(MyCustomProperties)
+    del bpy.types.Scene.textures_path
