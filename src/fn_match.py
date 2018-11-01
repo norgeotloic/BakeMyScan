@@ -192,8 +192,10 @@ def findMaterialFromTexture(texture):
     images    = material_names_in_images(images)
 
     #Get the matching ones
-    image     = [i for i in images if i["file"]==texture][0]
-    images    = [i for i in images if i["material"] == image["material"]]
+    liste = [i for i in images if i["file"]==texture]
+    if len(liste)>0:
+        image     = liste[0]
+        images    = [i for i in images if i["material"] == image["material"]]
 
     #Display some information about how it went
     """

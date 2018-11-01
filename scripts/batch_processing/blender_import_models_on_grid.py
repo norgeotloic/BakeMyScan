@@ -26,6 +26,8 @@ if not os.path.isdir(args.input):
     sys.exit(1)
 args.input = os.path.abspath(args.input)
 
+bpy.context.scene.render.engine = "CYCLES"
+
 #Remove the initial objects
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
@@ -33,34 +35,21 @@ bpy.ops.object.delete(use_global=False)
 #Import all the 3D models with their textures
 models = [f for f in os.listdir(args.input) if f[-4:] == ".fbx"]
 for m in models:
-    #Import the model
-    bpy.ops.object.select_all(action='DESELECT')
-    bpy.ops.import_scene.fbx(filepath=os.path.join(args.input, m))
-    rootName = os.path.splitext(m)[0]
-    obj = [o for o in bpy.data.objects if o.select][0]
-    obj.name = rootName
-    mat = obj.active_material
-    mat.name = rootName
 
-    #Import the albedo and normals if they exist
+    #Get the object name from its path
+    name = os.path.splitext(m)[0]
+
+    #Import the model and make it active
+    bpy.ops.bakemyscan.import_scan(filepath = os.path.join(args.input, m))
+    obj = [o for o in bpy.data.objects if o.select][0]
+    bpy.context.scene.objects.active = obj
+    obj.name = name
+
+    #Try to create a material from a texture
     for f in os.listdir(args.input):
-        if rootName + "_ALBEDO" in f:
-            path         = os.path.join(args.input, f)
-            img          = bpy.data.images.load(path, check_existing=False)
-            tex          = bpy.data.textures.new( rootName + "_albedo",  "IMAGE" )
-            tex.image    = img
-            slot         = mat.texture_slots.add()
-            slot.texture = tex
-        if rootName + "_NORMAL" in f:
-            path         = os.path.join(args.input, f)
-            img          = bpy.data.images.load(path, check_existing=False)
-            tex          = bpy.data.textures.new( rootName + "_normal",  "IMAGE" )
-            tex.image    = img
-            slot         = mat.texture_slots.add()
-            slot.texture = tex
-            tex.use_normal_map  = True
-            slot.use_map_normal = True
-            slot.use_map_color_diffuse = False
+        if name in f:
+            bpy.ops.bakemyscan.material_from_texture(filepath=os.path.join(args.input, f))
+            #Maybe convert it to a blender internal material?
 
 #Get the number of columns
 columns = int(len(models)/args.rows) + 1
