@@ -18,7 +18,7 @@ class remesh_quads(bpy.types.Operator):
         for o in context.selected_objects:
             if o.type != "MESH":
                 return 0
-        if context.mode!="OBJECT":
+        if context.mode!="OBJECT" and context.mode!="SCULPT":
             return 0
         return 1
 
@@ -30,6 +30,9 @@ class remesh_quads(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
+        #Go into object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
         #Duplicate the original mesh and make it active
         hr = context.scene.objects.active
         bpy.ops.object.duplicate()
@@ -48,15 +51,15 @@ class remesh_quads(bpy.types.Operator):
             bpy.ops.mesh.vertices_smooth()
         bpy.ops.object.editmode_toggle()
 
-        #Shrinkwrap to the original
-        bpy.ops.object.modifier_add(type='SHRINKWRAP')
-        bpy.context.object.modifiers["Shrinkwrap"].target = hr
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
-
         #Subdivision
         bpy.ops.object.modifier_add(type='SUBSURF')
         bpy.context.object.modifiers["Subsurf"].levels = 1
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Subsurf")
+
+        #Shrinkwrap to the original
+        bpy.ops.object.modifier_add(type='SHRINKWRAP')
+        bpy.context.object.modifiers["Shrinkwrap"].target = hr
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
 
         return{'FINISHED'}
 

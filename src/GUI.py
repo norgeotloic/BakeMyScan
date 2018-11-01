@@ -5,6 +5,7 @@ class BakeMyScanPanel(bpy.types.Panel):
     bl_region_type = "TOOLS"
     bl_category    = "BakeMyScan"
     bl_options     = {"DEFAULT_CLOSED"}
+    bl_context     = "objectmode"
 
 class ImportPanel(BakeMyScanPanel):
     bl_label       = "Import"
@@ -123,6 +124,27 @@ class ExportPanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean not used")
         self.layout.operator("bakemyscan.export_fbx",              icon="EXPORT", text="Export to FBX")
 
+
+class fromSculptPanel(bpy.types.Panel):
+    bl_space_type  = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category    = "Tools"
+    bl_label       = "BakeMyScan Remesh"
+    bl_context     = "sculpt_mode"
+    bl_options     = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        self.layout.label("Internal")
+        self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
+        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text="Naive quads")
+        self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
+        self.layout.label("External")
+        self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
+        self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
+        self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
+        self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
+
+
 def register():
 
     bpy.utils.register_class(ImportPanel)
@@ -132,6 +154,8 @@ def register():
     bpy.utils.register_class(UnwrapPanel)
     bpy.utils.register_class(BakingPanel)
     bpy.utils.register_class(ExportPanel)
+
+    bpy.utils.register_class(fromSculptPanel)
 
     #Add the custom intensity slider
     bpy.utils.register_class(IntensityProperty)
@@ -150,6 +174,8 @@ def unregister():
     bpy.utils.unregister_class(UnwrapPanel)
     bpy.utils.unregister_class(BakingPanel)
     bpy.utils.unregister_class(ExportPanel)
+
+    bpy.utils.unregister_class(fromSculptPanel)
 
     #Clear the custom intensity slider
     bpy.utils.unregister_class(IntensityProperty)

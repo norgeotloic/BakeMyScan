@@ -59,11 +59,6 @@ class remove_all_but_selected(bpy.types.Operator):
         #Update the scene
         bpy.context.scene.update()
         bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-        for window in bpy.context.window_manager.windows:
-            screen = window.screen
-            for area in screen.areas:
-                if area.type == 'VIEW_3D':
-                    bpy.context.area.tag_redraw()
 
         return {'FINISHED'}
 

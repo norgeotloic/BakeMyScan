@@ -3,72 +3,6 @@ import os
 from bpy_extras.io_utils import ImportHelper
 import addon_utils
 
-class do_one_iteration(bpy.types.Operator):
-    bl_idname = "bakemyscan.remesh_one_iteration"
-    bl_label  = "Do one iteration for remshing"
-    bl_options = {"REGISTER", "UNDO"}
-
-    manifold     = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
-    vertex_group = bpy.props.BoolProperty(name="vertex_group", description="Use vertex group", default=False)
-
-    @classmethod
-    def poll(self, context):
-        #If more than two objects are selected
-        if len(context.selected_objects)!=1 or context.active_object is None:
-            return 0
-        #If something other than a MESH is selected
-        for o in context.selected_objects:
-            if o.type != "MESH":
-                return 0
-        if context.mode!="OBJECT":
-            return 0
-        return 1
-
-    def execute(self, context):
-        # 1 - planar decimation
-        bpy.ops.object.modifier_add(type='DECIMATE')
-        bpy.context.object.modifiers["Decimate"].decimate_type = 'DISSOLVE'
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
-
-        # 2 - triangulate the mesh
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.quads_convert_to_tris()
-        bpy.ops.object.editmode_toggle()
-
-        # 3 - smooth the vertices
-        bpy.ops.object.modifier_add(type='SMOOTH')
-        bpy.context.object.modifiers["Smooth"].iterations = 1
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
-
-        # 4 - decimate it
-        bpy.ops.object.modifier_add(type='DECIMATE')
-        bpy.context.object.modifiers["Decimate"].ratio = 0.8
-        if len(bpy.context.object.vertex_groups)>0 and self.vertex_group:
-            bpy.context.object.modifiers["Decimate"].vertex_group = bpy.context.object.vertex_groups[0].name
-            bpy.context.object.modifiers["Decimate"].vertex_group_factor = 0.75
-            bpy.context.object.modifiers["Decimate"].invert_vertex_group = True
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
-
-
-        # 5 - shrinkwrap to the original
-        bpy.ops.object.modifier_add(type='SHRINKWRAP')
-        bpy.context.object.modifiers["Shrinkwrap"].target = bpy.types.Scene.hr
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
-
-        # 6 - Remove non manifold and doubles
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.mesh.remove_doubles(threshold=0.0001)
-        bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
-        bpy.ops.mesh.vert_connect_nonplanar()
-        if self.manifold:
-            addon_utils.enable("object_print3d_utils")
-            bpy.ops.mesh.print3d_clean_non_manifold()
-        bpy.ops.object.editmode_toggle()
-
-        return{'FINISHED'}
-
-
 class remesh_iterative(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_iterative"
     bl_label  = "Remesh with an iterative method"
@@ -87,7 +21,7 @@ class remesh_iterative(bpy.types.Operator):
         for o in context.selected_objects:
             if o.type != "MESH":
                 return 0
-        if context.mode!="OBJECT":
+        if context.mode!="OBJECT" and context.mode!="SCULPT":
             return 0
         return 1
 
@@ -99,6 +33,9 @@ class remesh_iterative(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
+        #Go into object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
         #Duplicate the original mesh and make it active
         hr = context.scene.objects.active
         bpy.ops.object.duplicate()
@@ -144,6 +81,73 @@ class remesh_iterative(bpy.types.Operator):
                     bpy.ops.object.material_slot_remove()
 
         return{'FINISHED'}
+
+class do_one_iteration(bpy.types.Operator):
+    bl_idname = "bakemyscan.remesh_one_iteration"
+    bl_label  = "Do one iteration for remshing"
+    bl_options = {"REGISTER", "UNDO"}
+
+    manifold     = bpy.props.BoolProperty(name="manifold", description="Make manifold", default=False)
+    vertex_group = bpy.props.BoolProperty(name="vertex_group", description="Use vertex group", default=False)
+
+    @classmethod
+    def poll(self, context):
+        #If more than two objects are selected
+        if len(context.selected_objects)!=1 or context.active_object is None:
+            return 0
+        #If something other than a MESH is selected
+        for o in context.selected_objects:
+            if o.type != "MESH":
+                return 0
+        if context.mode!="OBJECT" and context.mode!="SCULPT":
+            return 0
+        return 1
+
+    def execute(self, context):
+
+        # 1 - planar decimation
+        bpy.ops.object.modifier_add(type='DECIMATE')
+        bpy.context.object.modifiers["Decimate"].decimate_type = 'DISSOLVE'
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
+
+        # 2 - triangulate the mesh
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.quads_convert_to_tris()
+        bpy.ops.object.editmode_toggle()
+
+        # 3 - smooth the vertices
+        bpy.ops.object.modifier_add(type='SMOOTH')
+        bpy.context.object.modifiers["Smooth"].iterations = 1
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
+
+        # 4 - decimate it
+        bpy.ops.object.modifier_add(type='DECIMATE')
+        bpy.context.object.modifiers["Decimate"].ratio = 0.8
+        if len(bpy.context.object.vertex_groups)>0 and self.vertex_group:
+            bpy.context.object.modifiers["Decimate"].vertex_group = bpy.context.object.vertex_groups[0].name
+            bpy.context.object.modifiers["Decimate"].vertex_group_factor = 0.75
+            bpy.context.object.modifiers["Decimate"].invert_vertex_group = True
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
+
+
+        # 5 - shrinkwrap to the original
+        bpy.ops.object.modifier_add(type='SHRINKWRAP')
+        bpy.context.object.modifiers["Shrinkwrap"].target = bpy.types.Scene.hr
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
+
+        # 6 - Remove non manifold and doubles
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.remove_doubles(threshold=0.0001)
+        bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
+        bpy.ops.mesh.vert_connect_nonplanar()
+        if self.manifold:
+            addon_utils.enable("object_print3d_utils")
+            bpy.ops.mesh.print3d_clean_non_manifold()
+        bpy.ops.object.editmode_toggle()
+
+        return{'FINISHED'}
+
 
 def register() :
     bpy.utils.register_class(do_one_iteration)

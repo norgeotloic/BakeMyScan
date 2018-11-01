@@ -18,7 +18,7 @@ class remesh_decimate(bpy.types.Operator):
         for o in context.selected_objects:
             if o.type != "MESH":
                 return 0
-        if context.mode!="OBJECT":
+        if context.mode!="OBJECT" and context.mode!="SCULPT":
             return 0
         return 1
 
@@ -29,6 +29,9 @@ class remesh_decimate(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
+        #Go into object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
         #Duplicate the original mesh and make it active
         hr = context.scene.objects.active
         bpy.ops.object.duplicate()

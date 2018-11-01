@@ -20,7 +20,7 @@ class remesh_quadriflow(bpy.types.Operator):
         for o in context.selected_objects:
             if o.type != "MESH":
                 return 0
-        if context.mode!="OBJECT":
+        if context.mode!="OBJECT" and context.mode!="SCULPT":
             return 0
         return 1
 
@@ -32,6 +32,9 @@ class remesh_quadriflow(bpy.types.Operator):
         col = self.layout.column(align=True)
 
     def execute(self, context):
+        #Go into object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
         obj    = context.active_object
 
