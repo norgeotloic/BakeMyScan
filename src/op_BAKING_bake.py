@@ -110,7 +110,14 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         #Get the directory to save the images to
-        self.directory = os.path.abspath(os.path.dirname(self.properties.filepath)) if os.path.isfile(self.properties.filepath) else os.path.abspath(self.properties.filepath)
+        print(self.filepath)
+        if os.path.exists(self.filepath):
+            if os.path.isdir(self.filepath):
+                self.directory = os.path.abspath(self.filepath)
+            else:
+                self.directory = os.path.abspath(os.path.dirname(self.filepath))
+        else:
+            self.directory = os.path.abspath(os.path.dirname(self.filepath))
 
         #Find which object is the source and which is the target
         source, target = None, None
