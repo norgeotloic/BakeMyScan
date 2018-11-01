@@ -24,15 +24,11 @@ class bake_to_vertex_colors(bpy.types.Operator):
         #If something other than a MESH is selected
         if context.active_object.type != "MESH":
             return 0
-        #The source object must have correct materials
-        if len(context.active_object.material_slots)==0:
-            return 0
         #Each material must be not None and have nodes
-        for slot in context.active_object.material_slots:
-            if slot.material is None:
-                return 0
-            if slot.material.use_nodes == False:
-                return 0
+        if context.active_object.active_material is None:
+            return 0
+        if context.active_object.active_material.use_nodes:
+            return 0
         if context.mode!="OBJECT":
             return 0
         return 1

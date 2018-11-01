@@ -89,15 +89,11 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         #The source object must have correct materials
         source = [o for o in context.selected_objects if o!=context.active_object][0] if len(context.selected_objects)==2 else context.active_object
         target = context.active_object
-        #it must have slots
-        if len(source.material_slots)==0:
-            return 0
         #Each material must be not None and have nodes
-        for slot in source.material_slots:
-            if slot.material is None:
-                return 0
-            if slot.material.use_nodes == False:
-                return 0
+        if source.active_material is None:
+            return 0
+        if source.active_material.use_nodes == False:
+            return 0
         if context.mode!="OBJECT":
             return 0
         #The target object must have a UV layout
@@ -128,7 +124,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
             source = [o for o in context.selected_objects if o!=target][0]
 
         #Get the source material
-        material  = source.material_slots[0].material
+        material  = source.active_material
 
         # Set the baking parameters
         bpy.data.scenes["Scene"].render.bake.use_selected_to_active = True
@@ -157,7 +153,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
                 #Copy the active material, and assign it to the source
                 tmpMat      = fn_bake.create_source_baking_material(material, baketype)
                 tmpMat.name = material.name + "_" + baketype
-                source.material_slots[0].material = tmpMat
+                source.active_material = tmpMat
 
                 #Create a material for the target
                 targetMat = fn_bake.create_target_baking_material(target)
@@ -172,7 +168,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
 
                 #Remove the material and reassign the original one
                 targetMat.node_tree.nodes.remove(imgNode)
-                source.material_slots[0].material = material
+                source.active_material = material
                 bpy.data.materials.remove(tmpMat)
 
         #Bake the geometric normals with blender render
@@ -242,7 +238,7 @@ if source != target and self.bake_geometry and self.bake_surface:
     bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
     #Add a material for the normals mixing
     normalMat = bpy.data.materials.new("normalMat")
-    target.material_slots[0].material = normalMat
+    target.active_material = normalMat
     normalMat.use_nodes = True
     normalMat.node_tree.nodes.remove(normalMat.node_tree.nodes['Diffuse BSDF'])
     AN = normalMat.node_tree.nodes.new

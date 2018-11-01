@@ -146,10 +146,9 @@ if __name__ == "__main__":
             bpy.types.Scene.pbrtextures = json.load(fp)
     def assert_suzanne_has_material():
         obj = bpy.context.active_object
-        assert(len(obj.material_slots)>0)
-        assert(obj.material_slots[0].material is not None)
-        assert(obj.material_slots[0].material.use_nodes == True)
-        assert(len([x for x in obj.material_slots[0].material.node_tree.nodes if x.type=="GROUP"])>0)
+        assert(obj.active_material is not None)
+        assert(obj.active_material.use_nodes == True)
+        assert(len([x for x in obj.active_material.node_tree.nodes if x.type=="GROUP"])>0)
     def assert_suzanne_is_unwrapped():
         obj = bpy.data.objects["Suzanne"]
         assert(len(obj.data.uv_layers)>0)

@@ -47,10 +47,7 @@ class create_empty_material(bpy.types.Operator):
         _material.node_tree.links.new(_group.outputs["BSDF"], _materialOutput.inputs[0] )
 
         #Assign the object after unwrapping and adding a material if none is present
-        if obj is not None:
-            if len(obj.material_slots)==0:
-                bpy.ops.object.material_slot_add()
-            obj.material_slots[0].material = _material
+        obj.active_material = _material
 
         return{'FINISHED'}
 
@@ -64,14 +61,16 @@ class create_empty_node(bpy.types.Operator):
         #Need to be in Cycles render mode
         if bpy.context.scene.render.engine != "CYCLES":
             return 0
-        if bpy.context.active_object is None:
+        if context.active_object is None:
+            return 0
+        if context.active_object.active_material is None:
             return 0
         if len([o for o in bpy.context.selected_objects if o.type=="MESH"])!=1:
             return 0
         return 1
 
     def execute(self, context):
-        mat = context.active_object.material_slots[0].material
+        mat = context.active_object.active_material
 
         #Create the group
         _group = add_empty_group_to_material(mat, context.active_object)

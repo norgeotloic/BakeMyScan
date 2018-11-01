@@ -39,7 +39,7 @@ for m in models:
     rootName = os.path.splitext(m)[0]
     obj = [o for o in bpy.data.objects if o.select][0]
     obj.name = rootName
-    mat = obj.material_slots[0].material
+    mat = obj.active_material
     mat.name = rootName
 
     #Import the albedo and normals if they exist

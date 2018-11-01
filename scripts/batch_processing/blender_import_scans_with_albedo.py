@@ -110,7 +110,7 @@ for directory in directories:
 
     #Add a new material
     mat = bpy.data.materials.new(name)
-    obj.material_slots[0].material = mat
+    obj.active_material = mat
 
     #Assign a texture to it
     image = bpy.data.images.load(image_path)
@@ -128,7 +128,7 @@ for directory in directories:
 """
 #Get the interesting stuff
 hr = bpy.context.active_object
-mat = hr.material_slots[0].material
+mat = hr.active_material
 
 bpy.ops.bakemyscan.remesh_iterative(limit=args.target)
 

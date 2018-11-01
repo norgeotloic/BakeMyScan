@@ -90,26 +90,6 @@ class node_from_library(bpy.types.Operator):
         for _type in mat:
             if mat[_type] is not None:
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=mat[_type])
-        """
-        materials = bpy.types.Scene.pbrtextures
-        obj = context.active_object
-        #Get the active material
-        mat = obj.material_slots[0].material
-        #Create the group
-        _group = mat.node_tree.nodes.new(type="ShaderNodeGroup")
-        _group.node_tree = fn_nodes.node_tree_pbr(materials[self.enum], name=self.enum)
-        _group.label = self.enum
-        #Set the default height to 2% of the object size and the UV scale factor to 1
-        _group.inputs["UV scale"].default_value = 1.0
-        _group.inputs["Height"].default_value = 0.02 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
-        #Select the group and link it to the mouse for better placement
-        for n in mat.node_tree.nodes:
-            n.select = False
-        _group.select = True
-        _group.location = context.space_data.cursor_location
-        mat.node_tree.nodes.active = _group
-        bpy.ops.node.translate_attach_remove_on_cancel('INVOKE_DEFAULT')
-        """
         return{'FINISHED'}
 
 def register() :

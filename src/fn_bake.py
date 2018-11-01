@@ -170,7 +170,7 @@ def create_target_baking_material(obj):
     #Add a new material called "baking" to the target
     bpy.ops.object.material_slot_add()
     _material = bpy.data.materials.new("baking")
-    obj.material_slots[0].material = _material
+    obj.active_material = _material
     _material.use_nodes = True
 
     return _material

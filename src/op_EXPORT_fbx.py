@@ -32,15 +32,11 @@ class export_fbx(bpy.types.Operator, ExportHelper):
         for o in context.selected_objects:
             if o.type != "MESH":
                 return 0
-        #it must have slots
-        if len(context.active_object.material_slots)==0:
-            return 0
         #Each material must be not None and have nodes
-        for slot in context.active_object.material_slots:
-            if slot.material is None:
+        if context.active_object.active_material is None:
                 return 0
-            if slot.material.use_nodes == False:
-                return 0
+        if context.active_object.active_material.use_nodes == False:
+            return 0
         if context.mode!="OBJECT":
             return 0
         return 1
@@ -72,8 +68,7 @@ class export_fbx(bpy.types.Operator, ExportHelper):
 
         #Move and update the textures
         bpy.ops.export_scene.fbx(filepath = self.filepath, use_selection=True)
-        mat = obj.material_slots[0].material
-        save_images(mat.node_tree, directory, name)
+        save_images(obj.active_material.node_tree, directory, name)
 
         return {'FINISHED'}
 
