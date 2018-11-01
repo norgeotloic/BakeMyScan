@@ -110,19 +110,31 @@ class BakingPanel(BakeMyScanPanel):
         return 1
 
     def draw(self, context):
-        self.layout.operator("bakemyscan.bake_textures",         icon="RENDER_STILL", text="Bake to textures")
-        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Bake to vertex color")
+        self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Textures to textures")
+        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Textures to vertex color")
 
 class ExportPanel(BakeMyScanPanel):
-    bl_space_type  = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category    = "BakeMyScan"
     bl_label       = "Export"
 
     def draw(self, context):
-        self.layout.operator("bakemyscan.export_orthoview",        icon="OUTLINER_OB_CAMERA", text="Ortho View")
+        self.layout.operator("bakemyscan.export_orthoview",        icon="RENDER_STILL", text="Ortho View")
         self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean not used")
         self.layout.operator("bakemyscan.export_fbx",              icon="EXPORT", text="Export to FBX")
+
+class AboutPanel(BakeMyScanPanel):
+    bl_label       = "About / Help"
+
+    def draw(self, context):
+        self.layout.label("BakeMyScan")
+        self.layout.operator("wm.url_open", text="Website",      icon_value=bpy.types.Scene.custom_icons["bakemyscan"].icon_id).url = "http://bakemyscan.org"
+        self.layout.operator("wm.url_open", text="Github",       icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
+        self.layout.operator("wm.url_open", text="Build status", icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"
+        self.layout.label("External software")
+        self.layout.operator("wm.url_open", text="MMGtools", icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id).url = "https://www.mmgtools.org/"
+        self.layout.operator("wm.url_open", text="Instant Meshes", icon_value=bpy.types.Scene.custom_icons["instant"].icon_id).url = "https://github.com/wjakob/instant-meshes"
+        self.layout.operator("wm.url_open", text="Quadriflow", icon="MOD_DECIM").url = "https://github.com/hjwdzh/QuadriFlow"
+        self.layout.operator("wm.url_open", text="Meshlab", icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id).url = "http://www.meshlab.net/"
+        self.layout.operator("wm.url_open", text="Imagemagick", icon_value=bpy.types.Scene.custom_icons["magick"].icon_id).url = "https://www.imagemagick.org/script/index.php"
 
 
 class fromSculptPanel(bpy.types.Panel):
@@ -154,6 +166,7 @@ def register():
     bpy.utils.register_class(UnwrapPanel)
     bpy.utils.register_class(BakingPanel)
     bpy.utils.register_class(ExportPanel)
+    bpy.utils.register_class(AboutPanel)
 
     bpy.utils.register_class(fromSculptPanel)
 
@@ -174,6 +187,7 @@ def unregister():
     bpy.utils.unregister_class(UnwrapPanel)
     bpy.utils.unregister_class(BakingPanel)
     bpy.utils.unregister_class(ExportPanel)
+    bpy.utils.unregister_class(AboutPanel)
 
     bpy.utils.unregister_class(fromSculptPanel)
 

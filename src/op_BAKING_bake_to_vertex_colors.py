@@ -7,7 +7,7 @@ from . import fn_bake
 class bake_to_vertex_colors(bpy.types.Operator):
     """Assume a PBR material is present, will bake from cycles"""
     bl_idname = "bakemyscan.bake_to_vertex_colors"
-    bl_label  = "Bake textures"
+    bl_label  = "Textures to vertex colors"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod

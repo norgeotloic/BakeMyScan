@@ -2,6 +2,8 @@
 import bpy
 from . import fn_nodes
 
+import tempfile
+
 def copy_cycles_material(material, name=None):
 
     _new_material = material.copy()

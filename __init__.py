@@ -47,6 +47,10 @@ def register():
     bpy.types.Scene.custom_icons.load("meshlab", os.path.join(icons_dir, "meshlab.png"), 'IMAGE')
     bpy.types.Scene.custom_icons.load("instant", os.path.join(icons_dir, "instant.png"), 'IMAGE')
     bpy.types.Scene.custom_icons.load("mmg", os.path.join(icons_dir, "mmg.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("bakemyscan", os.path.join(icons_dir, "bakemyscan.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("github", os.path.join(icons_dir, "github.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("travis", os.path.join(icons_dir, "travis.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("magick", os.path.join(icons_dir, "magick.png"), 'IMAGE')
 
 def unregister():
     for currentModuleName in modulesFullNames.values():

@@ -47,7 +47,7 @@ def bakeWithBlender(mat, nam, res, dir, fmt):
 
 class bake_cycles_textures(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.bake_textures"
-    bl_label  = "Bake textures"
+    bl_label  = "Textures to textures"
     bl_options = {"REGISTER", "UNDO"}
 
     filepath  = bpy.props.StringProperty(
