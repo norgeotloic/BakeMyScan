@@ -10,7 +10,7 @@ class assign_texture(bpy.types.Operator, ImportHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     filter_glob = bpy.props.StringProperty(
-        default="*" + ";*".join(bpy.path.extensions_image),
+        default="*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.exr",
         options={'HIDDEN'},
     )
     slot = bpy.props.EnumProperty(

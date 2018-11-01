@@ -41,7 +41,7 @@ class material_from_library(bpy.types.Operator):
 
     def execute(self, context):
         #Create an empty material
-        bpy.ops.bakemyscan.create_empty_material()
+        bpy.ops.bakemyscan.create_empty_material(name = self.enum)
         #Fill the textures
         mat = bpy.types.Scene.pbrtextures[self.enum]
         for _type in mat:
@@ -84,7 +84,7 @@ class node_from_library(bpy.types.Operator):
 
     def execute(self, context):
         #Create an empty node
-        bpy.ops.bakemyscan.create_empty_node()
+        bpy.ops.bakemyscan.create_empty_node(name = self.enum)
         #Fill the textures
         mat = bpy.types.Scene.pbrtextures[self.enum]
         for _type in mat:

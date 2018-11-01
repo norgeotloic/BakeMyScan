@@ -50,15 +50,17 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
     bl_label  = "Textures to textures"
     bl_options = {"REGISTER", "UNDO"}
 
+    filename_ext=''
+    use_filter=True
+    use_filter_folder=True
+
     filepath  = bpy.props.StringProperty(
         name="File Path",
         description="Filepath used for exporting the file",
         maxlen=1024,
         subtype='DIR_PATH',
         default="")
-    filename_ext=''
-    use_filter=True
-    use_filter_folder=True
+
 
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
     imgFormat      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
@@ -213,7 +215,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         for o in context.selected_objects:
             if o!=context.active_object:
                 o.select=False
-        bpy.ops.bakemyscan.create_empty_material()
+        bpy.ops.bakemyscan.create_empty_material(name="baking_" + context.active_object.name)
         for _type in importSettings:
             if importSettings[_type] is not None:
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type])
