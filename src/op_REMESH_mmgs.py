@@ -19,6 +19,8 @@ class remesh_mmgs(bpy.types.Operator):
     aniso  = bpy.props.BoolProperty(  name="aniso",  description="Enable anisotropy", default=False)
     nreg   = bpy.props.BoolProperty(  name="nreg",   description="Normal regulation", default=False)
 
+    advanced = bpy.props.BoolProperty(  name="advanced", description="advanced properties", default=False)
+
     @classmethod
     def poll(self, context):
         #mmgs must be installed
@@ -38,25 +40,30 @@ class remesh_mmgs(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
+    def check(self, context):
+        return True
+
     def draw(self, context):
         box = self.layout.box()
         box.label('Basic options')
         box.prop(self, "hausd",  text="Haussdorf distance (ratio)")
         box.prop(self, "smooth", text="Ignore angle detection (smooth)")
+
         box = self.layout.box()
-        box.label('Advanced options')
-        box.prop(self, "angle",  text="Angle detection (°)")
-        box.prop(self, "hmin",   text="Minimal edge size (ratio)")
-        box.prop(self, "hmax",   text="Maximal edge size (ratio)")
-        box.prop(self, "hgrad",  text="Gradation parameter")
-        box.prop(self, "aniso",  text="Enable anisotropy")
-        box.prop(self, "nreg",   text="Normal regulation")
+        box.prop(self, "advanced", text="Advanced options")
+        if self.advanced:
+            box.prop(self, "angle",  text="Angle detection (°)")
+            box.prop(self, "hmin",   text="Minimal edge size (ratio)")
+            box.prop(self, "hmax",   text="Maximal edge size (ratio)")
+            box.prop(self, "hgrad",  text="Gradation parameter")
+            box.prop(self, "aniso",  text="Enable anisotropy")
+            box.prop(self, "nreg",   text="Normal regulation")
         col = self.layout.column(align=True)
 
     def execute(self, context):
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
-        
+
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
         obj    = context.active_object
         maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )

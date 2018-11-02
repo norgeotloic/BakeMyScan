@@ -25,6 +25,8 @@ class remesh_instant(bpy.types.Operator):
     r = bpy.props.EnumProperty(items= ( ('r0', 'none', 'none'), ("2", "2", "2"), ("4", "4", "4"), ("6", "6", "6")) , name="r", description="Orientation symmetry type", default="r0")
     p = bpy.props.EnumProperty(items= ( ('p0', 'none', 'none'), ("4", "4", "4"), ("6", "6", "6")) , name="r", description="Position symmetry type", default="p0")
 
+    advanced = bpy.props.BoolProperty(  name="advanced", description="advanced properties", default=False)
+
     @classmethod
     def poll(self, context):
         #Instant meshes must be installed
@@ -41,35 +43,45 @@ class remesh_instant(bpy.types.Operator):
             return 0
         return 1
 
+    def check(self, context):
+        return True
+
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
         box = self.layout.box()
-        box.label('Basic options')
-        box.prop(self, "interactive", text="Open the GUI")
-        box.prop(self, "method", text="Remesh according to")
-        box.prop(self, "facescount",  text="Desired number of faces")
-        box.prop(self, "facescount",  text="Desired number of vertices")
-        box.prop(self, "edgelength",  text="Desired edge length (ratio)")
+        box.prop(self, "interactive", text="Interactive mode")
 
-        box = self.layout.box()
-        box.label('Advanced options')
-        box.prop(self, "d", text="Deterministic (slower)")
-        box.prop(self, "D", text="Tris/quads dominant instead of pure")
-        box.prop(self, "i", text="Intrinsic mode")
-        box.prop(self, "b", text="Align to boundaries")
-        box.prop(self, "C", text="Compatibility mode")
-        box.prop(self, "c", text="Creases angle threshold")
-        box.prop(self, "S", text="Smoothing reprojection steps")
-        box.prop(self, "r", text="Orientation symmetry type")
-        box.prop(self, "p", text="Position symmetry type")
+        if not self.interactive:
+            box.label('Basic options')
+            box.prop(self, "method", text="Remesh according to")
+            if self.method == "faces":
+                box.prop(self, "facescount",  text="Desired number of faces")
+            elif self.method == "verts":
+                box.prop(self, "vertscount",  text="Desired number of vertices")
+            elif self.method == "edges":
+                box.prop(self, "edgelength",  text="Desired edge length (ratio)")
+
+            box = self.layout.box()
+            box.prop(self, "advanced", text="Advanced options")
+            if self.advanced:
+                box.prop(self, "d", text="Deterministic (slower)")
+                box.prop(self, "D", text="Tris/quads dominant instead of pure")
+                box.prop(self, "i", text="Intrinsic mode")
+                box.prop(self, "b", text="Align to boundaries")
+                box.prop(self, "C", text="Compatibility mode")
+                box.prop(self, "c", text="Creases angle threshold")
+                box.prop(self, "S", text="Smoothing reprojection steps")
+                box.prop(self, "r", text="Orientation symmetry type")
+                box.prop(self, "p", text="Position symmetry type")
+                
         col = self.layout.column(align=True)
 
     def execute(self, context):
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
-        
+
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
         obj    = context.active_object
         maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
