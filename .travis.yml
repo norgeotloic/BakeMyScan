@@ -14,7 +14,6 @@ before_install:
   - sudo apt-get install blender
   - sudo apt-get install unzip
   - sudo apt-get install meshlab
-  - sudo apt-get install imagemagick
 
 install:
   # Update blender
@@ -42,6 +41,6 @@ install:
 
 script:
   #Try to set the user preferences
-  - blender/blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/userprefs.py -- --mmgs "bin/mmgs_O3" --instant "Instant/Instant Meshes" --convert "convert" --meshlabserver "LC_ALL=C meshlabserver"
+  - blender/blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/userprefs.py -- --mmgs "bin/mmgs_O3" --instant "Instant/Instant Meshes" --meshlabserver "LC_ALL=C meshlabserver"
   #Run the tests
   - blender/blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/tests.py

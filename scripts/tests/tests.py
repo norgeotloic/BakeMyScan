@@ -4,7 +4,7 @@
 #blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/tests.py
 
 #Need to have run the userprefs before:
-#blender --addons BakeMyScan --background --python BakeMyScan\scripts\tests\userprefs.py -- --mmgs bin/mmgs_O3 --instant 'Instant Meshes/Instant Meshes' --convert convert --meshlabserver 'LC_ALL=C meshlabserver'
+#blender --addons BakeMyScan --background --python BakeMyScan\scripts\tests\userprefs.py -- --mmgs bin/mmgs_O3 --instant 'Instant Meshes/Instant Meshes' --meshlabserver 'LC_ALL=C meshlabserver'
 
 import collections
 import bpy

@@ -101,9 +101,6 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         #The target object must have a UV layout
         if len(target.data.uv_layers) == 0:
             return 0
-        #convert must be installed
-        if context.user_preferences.addons["BakeMyScan"].preferences.convert == "":
-            return 0
         return 1
 
     def execute(self, context):
@@ -186,15 +183,10 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
 
             #Merging the normal maps with Imagemagick
             if self.bake_surface:
-                #Removing the blue channel from the material image
-                ARGS = "-channel Blue -evaluate set 0"
-                output, error, code = fn_soft.convert(NORM, TMP, ARGS, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
-                ARGS = "-compose overlay -composite"
-                output, error, code = fn_soft.convert(GEOM, OUT, ARGS, input2=TMP, executable=context.user_preferences.addons["BakeMyScan"].preferences.convert)
-                #Remove the old normal images (no blue channel, geometric normals...)
-                os.remove(GEOM)
-                os.remove(TMP)
-                os.remove(NORM)
+                new = fn_bake.overlay_normals(bpy.data.images.load(GEOM), bpy.data.images.load(NORM))
+                new.file_format = self.imgFormat
+                new.filepath_raw = OUT
+                new.save()
             else:
                 os.rename(GEOM, OUT)
 
@@ -227,55 +219,3 @@ def register() :
 
 def unregister() :
     bpy.utils.unregister_class(bake_cycles_textures)
-
-
-
-
-#Bake the geometric and surface normals to one (Imagemagick or node setup)
-"""
-if source != target and self.bake_geometry and self.bake_surface:
-    bpy.ops.object.select_all(action="DESELECT")
-    target.select = True
-    context.scene.objects.active = target
-    bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
-    #Add a material for the normals mixing
-    normalMat = bpy.data.materials.new("normalMat")
-    target.active_material = normalMat
-    normalMat.use_nodes = True
-    normalMat.node_tree.nodes.remove(normalMat.node_tree.nodes['Diffuse BSDF'])
-    AN = normalMat.node_tree.nodes.new
-    #Add the two normal maps
-    _normal_geometric = AN(type="ShaderNodeTexImage")
-    _normal_geometric.color_space = "NONE"
-    _normal_geometric.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal_geometric." + self.imgFormat.lower()), check_existing=False)
-    _normal_surface = AN(type="ShaderNodeTexImage")
-    _normal_surface.color_space = "NONE"
-    _normal_surface.image = bpy.data.images.load(os.path.join(self.directory, "baked_normal." + self.imgFormat.lower()), check_existing=False)
-    #Add a mixing group
-    _mix = AN(type="ShaderNodeGroup")
-    _mix.label = "Mix Normals"
-    _mix.node_tree = fn_nodes.node_tree_combine_normals_2()
-    _mix.inputs["Factor"].default_value=1.0
-    #Add a normal map node
-    _nmap = AN(type="ShaderNodeNormalMap")
-    #Add the normal to color node
-    _normal_to_color = AN(type="ShaderNodeGroup")
-    _normal_to_color.label = "Normals to color"
-    _normal_to_color.node_tree = fn_nodes.node_tree_normal_to_color()
-    #And an emission shader
-    _emission = AN(type="ShaderNodeEmission")
-    #Link everything
-    LN = normalMat.node_tree.links.new
-    LN(_normal_geometric.outputs["Color"], _mix.inputs["Geometry"])
-    LN(_normal_surface.outputs["Color"], _mix.inputs["Surface"])
-    LN(_mix.outputs["Color"], _nmap.inputs["Color"])
-    LN(_nmap.outputs["Normal"], _normal_to_color.inputs["Normal"])
-    LN(_normal_to_color.outputs["Color"], _emission.inputs["Color"])
-    LN(_emission.outputs["Emission"], normalMat.node_tree.nodes["Material Output"].inputs["Surface"])
-    #Add the image for the baking
-    imgNode = addImageNode(normalMat, "baked_normal_combined", self.resolution, self.directory, self.imgFormat)
-    #Bake, save and restore
-    bpy.ops.object.bake(type="EMIT")
-    imgNode.image.save()
-    #bpy.data.materials.remove(normalMat)
-"""

@@ -1,6 +1,7 @@
 # coding: utf8
 import bpy
 from . import fn_nodes
+import numpy as np
 
 import tempfile
 
@@ -123,6 +124,32 @@ def convert_principled_to_emission(node, tree, input_node):
 ################################################################################
 # "API" functions, referenced by the operator
 ################################################################################
+
+def overlay_normals(image1, image2, name="overlay"):
+
+    assert(image1.size[0] == image2.size[0])
+    assert(image1.size[1] == image2.size[1])
+    w,h = image1.size[0], image1.size[1]
+    pixels1 = np.array(image1.pixels).reshape((w,h,4))
+    pixels2 = np.array(image1.pixels).reshape((w,h,4))
+
+    #Remove the blue channel
+    pixels2[:,:,2]=0.
+
+    #Get the value from the firdt image
+    value = np.max(pixels1[:,:,:3], axis=2)
+    val = np.zeros((w,h,4))
+    val[:,:,0] = val[:,:,1] = val[:,:,2] = val[:,:,3] = value
+
+    #Compute the overlay
+    mult = pixels1*pixels2
+    comp = 1.0 - 2*(1.-pixels1)*(1.-pixels2)
+    pix = np.where(val<0.5, mult, comp)
+    pix[:,:,3]=1.
+
+    img = bpy.data.images.new("mix", w, h)
+    img.pixels = np.ravel(pix)
+    return img
 
 def create_source_baking_material(material, channel):
     #Create the new material
