@@ -136,12 +136,10 @@ class assign_texture(bpy.types.Operator, ImportHelper):
             LN(nodes.get("emission").outputs["Color"], nodes.get("emission_mix").inputs[0])
             LN(nodes.get("emission_shader").outputs["Emission"], nodes.get("emission_mix").inputs[2])
             LN(PR.outputs["BSDF"], nodes.get("emission_mix").inputs[1])
-            LN(nodes.get("emission_mix").outputs["Shader"], nodes.get("output").inputs["BSDF"])
         if self.slot == "opacity" and nodes.get("opacity") is not None:
-            LN(nodes.get("opacity").outputs["Color"], nodes.get("opacity_shader").inputs["Color"])
+            #LN(nodes.get("opacity").outputs["Color"], nodes.get("opacity_shader").inputs["Color"])
             LN(nodes.get("opacity").outputs["Color"], nodes.get("opacity_mix").inputs[0])
             LN(nodes.get("opacity_shader").outputs["BSDF"], nodes.get("opacity_mix").inputs[1])
-            LN(nodes.get("opacity_mix").outputs["Shader"], nodes.get("output").inputs["BSDF"])
             if nodes.get("emission").image is not None:
                 LN(nodes.get("emission_mix").outputs["Shader"], nodes.get("opacity_mix").inputs[2])
             else:

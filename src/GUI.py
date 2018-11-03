@@ -51,8 +51,10 @@ class MaterialPanel(BakeMyScanPanel):
 def setworldintensity(self, context):
     bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
     return None
+
 class IntensityProperty(bpy.types.PropertyGroup):
     intensity =  bpy.props.FloatProperty(name="intensity", description="HDRI intensity", default=1, min=0., max=10000., update=setworldintensity)
+
 class HDRIPanel(BakeMyScanPanel):
     """Creates a Panel in the Object properties window"""
     bl_label       = "HDRI"
@@ -77,7 +79,7 @@ class HDRIPanel(BakeMyScanPanel):
         row = layout.row()
         row.template_icon_view(wm, "my_previews")
 
-        layout.prop(context.scene.intensity, "intensity", text="HDRI intensity", icon="WORLD")
+        layout.prop(context.scene.intensity, "intensity", text="HDRI intensity")
 
 class RemeshPanel(BakeMyScanPanel):
     bl_label       = "Remesh"
@@ -111,7 +113,7 @@ class BakingPanel(BakeMyScanPanel):
 
     def draw(self, context):
         self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Textures to textures")
-        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Textures to vertex color")
+        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Albedo to vertex color")
 
 class ExportPanel(BakeMyScanPanel):
     bl_label       = "Export"

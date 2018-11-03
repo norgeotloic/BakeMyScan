@@ -38,6 +38,10 @@ class remesh_quads(bpy.types.Operator):
         bpy.ops.object.duplicate()
         lr = context.scene.objects.active
 
+        #Apply the modifiers
+        for m in lr.modifiers:
+            bpy.ops.object.modifier_apply(modifier=m.name)
+
         #Decimate it
         bpy.ops.object.modifier_add(type='DECIMATE')
         bpy.context.object.modifiers["Decimate"].ratio = self.ratio

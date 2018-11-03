@@ -37,6 +37,10 @@ class remesh_decimate(bpy.types.Operator):
         bpy.ops.object.duplicate()
         lr = context.scene.objects.active
 
+        #Apply the modifiers
+        for m in lr.modifiers:
+            bpy.ops.object.modifier_apply(modifier=m.name)
+
         #First coarse decimate or mmgs or meshlabserver to get a medium poly
         lr.modifiers.new("decimate", type='DECIMATE')
         lr.modifiers["decimate"].ratio = float(self.limit/len(lr.data.polygons))

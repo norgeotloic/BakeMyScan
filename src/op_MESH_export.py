@@ -81,9 +81,9 @@ class export_mesh(bpy.types.Operator, ExportHelper):
             for i,t in enumerate(mesh.polygons):
                 for j,v in enumerate(t.vertices):
                     try:
-                        cols[v] = 1. - float(GROUP.weight(v))
+                        cols[v] = 1.0 - float(GROUP.weight(v))
                     except:
-                        continue
+                        cols[v] = 1.0
             exportMesh.scalars = fn_msh.np.array(cols)*(self.maxiSol - self.miniSol) + self.miniSol
             exportMesh.writeSol(self.filepath.replace(".mesh", ".sol"))
 

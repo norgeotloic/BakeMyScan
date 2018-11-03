@@ -10,6 +10,7 @@ class save_json_library(bpy.types.Operator, ExportHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     filename_ext=".json"
+    filter_glob = bpy.props.StringProperty(default="*.json", options={'HIDDEN'})
 
     @classmethod
     def poll(self, context):

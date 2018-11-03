@@ -27,7 +27,7 @@ class bake_to_vertex_colors(bpy.types.Operator):
         #Each material must be not None and have nodes
         if context.active_object.active_material is None:
             return 0
-        if context.active_object.active_material.use_nodes:
+        if not context.active_object.active_material.use_nodes:
             return 0
         if context.mode!="OBJECT":
             return 0
@@ -88,6 +88,14 @@ class bake_to_vertex_colors(bpy.types.Operator):
         #Reset to Cycles
         bpy.context.scene.render.engine = 'CYCLES'
         mat.use_nodes = True
+
+        #Switch to vertex paint mode
+        try:
+            bpy.context.space_data.viewport_shade = 'SOLID'
+            bpy.ops.paint.vertex_paint_toggle()
+        except:
+            pass
+
 
         return{'FINISHED'}
 

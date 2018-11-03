@@ -2,6 +2,10 @@ import imghdr
 import os
 import re
 
+def rreplace(s, old, new):
+    li = s.rsplit(old, 1)
+    return new.join(li)
+
 def normalize_name(str):
     #https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
     _rep     = {
@@ -78,7 +82,7 @@ def find_pattern_in_image(f):
         for suffix in patterns[slot]:
             name = os.path.splitext(f)[0].lower().strip()
             if name.endswith(suffix):
-                name = name.replace(suffix,"")
+                name = rreplace(name, suffix,"")#This fixes a case like "greasy_metal_roughness"
                 while name.endswith("_"):
                     name = name[:-1]
                 return slot, name

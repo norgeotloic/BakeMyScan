@@ -99,15 +99,10 @@ def parameter_to_node(tree, parameter):
     #print(parameter, _node)
     return _node
 
-def node_tree_pbr(settings, name="Material"):
-    #Get the group if it already exists
-    """
-    if bpy.data.node_groups.get(name):
-        _node_tree = bpy.data.node_groups.get(name)
-        return _node_tree
-    """
+def node_tree_pbr():
+
     #Create the group and its input/output sockets
-    _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name=name)
+    _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name="group")
     _node_tree.inputs.new('NodeSocketFloat','UV scale')
     _node_tree.inputs.new('NodeSocketFloat','Height')
     _node_tree.outputs.new('NodeSocketShader','BSDF')
@@ -123,57 +118,37 @@ def node_tree_pbr(settings, name="Material"):
     #Nodes
     _principled  = AN(type="ShaderNodeBsdfPrincipled")
     _principled.name = _principled.label = "BakeMyScan PBR"
-    _albedo      = parameter_to_node(_node_tree, settings["albedo"])     if "albedo"     in settings else None
-    _ao          = parameter_to_node(_node_tree, settings["ao"])         if "ao"         in settings else None
-    _metallic    = parameter_to_node(_node_tree, settings["metallic"])   if "metallic"   in settings else None
-    _roughness   = parameter_to_node(_node_tree, settings["roughness"])  if "roughness"  in settings else None
-    _glossiness  = parameter_to_node(_node_tree, settings["glossiness"]) if "glossiness" in settings else None
-    _normal      = parameter_to_node(_node_tree, settings["normal"])     if "normal"     in settings else None
-    _surface     = parameter_to_node(_node_tree, settings["surface"])    if "surface"    in settings else None
-    _height      = parameter_to_node(_node_tree, settings["height"])     if "height"     in settings else None
-    _opacity     = parameter_to_node(_node_tree, settings["opacity"])    if "opacity"    in settings else None
-    _emission    = parameter_to_node(_node_tree, settings["emission"])   if "emission"   in settings else None
-    _vertexcolors = AN(type="ShaderNodeAttribute") if "vertexcolors" in settings else None
-    #If the dictionnary is empty, create images for each of them
-    if len(settings)==0:
-        _albedo     = AN(type="ShaderNodeTexImage")
-        _ao         = AN(type="ShaderNodeTexImage")
-        _metallic   = AN(type="ShaderNodeTexImage")
-        _roughness  = AN(type="ShaderNodeTexImage")
-        _glossiness = AN(type="ShaderNodeTexImage")
-        _normal     = AN(type="ShaderNodeTexImage")
-        _height     = AN(type="ShaderNodeTexImage")
-        _opacity    = AN(type="ShaderNodeTexImage")
-        _emission   = AN(type="ShaderNodeTexImage")
-        _vertexcolors = AN(type="ShaderNodeAttribute")
+    #Create images for each of them
+    _albedo     = AN(type="ShaderNodeTexImage")
+    _ao         = AN(type="ShaderNodeTexImage")
+    _metallic   = AN(type="ShaderNodeTexImage")
+    _roughness  = AN(type="ShaderNodeTexImage")
+    _glossiness = AN(type="ShaderNodeTexImage")
+    _normal     = AN(type="ShaderNodeTexImage")
+    _height     = AN(type="ShaderNodeTexImage")
+    _opacity    = AN(type="ShaderNodeTexImage")
+    _emission   = AN(type="ShaderNodeTexImage")
+    _vertexcolors = AN(type="ShaderNodeAttribute")
     #Set the nodes names to get them later
-    if _albedo is not None:
-        _albedo.name     = _albedo.label     = "albedo"
-    if _ao is not None:
-        _ao.name         = _ao.label         = "ao"
-    if _metallic is not None:
-        _metallic.name   = _metallic.label   = "metallic"
-    if _roughness is not None:
-        _roughness.name  = _roughness.label  = "roughness"
-    if _glossiness is not None:
-        _glossiness.name = _glossiness.label = "glossiness"
-    if _normal is not None:
-        _normal.name     = _normal.label     = "normal"
-    if _height is not None:
-        _height.name     = _height.label     = "height"
-    if _opacity is not None:
-        _opacity.name    = _opacity.label    = "opacity"
-    if _emission is not None:
-        _emission.name   = _emission.label   = "emission"
+    _albedo.name     = _albedo.label     = "albedo"
+    _ao.name         = _ao.label         = "ao"
+    _metallic.name   = _metallic.label   = "metallic"
+    _roughness.name  = _roughness.label  = "roughness"
+    _glossiness.name = _glossiness.label = "glossiness"
+    _normal.name     = _normal.label     = "normal"
+    _height.name     = _height.label     = "height"
+    _opacity.name    = _opacity.label    = "opacity"
+    _emission.name   = _emission.label   = "emission"
+    _vertexcolors.name = _vertexcolors.label = "vertexcolors"
     #Add te other nodes (mix, inverts, maps...)
-    _bump              = AN(type="ShaderNodeBump") if (_normal is not None or _height is not None) else None
-    _nmap              = AN(type="ShaderNodeNormalMap") if (_normal is not None) else None
-    _ao_mix            = AN(type="ShaderNodeMixRGB") if (_ao is not None) else None
-    _opacity_mix       = AN(type="ShaderNodeMixShader") if (_opacity  is not None) else None
-    _opacity_shader    = AN(type="ShaderNodeBsdfTransparent") if (_opacity  is not None) else None
-    _emission_mix      = AN(type="ShaderNodeMixShader") if (_emission is not None) else None
-    _emission_shader   = AN(type="ShaderNodeEmission") if (_emission  is not None) else None
-    _glossiness_invert = AN(type="ShaderNodeInvert") if (_glossiness is not None) else None
+    _bump              = AN(type="ShaderNodeBump")
+    _nmap              = AN(type="ShaderNodeNormalMap")
+    _ao_mix            = AN(type="ShaderNodeMixRGB")
+    _opacity_mix       = AN(type="ShaderNodeMixShader")
+    _opacity_shader    = AN(type="ShaderNodeBsdfTransparent")
+    _emission_mix      = AN(type="ShaderNodeMixShader")
+    _emission_shader   = AN(type="ShaderNodeEmission")
+    _glossiness_invert = AN(type="ShaderNodeInvert")
     _reroute  = AN(type="NodeReroute")
     _uv       = AN(type="ShaderNodeUVMap")
     _mapping  = AN(type="ShaderNodeMapping")
@@ -182,32 +157,31 @@ def node_tree_pbr(settings, name="Material"):
     _scaley   = AN(type="ShaderNodeMath")
     _scalez   = AN(type="ShaderNodeMath")
     _combine  = AN(type="ShaderNodeCombineXYZ")
+    #Parameters for opacity and emission
+    _emission_mix.inputs[0].default_value = 0.
+    _opacity_mix.inputs[0].default_value  = 1.
     #Other nodes names to fill them in
-    if len(settings)==0:
-        _vertexcolors.label = _vertexcolors.name = "vertexcolors"
-        _bump.label = _bump.name = "bump"
-        _nmap.label = _nmap.name = "nmap"
-        _ao_mix.label = _ao_mix.name = "ao_mix"
-        _opacity_mix.label = _opacity_mix.name = "opacity_mix"
-        _opacity_shader.label = _opacity_shader.name = "opacity_shader"
-        _emission_mix.label = _emission_mix.name = "emission_mix"
-        _emission_shader.label = _emission_shader.name = "emission_shader"
-        _glossiness_invert.label = _glossiness_invert.name = "glossiness_invert"
-        _reroute.label = _reroute.name = "reroute"
-        _uv.label = _uv.name = "uv"
-        _mapping.label = _mapping.name = "mapping"
-        _separate.label = _separate.name = "separate"
-        _scalex.label = _scalex.name = "scalex"
-        _scaley.label = _scaley.name = "scaley"
-        _scalez.label = _scalez.name = "scalez"
-        _combine.label = _combine.name = "combine"
+    _bump.label = _bump.name = "bump"
+    _nmap.label = _nmap.name = "nmap"
+    _ao_mix.label = _ao_mix.name = "ao_mix"
+    _opacity_mix.label = _opacity_mix.name = "opacity_mix"
+    _opacity_shader.label = _opacity_shader.name = "opacity_shader"
+    _emission_mix.label = _emission_mix.name = "emission_mix"
+    _emission_shader.label = _emission_shader.name = "emission_shader"
+    _glossiness_invert.label = _glossiness_invert.name = "glossiness_invert"
+    _reroute.label = _reroute.name = "reroute"
+    _uv.label = _uv.name = "uv"
+    _mapping.label = _mapping.name = "mapping"
+    _separate.label = _separate.name = "separate"
+    _scalex.label = _scalex.name = "scalex"
+    _scaley.label = _scaley.name = "scaley"
+    _scalez.label = _scalez.name = "scalez"
+    _combine.label = _combine.name = "combine"
     #Parameters
     _scalex.operation = _scaley.operation = _scalez.operation = 'MULTIPLY'
     _scalex.inputs[1].default_value = _scaley.inputs[1].default_value = _scalez.inputs[1].default_value = 1
-    if _ao_mix is not None:
-        _ao_mix.blend_type = "MULTIPLY"
-    if _vertexcolors is not None:
-        _vertexcolors.attribute_name = "Col"
+    _ao_mix.blend_type = "MULTIPLY"
+    _vertexcolors.attribute_name = "Col"
     #Links
     LN(_principled.outputs["BSDF"], _output.inputs["BSDF"])
     LN(_input.outputs["UV scale"], _reroute.inputs[0])
@@ -225,45 +199,21 @@ def node_tree_pbr(settings, name="Material"):
     for node in _node_tree.nodes:
         if node.type == "TEX_IMAGE":
             LN(_combine.outputs["Vector"], node.inputs["Vector"])
-    if _albedo is not None and "albedo" in settings:
-        LN(_albedo.outputs["Color"], _principled.inputs["Base Color"])
-    if _ao is not None and "ao" in settings:
-        LN(_albedo.outputs["Color"], _ao_mix.inputs[1])
-        LN(_ao.outputs["Color"], _ao_mix.inputs[2])
-        LN(_ao_mix.outputs["Color"], _principled.inputs["Base Color"])
-    if _vertexcolors is not None and "vertexcolors" in settings:
-        LN(_vertexcolors.outputs["Color"], _principled.inputs["Base Color"])
-    if _metallic is not None and "metallic" in settings:
-        LN(_metallic.outputs["Color"], _principled.inputs["Metallic"])
-    if _roughness is not None and "roughness" in settings:
-        LN(_roughness.outputs["Color"], _principled.inputs["Roughness"])
-    if _glossiness is not None and "glossiness" in settings:
-        LN(_glossiness.outputs["Color"], _glossiness_invert.inputs["Color"])
-        LN(_glossiness_invert.outputs["Color"], _principled.inputs["Roughness"])
-    if _bump is not None and ("normal" in settings or "surface" in settings or "height" in settings):
-        LN(_bump.outputs["Normal"], _principled.inputs["Normal"])
-        if _height is not None and "height" in settings:
-            LN(_input.outputs["Height"], _bump.inputs["Distance"])
-            LN(_height.outputs["Color"], _bump.inputs["Height"])
-        if _nmap is not None and ("normal" in settings or "surface" in settings):
-            LN(_normal.outputs["Color"], _nmap.inputs["Color"])
-            LN(_nmap.outputs["Normal"], _bump.inputs["Normal"])
-    #Post shader emission and opacity mix
-    if _emission is not None and "emission" in settings:
-        LN(_emission.outputs["Color"], _emission_shader.inputs["Color"])
-        LN(_emission.outputs["Color"], _emission_mix.inputs[0])
-        LN(_emission_shader.outputs["Emission"], _emission_mix.inputs[2])
-        LN(_principled.outputs["BSDF"], _emission_mix.inputs[1])
-        LN(_emission_mix.outputs["Shader"], _output.inputs["BSDF"])
-    if _opacity is not None and "opacity" in settings:
-        LN(_opacity.outputs["Color"], _opacity_shader.inputs["Color"])
-        LN(_opacity.outputs["Color"], _opacity_mix.inputs[0])
-        LN(_opacity_shader.outputs["BSDF"], _opacity_mix.inputs[1])
-        LN(_opacity_mix.outputs["Shader"], _output.inputs["BSDF"])
-        if _emission is not None and "emission" in settings:
-            LN(_emission_mix.outputs["Shader"], _opacity_mix.inputs[2])
-        else:
-            LN(_principled.outputs["BSDF"], _opacity_mix.inputs[2])
+
+
+    LN(_glossiness.outputs["Color"], _glossiness_invert.inputs["Color"])
+    LN(_bump.outputs["Normal"], _principled.inputs["Normal"])
+    LN(_input.outputs["Height"], _bump.inputs["Distance"])
+    LN(_nmap.outputs["Normal"], _bump.inputs["Normal"])
+
+    #Opacity and emission
+    LN(_emission_shader.outputs["Emission"], _emission_mix.inputs[2])
+    LN(_principled.outputs["BSDF"], _emission_mix.inputs[1])
+    LN(_emission_mix.outputs["Shader"], _opacity_mix.inputs[2])
+    LN(_opacity_shader.outputs["BSDF"], _opacity_mix.inputs[1])
+    LN(_opacity_mix.outputs["Shader"], _output.inputs["BSDF"])
+
+
     #Position everything
     _output.location     = [200,0]
     _principled.location = [0,0]
@@ -278,51 +228,34 @@ def node_tree_pbr(settings, name="Material"):
     _scalez.location   = [-1200,-100]
     _combine.location  = [-1000, 0]
     #Input nodes for the principled node
-    if _albedo is not None:
-        _albedo.location = [-200,0]
-    if _ao is not None:
-        _albedo.location = [-400,100]
-        _ao.location = [-400,-100]
-        _ao_mix.location = [-200, 0]
-    if _vertexcolors is not None:
-        _vertexcolors.location = [-400,0]
-    if _metallic is not None:
-        _metallic.location = [-200, -200]
-        if _metallic.type == "TEX_IMAGE":
-            _metallic.color_space = "NONE"
-    if _roughness is not None:
-        _roughness.location = [-200, -400]
-        if _roughness.type == "TEX_IMAGE":
-            _roughness.color_space = "NONE"
-    if _glossiness is not None:
-        _glossiness.location = [-400, -400]
-        _glossiness_invert.location = [-200, -400]
-        if _glossiness.type == "TEX_IMAGE":
-            _glossiness.color_space = "NONE"
-    if _bump is not None:
-        _bump.location = [-200, -600]
-    if _nmap is not None:
-        _nmap.location = [-400, -700]
-    if _height is not None:
-        _height.location = [-400, -500]
-    if _normal is not None:
-        _normal.location = [-600, -700]
-        if _normal.type == "TEX_IMAGE":
-            _normal.color_space = "NONE"
+    _albedo.location = [-200,0]
+    _albedo.location = [-400,100]
+    _ao.location = [-400,-100]
+    _ao_mix.location = [-200, 0]
+    _vertexcolors.location = [-400,0]
+    _metallic.location = [-200, -200]
+    _metallic.color_space = "NONE"
+    _roughness.location = [-200, -400]
+    _roughness.color_space = "NONE"
+    _glossiness.location = [-400, -400]
+    _glossiness_invert.location = [-200, -400]
+    _glossiness.color_space = "NONE"
+    _bump.location = [-200, -600]
+    _nmap.location = [-400, -700]
+    _height.location = [-400, -500]
+    _normal.location = [-600, -700]
+    _normal.color_space = "NONE"
     #Post-shader emission and opacity mix
-    if _emission is not None:
-        _emission.location = [-200, 200]
-        _emission_shader.location = [0, 200]
-        _emission_mix.location = [200, 100]
-    if _opacity is not None:
-        off = [400,200] if _emission is not None else [0,0]
-        _opacity.location = [-200 + off[0], 200 + off[1]]
-        _opacity_shader.location = [0 + off[0], 200 + off[1]]
-        _opacity_mix.location = [200 + off[0], 100 + off[1]]
-    if (_emission is not None and _opacity is None) or (_emission is None and _opacity is not None):
-        _output.location = [400,200]
-    if _emission is not None and _opacity is not None:
-        _output.location = [800,400]
+
+    _emission.location = [-200, 200]
+    _emission_shader.location = [0, 200]
+    _emission_mix.location = [200, 100]
+    off = [400,200]
+    _opacity.location = [-200 + off[0], 200 + off[1]]
+    _opacity_shader.location = [0 + off[0], 200 + off[1]]
+    _opacity_mix.location = [200 + off[0], 100 + off[1]]
+    _output.location = [800,400]
+
     #Collapse all the nodes
     for n in _node_tree.nodes:
         if n.type!="BSDF_PRINCIPLED":

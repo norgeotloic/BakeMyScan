@@ -5,7 +5,7 @@ from . import fn_nodes
 def add_empty_group_to_material(_material, obj, name="PBR"):
     #Create and link the PBR group node
     _group = _material.node_tree.nodes.new(type="ShaderNodeGroup")
-    _group.node_tree = fn_nodes.node_tree_pbr(settings={}, name=name)
+    _group.node_tree = fn_nodes.node_tree_pbr()
     _group.label = name
     _group.name  = name
     #Set the default height to 2% of the object size and the UV scale factor to 1

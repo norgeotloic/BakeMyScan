@@ -4,6 +4,7 @@ from . import fn_nodes
 from . import fn_soft
 from . import fn_bake
 import numpy as np
+import collections
 
 def addImageNode(mat, nam, res):
     if bpy.data.images.get(nam):
@@ -81,7 +82,7 @@ class bake_cycles_textures(bpy.types.Operator):
         if bpy.context.scene.render.engine!="CYCLES":
             return 0
         #If more than two objects are selected
-        if len(context.selected_objects)>2:
+        if len(context.selected_objects)!=2:
             return 0
         #If no object is active
         if context.active_object is None:
@@ -128,14 +129,13 @@ class bake_cycles_textures(bpy.types.Operator):
         bpy.data.scenes["Scene"].render.bake.cage_extrusion = self.cageRatio * max(max(dims[0], dims[1]), dims[2])
 
         #Proceed to the different channels baking
-        toBake = {
-            "Base Color": self.bake_albedo,
-            "Metallic": self.bake_metallic,
-            "Roughness": self.bake_roughness,
-            "Normal": self.bake_surface,
-            "Emission": self.bake_emission,
-            "Opacity": self.bake_opacity
-        }
+        toBake = collections.OrderedDict()
+        toBake["Base Color"] = self.bake_albedo
+        toBake["Metallic"]   = self.bake_metallic
+        toBake["Roughness"]  = self.bake_roughness
+        toBake["Normal"]     = self.bake_surface
+        toBake["Emission"]   = self.bake_emission
+        toBake["Opacity"]    = self.bake_opacity
 
         #Keep track of the baked images
         baked = {}
