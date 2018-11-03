@@ -26,8 +26,10 @@ class export_mesh(bpy.types.Operator, ExportHelper):
     )
 
     #Operator properties
-    miniSol     = bpy.props.FloatProperty(name="miniSol", description="Minimum scalar", default=0.01, subtype="FACTOR")
-    maxiSol     = bpy.props.FloatProperty(name="maxiSol", description="Maximum scalar", default=1, subtype="FACTOR")
+    writeSol    = bpy.props.FloatProperty(name="writeSol", description="Write the .sol if weight paints are present", default=False)
+    miniSol     = bpy.props.FloatProperty(name="miniSol",  description="Minimum scalar", default=0.01, subtype="FACTOR")
+    maxiSol     = bpy.props.FloatProperty(name="maxiSol",  description="Maximum scalar", default=1, subtype="FACTOR")
+
 
     @classmethod
     def poll(cls, context):
@@ -73,16 +75,16 @@ class export_mesh(bpy.types.Operator, ExportHelper):
 
         #Write a solution file according to the weight paint mode
         vgrp = bpy.context.active_object.vertex_groups.keys()
-        if(len(vgrp)>0):
+        if len(vgrp)>0 and self.writeSol:
             GROUP = bpy.context.active_object.vertex_groups.active
             cols = [0.0] * len(verts)
             for i,t in enumerate(mesh.polygons):
                 for j,v in enumerate(t.vertices):
                     try:
-                        cols[v] = float(GROUP.weight(v))
+                        cols[v] = 1. - float(GROUP.weight(v))
                     except:
                         continue
-            exportMesh.scalars = fn_msh.np.array(cols)*(self.maxiSol - self.miniSol) + self.minisol
+            exportMesh.scalars = fn_msh.np.array(cols)*(self.maxiSol - self.miniSol) + self.miniSol
             exportMesh.writeSol(self.filepath.replace(".mesh", ".sol"))
 
         #Delete the copy of the original mesh

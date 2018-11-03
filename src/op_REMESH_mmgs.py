@@ -20,6 +20,7 @@ class remesh_mmgs(bpy.types.Operator):
     nreg   = bpy.props.BoolProperty(  name="nreg",   description="Normal regulation", default=False)
 
     advanced = bpy.props.BoolProperty(  name="advanced", description="advanced properties", default=False)
+    weight   = bpy.props.BoolProperty(  name="weight", description="weight as edge length", default=False)
 
     @classmethod
     def poll(self, context):
@@ -50,14 +51,27 @@ class remesh_mmgs(bpy.types.Operator):
         box.prop(self, "smooth", text="Ignore angle detection (smooth)")
 
         box = self.layout.box()
+        box.prop(self, "weight", text="Use weight paint")
+        if self.weight:
+            box.label('Warning!')
+            box.label('Low weights (blue) <-> max size')
+            box.label('High weights (red) <-> min size')
+            box.label('Min size too low -> very long!')
+            box.label('Try defaults first!')
+            box.prop(self, "hmin",   text="Minimal edge size (ratio)")
+            box.prop(self, "hmax",   text="Maximal edge size (ratio)")
+
+        box = self.layout.box()
         box.prop(self, "advanced", text="Advanced options")
         if self.advanced:
             box.prop(self, "angle",  text="Angle detection (°)")
-            box.prop(self, "hmin",   text="Minimal edge size (ratio)")
-            box.prop(self, "hmax",   text="Maximal edge size (ratio)")
+            if not self.weight:
+                box.prop(self, "hmin",   text="Minimal edge size (ratio)")
+                box.prop(self, "hmax",   text="Maximal edge size (ratio)")
             box.prop(self, "hgrad",  text="Gradation parameter")
             box.prop(self, "aniso",  text="Enable anisotropy")
             box.prop(self, "nreg",   text="Normal regulation")
+
         col = self.layout.column(align=True)
 
     def execute(self, context):
@@ -72,7 +86,7 @@ class remesh_mmgs(bpy.types.Operator):
         tmpDir = tempfile.TemporaryDirectory()
         IN  = os.path.join(tmpDir.name, "tmp.mesh")
         OUT = os.path.join(tmpDir.name, "tmp.o.mesh")
-        bpy.ops.bakemyscan.export_mesh(filepath=IN)
+        bpy.ops.bakemyscan.export_mesh(filepath=IN, writeSol=self.weight, miniSol=self.hmin * maxDim, maxiSol=self.hmax * maxDim)
 
         #Remesh
         exe = context.user_preferences.addons["BakeMyScan"].preferences.mmgs
@@ -85,9 +99,9 @@ class remesh_mmgs(bpy.types.Operator):
             hmin        = self.hmin * maxDim,
             hmax        = self.hmax * maxDim,
             ar          = self.angle,
-            nr          = True if self.smooth else False,
-            aniso       = True if self.aniso else False,
-            nreg        = True if self.nreg else False
+            nr          = self.smooth,
+            aniso       = self.aniso,
+            nreg        = self.nreg,
         )
 
         #Reimport
