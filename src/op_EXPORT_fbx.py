@@ -3,19 +3,18 @@ from bpy_extras.io_utils import ExportHelper
 import os
 import shutil
 
-class export_fbx(bpy.types.Operator, ExportHelper):
-    bl_idname = "bakemyscan.export_fbx"
-    bl_label  = "Exports the model to a .fbx"
+class export(bpy.types.Operator, ExportHelper):
+    bl_idname = "bakemyscan.export"
+    bl_label  = "Exports model and associated textures"
     bl_options = {"REGISTER", "UNDO"}
 
-    filename_ext = ".fbx"
-    filter_glob = bpy.props.StringProperty(default="*.fbx", options={'HIDDEN'})
-    filepath = bpy.props.StringProperty(
-        name="Export fbx file",
-        description="New fbx file to export to",
-        maxlen= 1024,
-        default= ""
+    filename_ext=""
+    filter_glob = bpy.props.StringProperty(
+        default="*.fbx;*.obj;*.ply",
+        options={'HIDDEN'},
     )
+
+    fmt = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="fmt", description="Image format", default="JPEG")
 
     @classmethod
     def poll(self, context):
@@ -54,11 +53,15 @@ class export_fbx(bpy.types.Operator, ExportHelper):
                 if node.type=="TEX_IMAGE":
                     img = node.image
                     if img is not None:
-                        path = os.path.abspath(os.path.join(directory, name + "_" + img.name.split("_")[-1].split(".")[0]))
+                        imageName = name + "_" + img.name.split("_")[-1].split(".")[0]
+                        imageFormat = "png" if self.fmt == "PNG" else "jpg"
+                        path = os.path.abspath(os.path.join(directory, imageName + "." + imageFormat))
                         #If the image is a file
                         if img.source=="FILE":
+                            img.filepath_raw = path
+                            img.file_format = self.fmt
                             img.save()
-                            shutil.copyfile(img.filepath_raw, path)
+                            #shutil.copyfile(img.filepath_raw, path)
                             #os.remove(node.image.filepath_raw)
                         else:
                             img.filepath_raw = path
@@ -66,14 +69,24 @@ class export_fbx(bpy.types.Operator, ExportHelper):
                 elif node.type == "GROUP":
                     save_images(node.node_tree, directory, name)
 
-        #Move and update the textures
-        bpy.ops.export_scene.fbx(filepath = self.filepath, use_selection=True)
+        #Save the model
+        if self.filepath.endswith("fbx"):
+            bpy.ops.export_scene.fbx(filepath = self.filepath, use_selection=True)
+        elif self.filepath.endswith("obj"):
+            bpy.ops.export_scene.obj(filepath = self.filepath, use_selection=True)
+        elif self.filepath.endswith("ply"):
+            bpy.ops.export_mesh.ply(filepath = self.filepath)
+        else:
+            print("File format not supported!")
+            return {"CANCELLED"}
+
+        #Save the textures
         save_images(obj.active_material.node_tree, directory, name)
 
         return {'FINISHED'}
 
 def register() :
-    bpy.utils.register_class(export_fbx)
+    bpy.utils.register_class(export)
 
 def unregister() :
-    bpy.utils.unregister_class(export_fbx)
+    bpy.utils.unregister_class(export)

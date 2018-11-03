@@ -119,7 +119,7 @@ class ExportPanel(BakeMyScanPanel):
     def draw(self, context):
         self.layout.operator("bakemyscan.export_orthoview",        icon="RENDER_STILL", text="Ortho View")
         self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean not used")
-        self.layout.operator("bakemyscan.export_fbx",              icon="EXPORT", text="Export to FBX")
+        self.layout.operator("bakemyscan.export",                  icon="EXPORT", text="Export model and textures")
 
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "About / Help"
