@@ -1,16 +1,13 @@
 import bpy
 import os
-from bpy_extras.io_utils import ExportHelper
 from . import fn_nodes
 from . import fn_soft
 from . import fn_bake
 
-def addImageNode(mat, nam, res, dir, fmt):
+def addImageNode(mat, nam, res):
     if bpy.data.images.get(nam):
         bpy.data.images.remove(bpy.data.images.get(nam))
     _image                     = bpy.data.images.new(nam, res, res)
-    _image.filepath_raw        = os.path.join(os.path.abspath(dir), nam + "." + fmt.lower())
-    _image.file_format         = fmt
     _imagenode                 = mat.node_tree.nodes.new(type="ShaderNodeTexImage") if not mat.node_tree.nodes.get("img") else mat.node_tree.nodes.get("img")
     _imagenode.name            = "img"
     _imagenode.select          = True
@@ -18,15 +15,13 @@ def addImageNode(mat, nam, res, dir, fmt):
     _imagenode.image           = _image
     return _imagenode
 
-def bakeWithBlender(mat, nam, res, dir, fmt):
+def bakeWithBlender(mat, nam, res):
     restore = mat.use_nodes
     engine  = bpy.context.scene.render.engine
     bpy.context.scene.render.engine="BLENDER_RENDER"
     if bpy.data.images.get(nam):
         bpy.data.images.remove(bpy.data.images.get(nam))
     image = bpy.data.images.new(nam, res, res)
-    image.filepath_raw = os.path.join(os.path.abspath(dir), nam + "." + fmt.lower())
-    image.file_format  = fmt
     tex = bpy.data.textures.new( nam, type = 'IMAGE')
     tex.image = image
     mat.use_nodes = False
@@ -40,38 +35,44 @@ def bakeWithBlender(mat, nam, res, dir, fmt):
     bpy.context.object.active_material.use_textures[0] = False
     bpy.context.scene.render.bake_type = "NORMALS"
     bpy.ops.object.bake_image()
-    image.save()
     bpy.ops.object.editmode_toggle()
     mat.use_nodes = restore
     bpy.context.scene.render.engine=engine
+    return image
 
-class bake_cycles_textures(bpy.types.Operator, ExportHelper):
+class bake_cycles_textures(bpy.types.Operator):
     bl_idname = "bakemyscan.bake_textures"
     bl_label  = "Textures to textures"
     bl_options = {"REGISTER", "UNDO"}
 
-    filename_ext=''
-    use_filter=True
-    use_filter_folder=True
-
-    filepath  = bpy.props.StringProperty(
-        name="File Path",
-        description="Filepath used for exporting the file",
-        maxlen=1024,
-        subtype='DIR_PATH',
-        default="")
-
-
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
-    imgFormat      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="imgFormat", description="image format", default="JPEG")
     cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.1, min=0.00001, max=5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
-    bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=False)
+    bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=True)
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
     bake_metallic  = bpy.props.BoolProperty(name="bake_metallic",  description="metalness", default=False)
     bake_roughness = bpy.props.BoolProperty(name="bake_roughness", description="roughness", default=False)
     bake_emission  = bpy.props.BoolProperty(name="bake_emission", description="emission", default=False)
     bake_opacity   = bpy.props.BoolProperty(name="bake_opacity",   description="opacity", default=False)
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        box = self.layout.box()
+        box.prop(self, "resolution", text="Image resolution")
+        box.prop(self, "cageRatio",  text="Relative cage size")
+        box = self.layout.box()
+        box.label("PBR channels")
+        box.prop(self, "bake_albedo",    text="Albedo")
+        box.prop(self, "bake_metallic",  text="Metallic")
+        box.prop(self, "bake_roughness", text="Roughness")
+        box.label("Other channels")
+        box.prop(self, "bake_geometry", text="Geometric normals")
+        box.prop(self, "bake_surface",  text="Surface normals")
+        box.prop(self, "bake_emission", text="Emission")
+        box.prop(self, "bake_opacity",  text="Opacity")
+        col = self.layout.column(align=True)
 
     @classmethod
     def poll(self, context):
@@ -104,15 +105,6 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         return 1
 
     def execute(self, context):
-        #Get the directory to save the images to
-        print(self.filepath)
-        if os.path.exists(self.filepath):
-            if os.path.isdir(self.filepath):
-                self.directory = os.path.abspath(self.filepath)
-            else:
-                self.directory = os.path.abspath(os.path.dirname(self.filepath))
-        else:
-            self.directory = os.path.abspath(os.path.dirname(self.filepath))
 
         #Find which object is the source and which is the target
         source, target = None, None
@@ -145,6 +137,9 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
             "Opacity": self.bake_opacity
         }
 
+        #Keep track of the baked images
+        baked = {}
+
         #Bake the Principled shader slots by transforming them to temporary emission shaders
         for baketype in toBake:
             if toBake[baketype]:
@@ -159,48 +154,32 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
 
                 #Add an image node to the material with the baked result image assigned
                 suffix   = baketype.replace(" ", "").lower()
-                imgNode  = addImageNode(targetMat, "baked_" + suffix, self.resolution, self.directory, self.imgFormat)
+                imgNode  = addImageNode(targetMat, "baked_" + suffix, self.resolution)
 
                 #Do the baking and save the image
                 bpy.ops.object.bake(type="EMIT")
-                imgNode.image.save()
+                baked[baketype] = imgNode.image
 
                 #Remove the material and reassign the original one
                 targetMat.node_tree.nodes.remove(imgNode)
                 source.active_material = material
                 bpy.data.materials.remove(tmpMat)
 
-        #Bake the geometric normals with blender render
+        #Bake and mix the normal maps
         if source != target and self.bake_geometry:
-
-            #Bake the normals with blender
-            D    = os.path.abspath(self.directory)
-            GEOM = os.path.join(D, "baked_geometry." + self.imgFormat.lower())
-            NORM = os.path.join(D, "baked_normal."   + self.imgFormat.lower())
-            TMP  = os.path.join(D, "baked_tmp."      + self.imgFormat.lower())
-            OUT  = os.path.join(D, "baked_normals."  + self.imgFormat.lower())
-            bakeWithBlender(targetMat, "baked_geometry", self.resolution, D, self.imgFormat)
-
-            #Merging the normal maps with Imagemagick
             if self.bake_surface:
-                new = fn_bake.overlay_normals(bpy.data.images.load(GEOM), bpy.data.images.load(NORM))
-                new.file_format = self.imgFormat
-                new.filepath_raw = OUT
-                new.save()
+                baked["Geometry"] = bakeWithBlender(targetMat, "baked_geometry", self.resolution)
+                baked["Normal"] = fn_bake.overlay_normals(baked["Geometry"], baked["Normal"])
             else:
-                os.rename(GEOM, OUT)
-
-        # Import the resulting material
-        def getbaked(baketype):
-            return os.path.join(self.directory, "baked_" + baketype.replace(" ", "").lower() + "." + self.imgFormat.lower())
+                baked["Normal"] = bakeWithBlender(targetMat, "baked_normal", self.resolution)
 
         importSettings = {
-            "albedo":    getbaked("Base Color") if self.bake_albedo else None,
-            "metallic":  getbaked("Metallic")   if self.bake_metallic else None,
-            "roughness": getbaked("Roughness")  if self.bake_roughness else None,
-            "normal":    getbaked("Normals")    if self.bake_geometry or self.bake_surface else None,
-            "emission":  getbaked("Emission")   if self.bake_emission else None,
-            "opacity":   getbaked("Opacity")    if self.bake_opacity else None
+            "albedo":    baked["Base Color"] if self.bake_albedo else None,
+            "metallic":  baked["Metallic"]   if self.bake_metallic else None,
+            "roughness": baked["Roughness"]  if self.bake_roughness else None,
+            "normal":    baked["Normal"]     if self.bake_geometry or self.bake_surface else None,
+            "emission":  baked["Emission"]   if self.bake_emission else None,
+            "opacity":   baked["Opacity"]    if self.bake_opacity else None
         }
 
         #Init the material
@@ -210,7 +189,7 @@ class bake_cycles_textures(bpy.types.Operator, ExportHelper):
         bpy.ops.bakemyscan.create_empty_material(name="baking_" + context.active_object.name)
         for _type in importSettings:
             if importSettings[_type] is not None:
-                bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type])
+                bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type].name, byname=True)
 
         return{'FINISHED'}
 

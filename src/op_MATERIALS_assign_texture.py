@@ -1,6 +1,7 @@
 # coding: utf8
 import bpy
 from   bpy_extras.io_utils import ImportHelper
+import os
 
 from . import fn_nodes
 
@@ -29,6 +30,8 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         description="image type",
         default="albedo"
     )
+
+    byname = bpy.props.BoolProperty(name="byname", description="pass images by name instead of files", default=False)
 
     @classmethod
     def poll(self, context):
@@ -84,9 +87,21 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         #Load the image in the image node
         imageNode = nodes.get(self.slot)
         if imageNode is None:
+            print("Can not find node %s in material %s" % (self.slot, mat.name))
             return {'CANCELLED'}
         else:
-            imageNode.image = bpy.data.images.load(self.filepath, check_existing=True)
+            #Pass the images by name
+            if self.byname:
+                if bpy.data.images.get(self.filepath) is not None:
+                    imageNode.image = bpy.data.images.get(self.filepath)
+                else:
+                    print("No image named %s found" % self.filepath)
+            #Pass the images by path
+            else:
+                if os.path.exists(self.filepath):
+                    imageNode.image = bpy.data.images.load(self.filepath, check_existing=True)
+                else:
+                    print("%s not found" % self.filepath)
 
         #Get the link function
         LN = group.node_tree.links.new
