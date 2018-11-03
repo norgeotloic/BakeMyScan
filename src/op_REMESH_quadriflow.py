@@ -34,7 +34,7 @@ class remesh_quadriflow(bpy.types.Operator):
     def execute(self, context):
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
-        
+
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
         obj    = context.active_object
 

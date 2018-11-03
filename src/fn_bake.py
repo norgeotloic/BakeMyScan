@@ -131,7 +131,7 @@ def overlay_normals(image1, image2, name="overlay"):
     assert(image1.size[1] == image2.size[1])
     w,h = image1.size[0], image1.size[1]
     pixels1 = np.array(image1.pixels).reshape((w,h,4))
-    pixels2 = np.array(image1.pixels).reshape((w,h,4))
+    pixels2 = np.array(image2.pixels).reshape((w,h,4))
 
     #Remove the blue channel
     pixels2[:,:,2]=0.
@@ -147,7 +147,7 @@ def overlay_normals(image1, image2, name="overlay"):
     pix = np.where(val<0.5, mult, comp)
     pix[:,:,3]=1.
 
-    img = bpy.data.images.new("mix", w, h)
+    img = bpy.data.images.new(name, w, h)
     img.pixels = np.ravel(pix)
     return img
 
@@ -186,6 +186,17 @@ def create_source_baking_material(material, channel):
             _input_node = fill_input_slot(n["node"], n["tree"], channel)
             convert_principled_to_emission(n["node"], n["tree"], _input_node)
 
+    #Turn all non colors textures, except normals, to colors
+    _image_nodes = get_all_nodes_in_material(_new_material, "TEX_IMAGE")
+    for n in [x["node"] for x in _image_nodes]:
+        if len(n.outputs["Color"].links)>0:
+            isNormal = False
+            for l in n.outputs["Color"].links:
+                if l.to_node is not None:
+                    if l.to_node.type=="NORMAL_MAP":
+                        isNormal = True
+            if not isNormal:
+                n.color_space = "COLOR"
     return _new_material
 
 def create_target_baking_material(obj):

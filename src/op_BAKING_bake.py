@@ -3,6 +3,7 @@ import os
 from . import fn_nodes
 from . import fn_soft
 from . import fn_bake
+import numpy as np
 
 def addImageNode(mat, nam, res):
     if bpy.data.images.get(nam):
@@ -125,7 +126,6 @@ class bake_cycles_textures(bpy.types.Operator):
         dims = source.dimensions
         bpy.data.scenes["Scene"].render.bake.use_cage = True
         bpy.data.scenes["Scene"].render.bake.cage_extrusion = self.cageRatio * max(max(dims[0], dims[1]), dims[2])
-        bpy.data.scenes["Scene"].render.bake.use_clear = True
 
         #Proceed to the different channels baking
         toBake = {
@@ -139,10 +139,14 @@ class bake_cycles_textures(bpy.types.Operator):
 
         #Keep track of the baked images
         baked = {}
+        #Give a prefix to the image names
+        prefix = target.name.replace("_","").replace(" ","").replace(".","").replace("-","").lower() + "_baked"
 
         #Bake the Principled shader slots by transforming them to temporary emission shaders
         for baketype in toBake:
             if toBake[baketype]:
+
+
 
                 #Copy the active material, and assign it to the source
                 tmpMat      = fn_bake.create_source_baking_material(material, baketype)
@@ -153,10 +157,17 @@ class bake_cycles_textures(bpy.types.Operator):
                 targetMat = fn_bake.create_target_baking_material(target)
 
                 #Add an image node to the material with the baked result image assigned
-                suffix   = baketype.replace(" ", "").lower()
-                imgNode  = addImageNode(targetMat, "baked_" + suffix, self.resolution)
+                suffix     = baketype.replace(" ", "").lower()
+                imgNode    = addImageNode(targetMat, prefix + "_" + suffix, self.resolution)
 
-                #Do the baking and save the image
+                #If we are in normal baking, make the background neutral and do no use clear
+                if baketype == "Normal":
+                    bpy.data.scenes["Scene"].render.bake.use_clear = False
+                    pixels = np.zeros((self.resolution, self.resolution, 4))
+                    pixels[:,:,:] = [0.5, 0.5, 1, 1]
+                    imgNode.image.pixels = np.ravel(pixels)
+
+                #Do the baking and keep the image
                 bpy.ops.object.bake(type="EMIT")
                 baked[baketype] = imgNode.image
 
@@ -164,20 +175,27 @@ class bake_cycles_textures(bpy.types.Operator):
                 targetMat.node_tree.nodes.remove(imgNode)
                 source.active_material = material
                 bpy.data.materials.remove(tmpMat)
+                bpy.data.scenes["Scene"].render.bake.use_clear = True
 
         #Bake and mix the normal maps
-        if source != target and self.bake_geometry:
+        if self.bake_geometry:
             if self.bake_surface:
-                baked["Geometry"] = bakeWithBlender(targetMat, "baked_geometry", self.resolution)
-                baked["Normal"] = fn_bake.overlay_normals(baked["Geometry"], baked["Normal"])
+                baked["Geometry"] = bakeWithBlender(targetMat, prefix + "_geometry", self.resolution)
+                baked["Normals"] = fn_bake.overlay_normals(baked["Geometry"], baked["Normal"], prefix + "_normals")
+                bpy.data.images.remove(baked["Geometry"])
+                bpy.data.images.remove(baked["Normal"])
             else:
-                baked["Normal"] = bakeWithBlender(targetMat, "baked_normal", self.resolution)
+                baked["Normals"] = bakeWithBlender(targetMat, prefix + "_normals", self.resolution)
+        else:
+            if self.bake_surface:
+                baked["Normals"] = baked["Normal"]
+                baked["Normals"].name = prefix + "_normals"
 
         importSettings = {
             "albedo":    baked["Base Color"] if self.bake_albedo else None,
             "metallic":  baked["Metallic"]   if self.bake_metallic else None,
             "roughness": baked["Roughness"]  if self.bake_roughness else None,
-            "normal":    baked["Normal"]     if self.bake_geometry or self.bake_surface else None,
+            "normal":    baked["Normals"]     if self.bake_geometry or self.bake_surface else None,
             "emission":  baked["Emission"]   if self.bake_emission else None,
             "opacity":   baked["Opacity"]    if self.bake_opacity else None
         }
@@ -186,7 +204,7 @@ class bake_cycles_textures(bpy.types.Operator):
         for o in context.selected_objects:
             if o!=context.active_object:
                 o.select=False
-        bpy.ops.bakemyscan.create_empty_material(name="baking_" + context.active_object.name)
+        bpy.ops.bakemyscan.create_empty_material(name=prefix+"_material")
         for _type in importSettings:
             if importSettings[_type] is not None:
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type].name, byname=True)

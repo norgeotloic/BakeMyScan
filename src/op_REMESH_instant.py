@@ -75,7 +75,7 @@ class remesh_instant(bpy.types.Operator):
                 box.prop(self, "S", text="Smoothing reprojection steps")
                 box.prop(self, "r", text="Orientation symmetry type")
                 box.prop(self, "p", text="Position symmetry type")
-                
+
         col = self.layout.column(align=True)
 
     def execute(self, context):

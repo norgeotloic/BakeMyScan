@@ -7,9 +7,10 @@ def add_empty_group_to_material(_material, obj, name="PBR"):
     _group = _material.node_tree.nodes.new(type="ShaderNodeGroup")
     _group.node_tree = fn_nodes.node_tree_pbr(settings={}, name=name)
     _group.label = name
+    _group.name  = name
     #Set the default height to 2% of the object size and the UV scale factor to 1
     _group.inputs["UV scale"].default_value = 1.0
-    _group.inputs["Height"].default_value   = 0.02 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
+    _group.inputs["Height"].default_value   = 0.005 * max( max(obj.dimensions[0], obj.dimensions[1]), obj.dimensions[2] )
     return _group
 
 class create_empty_material(bpy.types.Operator):

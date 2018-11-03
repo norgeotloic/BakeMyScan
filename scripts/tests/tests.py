@@ -177,11 +177,10 @@ if __name__ == "__main__":
         assert(active.active_material.use_nodes==True)
         for img in bpy.data.images:
             print(img.name)
-        assert(bpy.data.images.get("baked_basecolor") is not None)
-        assert(bpy.data.images.get("baked_roughness") is not None)
-        assert(bpy.data.images.get("baked_metallic") is not None)
-        assert(bpy.data.images.get("baked_normal") is not None)
-        assert(bpy.data.images.get("baked_geometry") is not None)
+        assert(bpy.data.images.get("suzanne001_baked_basecolor") is not None)
+        assert(bpy.data.images.get("suzanne001_baked_roughness") is not None)
+        assert(bpy.data.images.get("suzanne001_baked_metallic") is not None)
+        assert(bpy.data.images.get("suzanne001_baked_normals") is not None)
     def assert_mesh_file_created():
         assert(os.path.exists(_PATH("suzanne.mesh")))
         os.remove(_PATH("suzanne.mesh"))
