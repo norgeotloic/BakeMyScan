@@ -13,6 +13,13 @@ import time
 import sys
 import json
 
+#Do we stop the execution on error?
+_BREAK = False
+#Path to the local_directory
+_DIR = os.path.dirname(__file__)
+def _PATH(f):
+    return os.path.join(_DIR, f)
+
 ################################################################################
 # 1 - A class to manage the execution of the different test cases
 ################################################################################
@@ -31,7 +38,7 @@ class TestSequence:
         #Empty pbrtextures
         bpy.types.Scene.pbrtextures = {}
         #Relmove the temporary .json file
-        jsonfile = os.path.join(os.path.dirname(__file__), "test.json")
+        jsonfile = os.path.join(_DIR, "test.json")
         if os.path.exists(jsonfile):
             os.remove(jsonfile)
 
@@ -57,8 +64,7 @@ class TestSequence:
             args              = OP["args"]
             t = time.time()
 
-            #Run the operator and wrapper functions
-            try:
+            def EXECUTE():
                 #Reset the file
                 if OP["reset"]:
                     self.reset()
@@ -76,34 +82,43 @@ class TestSequence:
                 else:
                     #The poll function did not return, context is incorrect
                     OP["status"] = "CONTEXT"
-            #If an error occured
-            except:
+            def ONFAILURE():
                 print("Error using %s" % OP["name"])
                 OP["status"] = "FAILURE"
+                if _BREAK:
+                    sys.exit(11)
+
+            #Run the operator and wrapper functions
+            if _BREAK:
+                EXECUTE()
+            else:
+                try:
+                    EXECUTE()
+                except:
+                    ONFAILURE()
 
             OP["time"] = time.time() - t
 
     def report(self):
         nTests  = len(self.operators.keys())
         nPassed = 0
+
         #Count the number of passed tests
         for operator in self.operators:
             if self.operators[operator]["status"] == "SUCCESS":
                 nPassed+=1
             else:
                 pass
+
         #Return and print according to the number of successful tests
+        for operator in self.operators:
+            OP = self.operators[operator]
+            print("%s: %s in %f s" % (operator.ljust(30), OP["status"], OP["time"]) )
         if nPassed == nTests:
             print("Successfully ran the %d tests" % nTests)
-            for operator in self.operators:
-                OP = self.operators[operator]
-                print("%s: %s in %f s" % (operator.ljust(30), OP["status"], OP["time"]) )
             return 0
         else:
             print("Failed %d tests out of %d" % (nTests - nPassed, nTests))
-            for operator in self.operators:
-                OP = self.operators[operator]
-                print("%s: %s in %f s" % (operator.ljust(30), OP["status"], OP["time"]) )
             return 1
 
 ################################################################################
@@ -111,6 +126,7 @@ class TestSequence:
 ################################################################################
 
 if __name__ == "__main__":
+
     TESTS = TestSequence()
     TESTS.reset()
 
@@ -142,7 +158,7 @@ if __name__ == "__main__":
     def assert_pbr_library_non_empty():
         assert(len(bpy.types.Scene.pbrtextures.keys())>0)
     def assert_json_non_empty():
-        with open(os.path.join(os.path.dirname(__file__),"test.json"), 'r') as fp:
+        with open(_PATH("test.json"), 'r') as fp:
             bpy.types.Scene.pbrtextures = json.load(fp)
     def assert_suzanne_has_material():
         obj = bpy.context.active_object
@@ -153,27 +169,47 @@ if __name__ == "__main__":
         obj = bpy.data.objects["Suzanne"]
         assert(len(obj.data.uv_layers)>0)
     def assert_orthoview_created():
-        assert(os.path.exists(os.path.join(os.path.dirname(__file__),"orthoview.png")))
-        os.remove(os.path.join(os.path.dirname(__file__),"orthoview.png"))
+        assert(os.path.exists(_PATH("orthoview.png")))
+        os.remove(_PATH("orthoview.png"))
     def assert_baked_textures():
-        alb = os.path.join(os.path.dirname(__file__), "baked_basecolor.png")
-        nor = os.path.join(os.path.dirname(__file__), "baked_normals.png")
-        rou = os.path.join(os.path.dirname(__file__), "baked_roughness.png")
-        met = os.path.join(os.path.dirname(__file__), "baked_metallic.png")
-        assert(os.path.exists(alb))
-        assert(os.path.exists(nor))
-        assert(os.path.exists(rou))
-        assert(os.path.exists(met))
-        os.remove(alb)
-        os.remove(nor)
-        os.remove(rou)
-        os.remove(met)
+        active = bpy.context.active_object
+        assert(active.active_material is not None)
+        assert(active.active_material.use_nodes==True)
+        for img in bpy.data.images:
+            print(img.name)
+        assert(bpy.data.images.get("baked_basecolor") is not None)
+        assert(bpy.data.images.get("baked_roughness") is not None)
+        assert(bpy.data.images.get("baked_metallic") is not None)
+        assert(bpy.data.images.get("baked_normal") is not None)
+        assert(bpy.data.images.get("baked_geometry") is not None)
     def assert_mesh_file_created():
-        assert(os.path.exists(os.path.join(os.path.dirname(__file__),"suzanne.mesh")))
-        os.remove(os.path.join(os.path.dirname(__file__),"suzanne.mesh"))
+        assert(os.path.exists(_PATH("suzanne.mesh")))
+        os.remove(_PATH("suzanne.mesh"))
     def assert_cube_read():
         assert( len(bpy.data.objects) == 1 )
         assert( len(bpy.context.active_object.data.polygons) == 12 )
+    def assert_fbx_file_and_textures():
+        assert(os.path.exists(_PATH("model.fbx")))
+        os.remove(_PATH("model.fbx"))
+        assert(len([x for x in os.listdir(_DIR) if x.endswith(".png") and x.startswith("model_")])>1)
+        for f in os.listdir(_DIR):
+            if f.startswith("model_") and f.endswith(".png"):
+                os.remove(_PATH(f))
+    def assert_ply_file_and_textures():
+        assert(os.path.exists(_PATH("model.ply")))
+        assert(len([x for x in os.listdir(_DIR) if x.endswith(".jpg") and x.startswith("model_")])>1)
+        os.remove(_PATH("model.ply"))
+        for f in os.listdir(_DIR):
+            if f.startswith("model_") and f.endswith(".jpg"):
+                os.remove(_PATH(f))
+    def assert_obj_file_and_textures():
+        assert(os.path.exists(_PATH("model.obj")))
+        assert(len([x for x in os.listdir(_DIR) if x.endswith(".jpg") and x.startswith("model_")])>1)
+        os.remove(_PATH("model.obj"))
+        os.remove(_PATH("model.mtl"))
+        for f in os.listdir(_DIR):
+            if f.startswith("model_") and f.endswith(".jpg"):
+                os.remove(_PATH(f))
 
     ############################################################################
     # 2.1 - Testing the import operators on cubes in different formats
@@ -183,7 +219,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_obj",
         operator="import_scan",
-        args = {"filepath": os.path.join(os.path.dirname(__file__), "cube.obj")},
+        args = {"filepath": _PATH( "cube.obj")},
         after = assert_model_imported
     )
 
@@ -191,7 +227,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_ply",
         operator="import_scan",
-        args = {"filepath": os.path.join(os.path.dirname(__file__), "cube.ply")},
+        args = {"filepath": _PATH( "cube.ply")},
         after = assert_model_imported
     )
 
@@ -199,7 +235,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_stl",
         operator="import_scan",
-        args = {"filepath": os.path.join(os.path.dirname(__file__), "cube.stl")},
+        args = {"filepath": _PATH( "cube.stl")},
         after = assert_model_imported
     )
 
@@ -207,7 +243,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_fbx",
         operator="import_scan",
-        args = {"filepath": os.path.join(os.path.dirname(__file__), "cube.fbx")},
+        args = {"filepath": _PATH( "cube.fbx")},
         after = assert_model_imported
     )
 
@@ -215,7 +251,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_dae",
         operator="import_scan",
-        args = {"filepath": os.path.join(os.path.dirname(__file__), "cube.dae")},
+        args = {"filepath": _PATH( "cube.dae")},
         after = assert_model_imported
     )
 
@@ -223,7 +259,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_x3d",
         operator="import_scan",
-        args = {"filepath": os.path.join(os.path.dirname(__file__), "cube.x3d")},
+        args = {"filepath": _PATH( "cube.x3d")},
         after = assert_model_imported
     )
 
@@ -316,7 +352,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="create_library",
         operator="create_library",
-        args={"filepath":os.path.dirname(__file__)},
+        args={"filepath":_DIR},
         after=assert_pbr_library_non_empty,
         reset=True
     )
@@ -335,7 +371,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="save_json",
         operator="save_json_library",
-        args={"filepath":os.path.join(os.path.dirname(__file__),"test.json")},
+        args={"filepath":_PATH("test.json")},
         after=assert_json_non_empty,
         reset=False
     )
@@ -344,7 +380,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="load_json",
         operator="load_json_library",
-        args={"filepath":os.path.join(os.path.dirname(__file__),"test.json")},
+        args={"filepath":_PATH("test.json")},
         before=empty_material_library,
         after=assert_pbr_library_non_empty,
         reset=False
@@ -403,7 +439,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="assign_albedo",
         operator="assign_texture",
-        args={"slot":"albedo", "filepath":os.path.join(os.path.dirname(__file__),"stick_albedo.jpg")},
+        args={"slot":"albedo", "filepath":_PATH("stick_albedo.jpg")},
         reset=False,
     )
 
@@ -411,7 +447,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="assign_normals",
         operator="assign_texture",
-        args={"slot":"normal", "filepath":os.path.join(os.path.dirname(__file__),"stick_normals.jpg")},
+        args={"slot":"normal", "filepath":_PATH("stick_normals.jpg")},
         reset=False,
     )
 
@@ -419,14 +455,12 @@ if __name__ == "__main__":
     # 2.7 - Texture baking (mixing everything)
     ############################################################################
 
-    #Remesh suzanne
+    #Bake the textures
     TESTS.add_operator(
         name="bake_textures",
         operator="bake_textures",
         args={
-            "filepath":os.path.dirname(__file__),
             "resolution": 64,
-            "imgFormat": "PNG",
             "bake_albedo": True,
             "bake_geometry": True,
             "bake_surface": True,
@@ -448,11 +482,38 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="export_orthoview",
         operator="export_orthoview",
-        args={"filepath":os.path.join(os.path.dirname(__file__),"orthoview.png")},
+        args={"filepath":_PATH("orthoview.png")},
         before=create_suzanne,
         after=assert_orthoview_created,
     )
     """
+
+    #Export as fbx and png images
+    TESTS.add_operator(
+        name="export_fbx",
+        operator="export",
+        args={"filepath":_PATH("model.fbx"), "fmt": "PNG"},
+        after=assert_fbx_file_and_textures,
+        reset=False
+    )
+
+    #Export as obj
+    TESTS.add_operator(
+        name="export_obj",
+        operator="export",
+        args={"filepath":_PATH("model.obj")},
+        after=assert_obj_file_and_textures,
+        reset=False
+    )
+
+    #Export as ply
+    TESTS.add_operator(
+        name="export_ply",
+        operator="export",
+        args={"filepath":_PATH("model.ply")},
+        after=assert_ply_file_and_textures,
+        reset=False
+    )
 
     ############################################################################
     # 2.9 - Other operators (.mesh file format and future operators)
@@ -462,7 +523,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="export_mesh",
         operator="export_mesh",
-        args={"filepath":os.path.join(os.path.dirname(__file__),"suzanne.mesh")},
+        args={"filepath":_PATH("suzanne.mesh")},
         before=create_suzanne,
         after=assert_mesh_file_created,
     )
@@ -471,7 +532,7 @@ if __name__ == "__main__":
     TESTS.add_operator(
         name="import_mesh",
         operator="import_mesh",
-        args={"filepath":os.path.join(os.path.dirname(__file__),"cube.mesh")},
+        args={"filepath":_PATH("cube.mesh")},
         after=assert_cube_read
     )
 
