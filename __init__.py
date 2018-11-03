@@ -1,11 +1,11 @@
 bl_info = {
     'name':     'BakeMyScan',
-    'category': 'Import-Export',
-    'version': (1, 0, 0),
+    'category': 'Object',
+    'version': (0, 4, 0),
     'blender': (2, 79, 0),
     "description": "Multipurpose add-on to texture, remesh and bake objects",
     "author": "Loïc NORGEOT",
-    "warning": "Materials and baking operators only available in Cycles",
+    "warning": "Materials and baking operators are only available in Cycles",
     "tracker_url": "https://github.com/norgeotloic/BakeMyScan/issues",
     "wiki_url": "https://norgeotloic.github.io/BakeMyScan/"
 }
@@ -16,8 +16,6 @@ import importlib
 
 #icons
 import bpy.utils.previews
-
-
 
 #All python files in the src/ directory
 modulesFiles = [f for f in os.listdir(os.path.join(os.path.dirname(__file__),"src")) if f.endswith(".py")]
