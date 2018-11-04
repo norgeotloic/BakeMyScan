@@ -5,6 +5,7 @@ from . import fn_soft
 from . import fn_bake
 import numpy as np
 import collections
+import time
 
 def addImageNode(mat, nam, res):
     if bpy.data.images.get(nam):
@@ -18,26 +19,40 @@ def addImageNode(mat, nam, res):
     return _imagenode
 
 def bakeWithBlender(mat, nam, res, _type="NORMALS"):
+    #To blender internal
     restore = mat.use_nodes
     engine  = bpy.context.scene.render.engine
     bpy.context.scene.render.engine="BLENDER_RENDER"
+    mat.use_nodes = False
+
     if bpy.data.images.get(nam):
         bpy.data.images.remove(bpy.data.images.get(nam))
     image = bpy.data.images.new(nam, res, res)
+
     tex = bpy.data.textures.new( nam, type = 'IMAGE')
     tex.image = image
-    mat.use_nodes = False
+
+    for c in range(3):
+        if mat.texture_slots[c] is not None:
+            mat.texture_slots.clear(c)
     mtex = mat.texture_slots.add()
     mtex.texture = tex
     mtex.texture_coords = 'UV'
+
     bpy.context.scene.render.use_bake_selected_to_active = True
+
     bpy.ops.object.editmode_toggle()
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.data.screens['UV Editing'].areas[1].spaces[0].image = image
-    bpy.context.object.active_material.use_textures[0] = False
+    mat.use_textures[0] = False
     bpy.context.scene.render.bake_type = _type
     bpy.ops.object.bake_image()
     bpy.ops.object.editmode_toggle()
+
+    #Do some clean up
+    bpy.data.textures.remove(tex)
+
+    #Back to original
     mat.use_nodes = restore
     bpy.context.scene.render.engine=engine
     return image
@@ -144,6 +159,8 @@ class bake_cycles_textures(bpy.types.Operator):
         #Give a prefix to the image names
         prefix = target.name.replace("_","").replace(" ","").replace(".","").replace("-","").lower() + "_baked"
 
+        t0 = time.time()
+
         #Bake the Principled shader slots by transforming them to temporary emission shaders
         for baketype in toBake:
             if toBake[baketype]:
@@ -218,6 +235,7 @@ class bake_cycles_textures(bpy.types.Operator):
             if importSettings[_type] is not None:
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type].name, byname=True)
 
+        print("Baking finished in %f seconds." % (time.time() - t0))
         return{'FINISHED'}
 
 def register() :
