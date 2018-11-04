@@ -60,6 +60,8 @@ class remesh_quadriflow(bpy.types.Operator):
         else:
             #Reimport
             bpy.ops.import_scene.obj(filepath=OUT)
+            bpy.context.scene.objects.active = context.selected_objects[0]
+            bpy.ops.object.shade_smooth()
             self.report({"INFO"}, "QUADRIFLOW success")
             return{'FINISHED'}
 

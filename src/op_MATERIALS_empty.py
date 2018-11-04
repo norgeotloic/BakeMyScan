@@ -52,6 +52,12 @@ class create_empty_material(bpy.types.Operator):
         #Assign the object after unwrapping and adding a material if none is present
         obj.active_material = _material
 
+        #Switch to vertex paint mode
+        try:
+            bpy.context.space_data.viewport_shade = 'MATERIAL'
+        except:
+            pass
+
         return{'FINISHED'}
 
 class create_empty_node(bpy.types.Operator):

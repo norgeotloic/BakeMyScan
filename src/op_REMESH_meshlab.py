@@ -37,7 +37,7 @@ class remesh_meshlab(bpy.types.Operator):
     def execute(self, context):
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
-        
+
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
         obj    = context.active_object
         #maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
@@ -81,10 +81,11 @@ class remesh_meshlab(bpy.types.Operator):
             #Reimport
             bpy.ops.import_scene.obj(filepath=OUT)
             #Make active
-            obj = [o for o in bpy.data.objects if o not in old][0]
+            new = [o for o in bpy.data.objects if o not in old][0]
             bpy.ops.object.select_all(action='DESELECT')
-            obj.select=True
-            bpy.context.scene.objects.active = obj
+            new.select=True
+            bpy.context.scene.objects.active = new
+            bpy.ops.object.shade_smooth()
             self.report({"INFO"}, "MESHLABSERVER success")
             return{'FINISHED'}
 

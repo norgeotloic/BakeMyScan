@@ -107,6 +107,7 @@ class remesh_mmgs(bpy.types.Operator):
         #Reimport
         try:
             bpy.ops.bakemyscan.import_mesh(filepath=OUT)
+            bpy.ops.object.shade_smooth()
             self.report({"INFO"}, "MMGS success")
             print("MMGS OUTPUT:\n%s\nMMGS ERROR:\n%s" % (output, error))
             return{'FINISHED'}

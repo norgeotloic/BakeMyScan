@@ -14,7 +14,7 @@ import sys
 import json
 
 #Do we stop the execution on error?
-_BREAK = False
+_BREAK = True
 #Path to the local_directory
 _DIR = os.path.dirname(__file__)
 def _PATH(f):
@@ -205,10 +205,12 @@ if __name__ == "__main__":
         assert(os.path.exists(_PATH("model.obj")))
         assert(len([x for x in os.listdir(_DIR) if x.endswith(".jpg") and x.startswith("model_")])>1)
         os.remove(_PATH("model.obj"))
-        os.remove(_PATH("model.mtl"))
         for f in os.listdir(_DIR):
             if f.startswith("model_") and f.endswith(".jpg"):
                 os.remove(_PATH(f))
+    def assert_zip():
+        assert(os.path.exists(_PATH("model.zip")))
+        os.remove(_PATH("model.zip"))
 
     ############################################################################
     # 2.1 - Testing the import operators on cubes in different formats
@@ -511,6 +513,15 @@ if __name__ == "__main__":
         operator="export",
         args={"filepath":_PATH("model.ply")},
         after=assert_ply_file_and_textures,
+        reset=False
+    )
+
+    #Export as ply and zip
+    TESTS.add_operator(
+        name="export_zip",
+        operator="export",
+        args={"filepath":_PATH("model.ply"), "compress":True},
+        after=assert_zip,
         reset=False
     )
 

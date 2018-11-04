@@ -108,14 +108,14 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         PR = nodes.get("BakeMyScan PBR")
         #Make the obvious links
         if self.slot == "albedo" and nodes.get("albedo") is not None:
-            LN(nodes.get("albedo").outputs["Color"], PR.inputs["Base Color"])
+            LN(nodes.get("albedo").outputs["Color"], nodes.get("ao_mix").inputs[1])
+            LN(nodes.get("ao_mix").outputs["Color"], PR.inputs["Base Color"])
         if self.slot == "roughness" and nodes.get("roughness") is not None:
             LN(nodes.get("roughness").outputs["Color"], PR.inputs["Roughness"])
         if self.slot == "metallic" and nodes.get("metallic") is not None:
             LN(nodes.get("metallic").outputs["Color"], PR.inputs["Metallic"])
         #And the less obvious ones
         if self.slot == "ao" and nodes.get("ao") is not None:
-            LN(nodes.get("albedo").outputs["Color"], nodes.get("ao_mix").inputs[1])
             LN(nodes.get("ao").outputs["Color"], nodes.get("ao_mix").inputs[2])
             LN(nodes.get("ao_mix").outputs["Color"], PR.inputs["Base Color"])
         if self.slot == "glossiness" and nodes.get("glossiness") is not None:
@@ -144,6 +144,12 @@ class assign_texture(bpy.types.Operator, ImportHelper):
                 LN(nodes.get("emission_mix").outputs["Shader"], nodes.get("opacity_mix").inputs[2])
             else:
                 LN(PR.outputs["BSDF"], nodes.get("opacity_mix").inputs[2])
+
+        #Switch to vertex paint mode
+        try:
+            bpy.context.space_data.viewport_shade = 'MATERIAL'
+        except:
+            pass
 
         return{'FINISHED'}
 

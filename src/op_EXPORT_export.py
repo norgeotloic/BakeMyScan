@@ -2,6 +2,7 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 import os
 import shutil
+import zipfile
 
 class export(bpy.types.Operator, ExportHelper):
     bl_idname = "bakemyscan.export"
@@ -14,7 +15,8 @@ class export(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'},
     )
 
-    fmt = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="fmt", description="Image format", default="JPEG")
+    fmt      = bpy.props.EnumProperty(items= ( ('PNG', 'PNG', 'PNG'), ("JPEG", "JPEG", "JPEG")) , name="fmt", description="Image format", default="JPEG")
+    compress = bpy.props.BoolProperty("compress", name="compress", description="Compress into a .zip", default=False)
 
     @classmethod
     def poll(self, context):
@@ -48,32 +50,31 @@ class export(bpy.types.Operator, ExportHelper):
         name      = os.path.splitext(os.path.basename(os.path.abspath(self.properties.filepath)))[0]
 
         #function to recursively save all images in a tree
+        IMAGES = []
         def save_images(tree, directory, name):
             for node in tree.nodes:
                 if node.type=="TEX_IMAGE":
                     img = node.image
                     if img is not None:
-                        imageName = name + "_" + img.name.split("_")[-1].split(".")[0]
+                        imageName = name + "_" + node.name.lower() #img.name.split("_")[-1].split(".")[0]
                         imageFormat = "png" if self.fmt == "PNG" else "jpg"
                         path = os.path.abspath(os.path.join(directory, imageName + "." + imageFormat))
-                        #If the image is a file
-                        if img.source=="FILE":
-                            img.filepath_raw = path
-                            img.file_format = self.fmt
-                            img.save()
-                            #shutil.copyfile(img.filepath_raw, path)
-                            #os.remove(node.image.filepath_raw)
-                        else:
-                            img.filepath_raw = path
-                            img.save()
+                        #if img.source=="FILE":
+                        img.filepath_raw = path
+                        img.file_format = self.fmt
+                        img.save()
+                        IMAGES.append(path)
                 elif node.type == "GROUP":
                     save_images(node.node_tree, directory, name)
+            return
 
         #Save the model
         if self.filepath.endswith("fbx"):
             bpy.ops.export_scene.fbx(filepath = self.filepath, use_selection=True)
         elif self.filepath.endswith("obj"):
             bpy.ops.export_scene.obj(filepath = self.filepath, use_selection=True)
+            if os.path.exists(self.filepath.replace(".obj", ".mtl")):
+                os.remove(self.filepath.replace(".obj", ".mtl"))
         elif self.filepath.endswith("ply"):
             bpy.ops.export_mesh.ply(filepath = self.filepath)
         else:
@@ -82,6 +83,15 @@ class export(bpy.types.Operator, ExportHelper):
 
         #Save the textures
         save_images(obj.active_material.node_tree, directory, name)
+
+        #Compress into a .zip
+        if self.compress:
+            with zipfile.ZipFile(os.path.join(directory, name + ".zip"), 'w') as myzip:
+                for f in IMAGES + [self.filepath]:
+                    myzip.write(f, arcname=os.path.basename(f))
+            for f in IMAGES + [self.filepath]:
+                os.remove(f)
+            print("Successfully wrote " + os.path.join(directory, name + ".zip"))
 
         return {'FINISHED'}
 

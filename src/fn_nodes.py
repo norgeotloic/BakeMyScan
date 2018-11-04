@@ -181,6 +181,8 @@ def node_tree_pbr():
     _scalex.operation = _scaley.operation = _scalez.operation = 'MULTIPLY'
     _scalex.inputs[1].default_value = _scaley.inputs[1].default_value = _scalez.inputs[1].default_value = 1
     _ao_mix.blend_type = "MULTIPLY"
+    _ao_mix.inputs[2].default_value=[1,1,1,1]
+    _ao_mix.inputs[1].default_value=[1,1,1,1]
     _vertexcolors.attribute_name = "Col"
     #Links
     LN(_principled.outputs["BSDF"], _output.inputs["BSDF"])

@@ -17,7 +17,7 @@ def addImageNode(mat, nam, res):
     _imagenode.image           = _image
     return _imagenode
 
-def bakeWithBlender(mat, nam, res):
+def bakeWithBlender(mat, nam, res, _type="NORMALS"):
     restore = mat.use_nodes
     engine  = bpy.context.scene.render.engine
     bpy.context.scene.render.engine="BLENDER_RENDER"
@@ -35,7 +35,7 @@ def bakeWithBlender(mat, nam, res):
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.data.screens['UV Editing'].areas[1].spaces[0].image = image
     bpy.context.object.active_material.use_textures[0] = False
-    bpy.context.scene.render.bake_type = "NORMALS"
+    bpy.context.scene.render.bake_type = _type
     bpy.ops.object.bake_image()
     bpy.ops.object.editmode_toggle()
     mat.use_nodes = restore
@@ -48,13 +48,14 @@ class bake_cycles_textures(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
-    cageRatio      = bpy.props.FloatProperty(name="cageRatio", description="baking cage size as a ratio", default=0.1, min=0.00001, max=5)
+    cageRatio      = bpy.props.FloatProperty(name="cageRatio",     description="baking cage size as a ratio", default=0.1, min=0.00001, max=5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
-    bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",   description="geometric normals", default=True)
+    bake_ao        = bpy.props.BoolProperty(name="bake_ao",        description="ambient occlusion", default=False)
+    bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",  description="geometric normals", default=True)
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
     bake_metallic  = bpy.props.BoolProperty(name="bake_metallic",  description="metalness", default=False)
     bake_roughness = bpy.props.BoolProperty(name="bake_roughness", description="roughness", default=False)
-    bake_emission  = bpy.props.BoolProperty(name="bake_emission", description="emission", default=False)
+    bake_emission  = bpy.props.BoolProperty(name="bake_emission",  description="emission", default=False)
     bake_opacity   = bpy.props.BoolProperty(name="bake_opacity",   description="opacity", default=False)
 
     def invoke(self, context, event):
@@ -72,6 +73,7 @@ class bake_cycles_textures(bpy.types.Operator):
         box.label("Other channels")
         box.prop(self, "bake_geometry", text="Geometric normals")
         box.prop(self, "bake_surface",  text="Surface normals")
+        box.prop(self, "bake_ao",       text="Ambient occlusion")
         box.prop(self, "bake_emission", text="Emission")
         box.prop(self, "bake_opacity",  text="Opacity")
         col = self.layout.column(align=True)
@@ -146,7 +148,7 @@ class bake_cycles_textures(bpy.types.Operator):
         for baketype in toBake:
             if toBake[baketype]:
 
-
+                print("Baking the channel: %s" % baketype)
 
                 #Copy the active material, and assign it to the source
                 tmpMat      = fn_bake.create_source_baking_material(material, baketype)
@@ -177,8 +179,14 @@ class bake_cycles_textures(bpy.types.Operator):
                 bpy.data.materials.remove(tmpMat)
                 bpy.data.scenes["Scene"].render.bake.use_clear = True
 
+        #Bake the AO
+        if self.bake_ao:
+            print("Baking the ao")
+            baked["AO"] = bakeWithBlender(targetMat, prefix + "_ao", self.resolution, _type="AO")
+
         #Bake and mix the normal maps
         if self.bake_geometry:
+            print("Baking the geometric normals")
             if self.bake_surface:
                 baked["Geometry"] = bakeWithBlender(targetMat, prefix + "_geometry", self.resolution)
                 baked["Normals"] = fn_bake.overlay_normals(baked["Geometry"], baked["Normal"], prefix + "_normals")
@@ -193,9 +201,10 @@ class bake_cycles_textures(bpy.types.Operator):
 
         importSettings = {
             "albedo":    baked["Base Color"] if self.bake_albedo else None,
+            "ao":        baked["AO"]         if self.bake_ao else None,
             "metallic":  baked["Metallic"]   if self.bake_metallic else None,
             "roughness": baked["Roughness"]  if self.bake_roughness else None,
-            "normal":    baked["Normals"]     if self.bake_geometry or self.bake_surface else None,
+            "normal":    baked["Normals"]    if self.bake_geometry or self.bake_surface else None,
             "emission":  baked["Emission"]   if self.bake_emission else None,
             "opacity":   baked["Opacity"]    if self.bake_opacity else None
         }
