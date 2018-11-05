@@ -11,7 +11,7 @@ class ImportPanel(BakeMyScanPanel):
     bl_label       = "Import"
     def draw(self, context):
         self.layout.operator("bakemyscan.import_scan",  icon="IMPORT",       text="Import")
-        self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Clean")
+        self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Pre-process")
 
 def updatepath(self, context):
     print(self.texturepath)
@@ -26,7 +26,7 @@ class MyCustomProperties(bpy.types.PropertyGroup):
         update=updatepath
     )
 class MaterialPanel(BakeMyScanPanel):
-    bl_label       = "Material"
+    bl_label       = "Materials"
 
     @classmethod
     def poll(self, context):
@@ -36,17 +36,19 @@ class MaterialPanel(BakeMyScanPanel):
         return 1
 
     def draw(self, context):
-        #Manage a material library
         self.layout.label("PBR library")
-        self.layout.prop(context.scene.textures_path, "texturepath", text="Textures path", icon="TEXTURE")
-        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load a JSON library")
-        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save library to JSON")
+        self.layout.prop(context.scene.textures_path, "texturepath", text="Path", icon="FILE_FOLDER")
+        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load from .JSON")
+        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save to .JSON")
         self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
-        #Other operations on materials
-        self.layout.label("Other operations")
+
+        self.layout.label("Material from scratch")
         self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
         self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
-        self.layout.operator("bakemyscan.material_from_texture", icon="TEXTURE",  text="Load material from texture")
+
+        self.layout.label("Material from texture")
+        self.layout.operator("bakemyscan.material_from_texture", icon="MATERIAL",  text="Load material from texture")
+
 
 def setworldintensity(self, context):
     bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
@@ -125,20 +127,24 @@ class ExportPanel(BakeMyScanPanel):
 
 
 class AboutPanel(BakeMyScanPanel):
-    bl_label       = "About / Help"
+    bl_label       = "About"
 
     def draw(self, context):
         self.layout.label("BakeMyScan")
-        self.layout.operator("wm.url_open", text="Website",      icon_value=bpy.types.Scene.custom_icons["bakemyscan"].icon_id).url = "http://bakemyscan.org"
-        self.layout.operator("wm.url_open", text="Github",       icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
-        self.layout.operator("wm.url_open", text="Build status", icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"
+        self.layout.operator("wm.url_open", text="bakemyscan.org", icon_value=bpy.types.Scene.custom_icons["bakemyscan"].icon_id).url = "http://bakemyscan.org"
+        self.layout.operator("wm.url_open", text="Github",         icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
+        self.layout.operator("wm.url_open", text="Build status",   icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"
+
         self.layout.label("External software")
         self.layout.operator("wm.url_open", text="MMGtools", icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id).url = "https://www.mmgtools.org/"
         self.layout.operator("wm.url_open", text="Instant Meshes", icon_value=bpy.types.Scene.custom_icons["instant"].icon_id).url = "https://github.com/wjakob/instant-meshes"
         self.layout.operator("wm.url_open", text="Quadriflow", icon="MOD_DECIM").url = "https://github.com/hjwdzh/QuadriFlow"
         self.layout.operator("wm.url_open", text="Meshlab", icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id).url = "http://www.meshlab.net/"
-        self.layout.operator("wm.url_open", text="Imagemagick", icon_value=bpy.types.Scene.custom_icons["magick"].icon_id).url = "https://www.imagemagick.org/script/index.php"
 
+        self.layout.label("Yours truly, Loïc")
+        self.layout.operator("wm.url_open", text="Sketchfab", icon_value=bpy.types.Scene.custom_icons["sketchfab"].icon_id).url = "https://sketchfab.com/norgeotloic"
+        self.layout.operator("wm.url_open", text="Tweeter",   icon_value=bpy.types.Scene.custom_icons["tweeter"].icon_id).url = "https://twitter.com/norgeotloic"
+        self.layout.operator("wm.url_open", text="Donate", icon_value=bpy.types.Scene.custom_icons["donate"].icon_id).url = "http://bakemyscan.org/donate"
 
 class fromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"

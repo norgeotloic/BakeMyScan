@@ -3,7 +3,7 @@ import addon_utils
 
 class clean_object(bpy.types.Operator):
     bl_idname = "bakemyscan.clean_object"
-    bl_label  = "Clean your scan"
+    bl_label  = "Preprocess"
     bl_options = {"REGISTER", "UNDO"}
 
     materials   = bpy.props.BoolProperty(name="materials",   description="Materials", default=True)
@@ -13,7 +13,7 @@ class clean_object(bpy.types.Operator):
     normals     = bpy.props.BoolProperty(name="normals",     description="Normals", default=True)
     center      = bpy.props.BoolProperty(name="center",      description="Center", default=True)
     scale       = bpy.props.BoolProperty(name="scale",       description="Scale", default=True)
-    smooth      = bpy.props.IntProperty( name="smooth",      description="Smoothing iterations", default=0, min=0, max=10)
+    smooth      = bpy.props.IntProperty( name="smooth",      description="Smoothing iterations", default=1, min=0, max=10)
     manifold    = bpy.props.BoolProperty(name="manifold",    description="Make manifold", default=False)
 
     @classmethod
@@ -30,15 +30,18 @@ class clean_object(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
+        self.layout.label("Global")
         self.layout.prop(self, "materials", text="Clean materials")
-        self.layout.prop(self, "doubles",   text="Remove duplicate vertices")
-        self.layout.prop(self, "loose",     text="Delete loose geometry")
-        self.layout.prop(self, "sharp",     text="Remove sharp marks")
-        self.layout.prop(self, "normals",   text="Clean normals")
         self.layout.prop(self, "center",    text="Center the object")
         self.layout.prop(self, "scale",     text="Scale to unit box")
-        self.layout.prop(self, "smooth",    text="Smoothing iterations")
+        self.layout.label("Geometry")
+        self.layout.prop(self, "doubles",   text="Remove duplicated vertices")
+        self.layout.prop(self, "loose",     text="Delete loose geometry")
         self.layout.prop(self, "manifold",  text="Make manifold")
+        self.layout.label("Normals")
+        self.layout.prop(self, "sharp",     text="Remove sharp marks")
+        self.layout.prop(self, "normals",   text="Normalize normals")
+        self.layout.prop(self, "smooth",    text="Smoothing iterations")
         col = self.layout.column(align=True)
 
     def execute(self, context):
@@ -113,6 +116,7 @@ class clean_object(bpy.types.Operator):
                     override = {'area': area, 'region': area.regions[-1]}
                     bpy.ops.view3d.view_selected(override, use_all_regions=False)
 
+        self.report({'INFO'}, 'Pre-processing complete')
         return{'FINISHED'}
 
 def register() :

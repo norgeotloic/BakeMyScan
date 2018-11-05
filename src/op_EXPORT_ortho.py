@@ -124,6 +124,8 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
                 bpy.ops.view3d.toolshelf(context_copy)
                 bpy.ops.view3d.toolshelf(context_copy)
 
+        self.report({'INFO'}, 'Orthoview exported')
+
         return {'FINISHED'}
 
 def register() :

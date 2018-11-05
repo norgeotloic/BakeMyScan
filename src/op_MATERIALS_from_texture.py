@@ -8,7 +8,7 @@ from . import fn_nodes
 
 class material_from_texture(bpy.types.Operator, ImportHelper):
     bl_idname = "bakemyscan.material_from_texture"
-    bl_label  = "List available materials"
+    bl_label  = "Load material from texture"
     bl_options = {"REGISTER", "UNDO"}
 
     filter_glob = bpy.props.StringProperty(

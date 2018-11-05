@@ -1,13 +1,13 @@
 bl_info = {
     'name':     'BakeMyScan',
     'category': 'Object',
-    'version': (1, 0, 0),
+    'version': (1, 0, 1),
     'blender': (2, 79, 0),
     "description": "Multipurpose add-on to texture, remesh and bake objects",
     "author": "Loïc NORGEOT",
     "warning": "Materials and baking operators are only available in Cycles",
     "tracker_url": "https://github.com/norgeotloic/BakeMyScan/issues",
-    "wiki_url": "https://norgeotloic.github.io/BakeMyScan/"
+    "wiki_url": "http://bakemyscan.org"
 }
 
 import sys
@@ -48,7 +48,9 @@ def register():
     bpy.types.Scene.custom_icons.load("bakemyscan", os.path.join(icons_dir, "bakemyscan.png"), 'IMAGE')
     bpy.types.Scene.custom_icons.load("github", os.path.join(icons_dir, "github.png"), 'IMAGE')
     bpy.types.Scene.custom_icons.load("travis", os.path.join(icons_dir, "travis.png"), 'IMAGE')
-    bpy.types.Scene.custom_icons.load("magick", os.path.join(icons_dir, "magick.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("sketchfab", os.path.join(icons_dir, "sketchfab.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("tweeter", os.path.join(icons_dir, "tweeter.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("donate", os.path.join(icons_dir, "donate.png"), 'IMAGE')
 
 def unregister():
     for currentModuleName in modulesFullNames.values():

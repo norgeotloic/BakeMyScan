@@ -151,6 +151,7 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         except:
             pass
 
+        self.report({'INFO'}, self.slot + ' slot assigned')
         return{'FINISHED'}
 
 def register() :

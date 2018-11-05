@@ -90,6 +90,7 @@ class node_from_library(bpy.types.Operator):
         for _type in mat:
             if mat[_type] is not None:
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=mat[_type])
+        self.report({'INFO'}, '"' + self.enum + '" imported')
         return{'FINISHED'}
 
 def register() :

@@ -41,11 +41,25 @@ class remesh_decimate(bpy.types.Operator):
         for m in lr.modifiers:
             bpy.ops.object.modifier_apply(modifier=m.name)
 
-        #First coarse decimate or mmgs or meshlabserver to get a medium poly
+        #First coarse decimate or mmgs or meshlabserver to get a medium poly?
+
+        #Apply the modifier
         lr.modifiers.new("decimate", type='DECIMATE')
         lr.modifiers["decimate"].ratio = float(self.limit/len(lr.data.polygons))
         lr.modifiers["decimate"].use_collapse_triangulate = True
         bpy.ops.object.modifier_apply(modifier="decimate")
+
+        #Shade smooth and rename
+        bpy.ops.object.shade_smooth()
+        bpy.context.object.data.use_auto_smooth = False
+        context.active_object.name = hr.name + ".decimate"
+
+        #Remove hypothetical material
+        while len(context.active_object.material_slots):
+            context.active_object.active_material_index = 0
+            bpy.ops.object.material_slot_remove()
+
+        self.report({'INFO'}, 'Remeshed to %s triangles' % len(context.active_object.data.polygons))
 
         return{'FINISHED'}
 

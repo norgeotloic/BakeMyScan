@@ -28,7 +28,7 @@ class unwrap(bpy.types.Operator):
     def draw(self, context):
         self.layout.prop(self, "method", text="Unwrapping method")
         col = self.layout.column(align=True)
-        
+
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
@@ -50,6 +50,7 @@ class unwrap(bpy.types.Operator):
                 bpy.ops.uv.pack_islands(margin=0.001)
             bpy.ops.object.editmode_toggle()
 
+        self.report({'INFO'}, 'Model unwrapped')
         return{'FINISHED'}
 
 def register() :

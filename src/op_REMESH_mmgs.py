@@ -108,7 +108,13 @@ class remesh_mmgs(bpy.types.Operator):
         try:
             bpy.ops.bakemyscan.import_mesh(filepath=OUT)
             bpy.ops.object.shade_smooth()
-            self.report({"INFO"}, "MMGS success")
+            bpy.context.object.data.use_auto_smooth = False
+            context.active_object.name = obj.name + ".mmgs"
+            #Remove hypothetical material
+            while len(context.active_object.material_slots):
+                context.active_object.active_material_index = 0
+                bpy.ops.object.material_slot_remove()
+            self.report({'INFO'}, 'Remeshed to %s tris' % len(context.active_object.data.polygons))
             print("MMGS OUTPUT:\n%s\nMMGS ERROR:\n%s" % (output, error))
             return{'FINISHED'}
         except:

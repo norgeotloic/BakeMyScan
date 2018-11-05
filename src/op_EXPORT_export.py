@@ -9,7 +9,7 @@ class export(bpy.types.Operator, ExportHelper):
     bl_label  = "Exports model and associated textures"
     bl_options = {"REGISTER", "UNDO"}
 
-    filename_ext=""
+    filename_ext=".fbx"
     filter_glob = bpy.props.StringProperty(
         default="*.fbx;*.obj;*.ply",
         options={'HIDDEN'},
@@ -93,6 +93,8 @@ class export(bpy.types.Operator, ExportHelper):
                 os.remove(f)
             print("Successfully wrote " + os.path.join(directory, name + ".zip"))
 
+
+        self.report({'INFO'}, 'Export successful')
         return {'FINISHED'}
 
 def register() :

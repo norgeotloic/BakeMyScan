@@ -96,7 +96,7 @@ class bake_to_vertex_colors(bpy.types.Operator):
         except:
             pass
 
-
+        self.report({'INFO'}, 'Bake successful')
         return{'FINISHED'}
 
 def register() :

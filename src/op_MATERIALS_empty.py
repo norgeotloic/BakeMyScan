@@ -94,6 +94,7 @@ class create_empty_node(bpy.types.Operator):
         mat.node_tree.nodes.active = _group
         bpy.ops.node.translate_attach_remove_on_cancel('INVOKE_DEFAULT')
 
+        self.report({'INFO'}, 'Empty material "' + self.name + '" created')
         return{'FINISHED'}
 
 def register() :

@@ -206,6 +206,7 @@ class bake_cycles_textures(bpy.types.Operator):
             print("Baking the geometric normals")
             if self.bake_surface:
                 baked["Geometry"] = bakeWithBlender(targetMat, prefix + "_geometry", self.resolution)
+                print("Mixing geometric and surface normals")
                 baked["Normals"] = fn_bake.overlay_normals(baked["Geometry"], baked["Normal"], prefix + "_normals")
                 bpy.data.images.remove(baked["Geometry"])
                 bpy.data.images.remove(baked["Normal"])
@@ -236,6 +237,7 @@ class bake_cycles_textures(bpy.types.Operator):
                 bpy.ops.bakemyscan.assign_texture(slot=_type, filepath=importSettings[_type].name, byname=True)
 
         print("Baking finished in %f seconds." % (time.time() - t0))
+        self.report({'INFO'}, "Baking successful")
         return{'FINISHED'}
 
 def register() :

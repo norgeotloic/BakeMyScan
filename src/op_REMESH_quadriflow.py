@@ -61,8 +61,15 @@ class remesh_quadriflow(bpy.types.Operator):
             #Reimport
             bpy.ops.import_scene.obj(filepath=OUT)
             bpy.context.scene.objects.active = context.selected_objects[0]
+            #Shade smooth and rename
             bpy.ops.object.shade_smooth()
-            self.report({"INFO"}, "QUADRIFLOW success")
+            bpy.context.object.data.use_auto_smooth = False
+            context.active_object.name = obj.name + ".quadriflow"
+            #Remove hypothetical material
+            while len(context.active_object.material_slots):
+                context.active_object.active_material_index = 0
+                bpy.ops.object.material_slot_remove()
+            self.report({'INFO'}, 'Remeshed to %s polygons' % len(context.active_object.data.polygons))
             return{'FINISHED'}
 
 def register() :

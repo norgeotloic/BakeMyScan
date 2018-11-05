@@ -86,7 +86,15 @@ class remesh_meshlab(bpy.types.Operator):
             new.select=True
             bpy.context.scene.objects.active = new
             bpy.ops.object.shade_smooth()
-            self.report({"INFO"}, "MESHLABSERVER success")
+            bpy.context.object.data.use_auto_smooth = False
+            context.active_object.name = obj.name + ".meshlab"
+
+            #Remove hypothetical material
+            while len(context.active_object.material_slots):
+                context.active_object.active_material_index = 0
+                bpy.ops.object.material_slot_remove()
+
+            self.report({'INFO'}, 'Remeshed to %s tris' % len(context.active_object.data.polygons))
             return{'FINISHED'}
 
 def register() :

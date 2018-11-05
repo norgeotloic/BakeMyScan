@@ -29,7 +29,7 @@ class save_json_library(bpy.types.Operator, ExportHelper):
         with open(self.filepath, 'w') as fp:
             json.dump(bpy.types.Scene.pbrtextures, fp, sort_keys=True, indent=4)
 
-        self.report({'INFO'}, 'Wrote %d materials to the JSON file' % len(bpy.types.Scene.pbrtextures.keys()))
+        self.report({'INFO'}, 'Wrote %d materials' % len(bpy.types.Scene.pbrtextures.keys()))
         return{'FINISHED'}
 
 def register() :

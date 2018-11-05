@@ -4,7 +4,7 @@ import os
 
 class import_scan(bpy.types.Operator, ImportHelper):
     bl_idname = "bakemyscan.import_scan"
-    bl_label  = "Import your scan"
+    bl_label  = "Import"
     bl_options = {"REGISTER", "UNDO"}
     filter_glob = bpy.props.StringProperty(
         default="*.obj;*.ply;*.stl;*.fbx;*.dae;*.x3d;*.wrl",
@@ -76,6 +76,7 @@ class import_scan(bpy.types.Operator, ImportHelper):
         #Give it the name of the file
         obj.name = name
 
+        self.report({'INFO'}, 'Import successful')
         return{'FINISHED'}
 
 def register() :

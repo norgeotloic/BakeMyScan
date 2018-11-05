@@ -84,6 +84,12 @@ class remesh_iterative(bpy.types.Operator):
                 if i>0:
                     bpy.ops.object.material_slot_remove()
 
+        #Shade smooth and rename
+        bpy.ops.object.shade_smooth()
+        bpy.context.object.data.use_auto_smooth = False
+        context.active_object.name = hr.name + ".iterative"
+
+        self.report({'INFO'}, 'Remeshed to %s tris' % len(context.active_object.data.polygons))
         return{'FINISHED'}
 
 class do_one_iteration(bpy.types.Operator):
@@ -149,6 +155,11 @@ class do_one_iteration(bpy.types.Operator):
             addon_utils.enable("object_print3d_utils")
             bpy.ops.mesh.print3d_clean_non_manifold()
         bpy.ops.object.editmode_toggle()
+
+        #Remove hypothetical material
+        while len(context.active_object.material_slots):
+            context.active_object.active_material_index = 0
+            bpy.ops.object.material_slot_remove()
 
         return{'FINISHED'}
 
