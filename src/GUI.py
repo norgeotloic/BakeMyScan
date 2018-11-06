@@ -36,11 +36,6 @@ class MaterialPanel(BakeMyScanPanel):
         return 1
 
     def draw(self, context):
-        self.layout.label("PBR library")
-        self.layout.prop(context.scene.textures_path, "texturepath", text="Path", icon="FILE_FOLDER")
-        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load from .JSON")
-        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save to .JSON")
-        self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
 
         self.layout.label("Material from scratch")
         self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
@@ -48,6 +43,12 @@ class MaterialPanel(BakeMyScanPanel):
 
         self.layout.label("Material from texture")
         self.layout.operator("bakemyscan.material_from_texture", icon="MATERIAL",  text="Load material from texture")
+
+        self.layout.label("PBR library")
+        self.layout.prop(context.scene.textures_path, "texturepath", text="Path", icon="FILE_FOLDER")
+        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load from .JSON")
+        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save to .JSON")
+        self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
 
 
 def setworldintensity(self, context):

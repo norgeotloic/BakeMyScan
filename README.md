@@ -1,6 +1,8 @@
 # BakeMyScan [![Build Status](https://travis-ci.org/norgeotloic/BakeMyScan.svg?branch=master)](https://travis-ci.org/norgeotloic/BakeMyScan)
 
-*Update (2018/11/06): [Release 1.0.1 is out](https://github.com/norgeotloic/BakeMyScan/releases/tag/1.0.1), and I'm finishing the website and preparing video tutorials (the one below is just a "placeholder")*
+*Update (2018/11/06): [Release 1.0.1 is out](https://github.com/norgeotloic/BakeMyScan/releases/tag/1.0.1): install the addon from this .zip: [BakeMyScan.zip](https://github.com/norgeotloic/BakeMyScan/releases/download/1.0.1/BakeMyScan.zip)*
+
+*Currently updating the website and preparing video tutorials (the one below is just a "placeholder")*
 
 [BakeMyScan](http://bakemyscan.org) is a free blender addon, and aims to provide a fast, powerful and feature-rich toolbox to **efficiently optimize 3D models, scans and sculpts** for use in mobile/WebGL/AR/VR applications and game engines (Unreal/Unity).
 
