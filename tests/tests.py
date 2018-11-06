@@ -89,6 +89,7 @@ class TestSequence:
                     sys.exit(11)
 
             #Run the operator and wrapper functions
+            print("Running " + OP["name"])
             if _BREAK:
                 EXECUTE()
             else:

@@ -86,6 +86,7 @@ class bake_to_vertex_colors(bpy.types.Operator):
         bpy.ops.object.bake_image()
 
         #Reset to Cycles
+        bpy.context.scene.render.use_bake_to_vertex_color = False
         bpy.context.scene.render.engine = 'CYCLES'
         mat.use_nodes = True
 

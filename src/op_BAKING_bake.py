@@ -24,6 +24,8 @@ def bakeWithBlender(mat, nam, res, _type="NORMALS"):
     engine  = bpy.context.scene.render.engine
     bpy.context.scene.render.engine="BLENDER_RENDER"
     mat.use_nodes = False
+    bpy.context.scene.render.use_bake_to_vertex_color = False
+
 
     if bpy.data.images.get(nam):
         bpy.data.images.remove(bpy.data.images.get(nam))
