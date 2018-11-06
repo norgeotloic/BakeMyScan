@@ -59,8 +59,16 @@ class import_scan(bpy.types.Operator, ImportHelper):
                 bpy.data.objects.remove(o)
         newObjects = [o for o in bpy.data.objects if o not in oldObjects]
 
-        #Don't treat the case in which there are multiple meshes
+        #If there are multiple objects, keep the one with most polygons
         obj = newObjects[0]
+        #Find the biggest
+        max_poly = 0
+        for o in newObjects:
+            if len(o.data.polygons)>max_poly:
+                obj = o
+        for o in newObjects:
+            if o != obj:
+                bpy.data.objects.remove(o)
 
         #Select the new mesh, and make it the active object
         bpy.ops.object.select_all(action='DESELECT')

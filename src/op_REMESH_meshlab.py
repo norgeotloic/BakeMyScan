@@ -2,6 +2,7 @@ import bpy
 import os
 from . import fn_soft
 import tempfile
+import time
 
 class remesh_meshlab(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_meshlab"
@@ -35,6 +36,8 @@ class remesh_meshlab(bpy.types.Operator):
         col = self.layout.column(align=True)
 
     def execute(self, context):
+        t0 = time.time()
+
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -60,7 +63,10 @@ class remesh_meshlab(bpy.types.Operator):
 
         IN  = os.path.join(tmpDir.name, "tmp.obj")
         OUT = os.path.join(tmpDir.name, "tmp.o.obj")
+
+        t1 = time.time()
         bpy.ops.export_scene.obj(filepath=IN, use_selection=True)
+        t1 = time.time() - t1
 
         #Remesh
         output, error, code = fn_soft.meshlabserver(
@@ -79,7 +85,9 @@ class remesh_meshlab(bpy.types.Operator):
             #Get the old objects
             old = [o for o in bpy.data.objects]
             #Reimport
+            t2 = time.time()
             bpy.ops.import_scene.obj(filepath=OUT)
+            t2 = time.time() - t2
             #Make active
             new = [o for o in bpy.data.objects if o not in old][0]
             bpy.ops.object.select_all(action='DESELECT')
@@ -94,7 +102,7 @@ class remesh_meshlab(bpy.types.Operator):
                 context.active_object.active_material_index = 0
                 bpy.ops.object.material_slot_remove()
 
-            self.report({'INFO'}, 'Remeshed to %s tris' % len(context.active_object.data.polygons))
+            self.report({'INFO'}, '%d tris in %.2fs + %.2fs for I/O' % (len(context.active_object.data.polygons), (time.time() - t0)-(t1+t2), t1 + t2))
             return{'FINISHED'}
 
 def register() :

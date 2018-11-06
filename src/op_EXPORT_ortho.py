@@ -39,8 +39,9 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         #Switch to local view
-        #if not sum(context.space_data.layers[:]) == 0:
-        #    bpy.ops.view3d.localview()
+        #for area in screen.areas:
+        #    if area.type == "VIEW_3D":
+        #        bpy.ops.view3d.localview()
 
         obj = context.active_object
 

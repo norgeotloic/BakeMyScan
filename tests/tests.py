@@ -297,7 +297,7 @@ if __name__ == "__main__":
         before=create_suzanne,
         after=assert_suzanne_remeshed,
         reset=True,
-        args={"ratio":0.01, "smooth":2}
+        args={"nfaces":1500, "smooth":2}
     )
 
     #Remesh suzanne with an iterative method

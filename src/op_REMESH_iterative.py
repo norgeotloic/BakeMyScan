@@ -2,6 +2,7 @@ import bpy
 import os
 from bpy_extras.io_utils import ImportHelper
 import addon_utils
+import time
 
 class remesh_iterative(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_iterative"
@@ -33,6 +34,9 @@ class remesh_iterative(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
+        print("Iterative method")
+        t0 = time.time()
+
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -45,8 +49,9 @@ class remesh_iterative(bpy.types.Operator):
         for m in lr.modifiers:
             bpy.ops.object.modifier_apply(modifier=m.name)
 
-        #First coarse decimate or mmgs or meshlabserver to get a medium poly
+        #First coarse decimate to get a medium poly model
         if len(lr.data.polygons) > 50 * self.limit:
+            print("-- First decimation because nTris > 50 x target")
             target = min(50 * self.limit, len(lr.data.polygons)/5)
             lr.modifiers.new("decimate", type='DECIMATE')
             lr.modifiers["decimate"].ratio = float(target/len(lr.data.polygons))
@@ -56,13 +61,19 @@ class remesh_iterative(bpy.types.Operator):
         #Iteration process to reach 1.5 x limit
         bpy.types.Scene.hr = hr
         iterate = True
+        i = 0
         while(iterate):
+            i+=1
+            print("-- Iteration %d:" % i)
             lr = context.scene.objects.active
             bpy.ops.object.duplicate()
             bpy.ops.bakemyscan.remesh_one_iteration(manifold=self.manifold, vertex_group=self.vertex_group)
             tmp = context.scene.objects.active
-            print(self.limit, len(tmp.data.polygons), len(lr.data.polygons))
+
+            print("-- Iteration %d: %d tris -> %d tris" % (i, len(lr.data.polygons), len(tmp.data.polygons)) )
+
             if len(tmp.data.polygons) < self.limit:
+                print("-- We went far enough, cancel the last iteration")
                 iterate=False
                 bpy.data.objects.remove(tmp)
                 bpy.context.scene.objects.active = lr
@@ -72,24 +83,34 @@ class remesh_iterative(bpy.types.Operator):
         del bpy.types.Scene.hr
 
         #Final decimation to stick to the limit
+        print("-- Last decimate to be as exact as possible")
         lr.modifiers.new("decimate", type='DECIMATE')
         lr.modifiers["decimate"].ratio = float(self.limit/len(lr.data.polygons))
         lr.modifiers["decimate"].use_collapse_triangulate = True
         bpy.ops.object.modifier_apply(modifier="decimate")
 
-        #Remove the materials
-        for i,slot in enumerate(lr.material_slots):
-            if slot.material is not None:
-                slot.material = None
-                if i>0:
-                    bpy.ops.object.material_slot_remove()
+        #Remove hypothetical material
+        while len(context.active_object.material_slots):
+            context.active_object.active_material_index = 0
+            bpy.ops.object.material_slot_remove()
+
+        # 6 - Remove non manifold and doubles
+        print("-- Making manifold")
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.remove_doubles(threshold=0.0001)
+        bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
+        bpy.ops.mesh.vert_connect_nonplanar()
+        if self.manifold:
+            addon_utils.enable("object_print3d_utils")
+            bpy.ops.mesh.print3d_clean_non_manifold()
+        bpy.ops.object.editmode_toggle()
 
         #Shade smooth and rename
         bpy.ops.object.shade_smooth()
         bpy.context.object.data.use_auto_smooth = False
         context.active_object.name = hr.name + ".iterative"
 
-        self.report({'INFO'}, 'Remeshed to %s tris' % len(context.active_object.data.polygons))
+        self.report({'INFO'}, 'Remeshed to %s polys in %.2fs.' % (len(context.active_object.data.polygons), time.time() - t0))
         return{'FINISHED'}
 
 class do_one_iteration(bpy.types.Operator):
@@ -115,23 +136,23 @@ class do_one_iteration(bpy.types.Operator):
 
     def execute(self, context):
 
-        # 1 - planar decimation
+        print("  -- Planar decimation")
         bpy.ops.object.modifier_add(type='DECIMATE')
         bpy.context.object.modifiers["Decimate"].decimate_type = 'DISSOLVE'
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
 
-        # 2 - triangulate the mesh
+        print("  -- Ensuring triangles only")
         bpy.ops.object.editmode_toggle()
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.quads_convert_to_tris()
         bpy.ops.object.editmode_toggle()
 
-        # 3 - smooth the vertices
+        print("  -- Initial smoothing")
         bpy.ops.object.modifier_add(type='SMOOTH')
         bpy.context.object.modifiers["Smooth"].iterations = 1
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
 
-        # 4 - decimate it
+        print("  -- Initial decimation")
         bpy.ops.object.modifier_add(type='DECIMATE')
         bpy.context.object.modifiers["Decimate"].ratio = 0.8
         if len(bpy.context.object.vertex_groups)>0 and self.vertex_group:
@@ -140,26 +161,10 @@ class do_one_iteration(bpy.types.Operator):
             bpy.context.object.modifiers["Decimate"].invert_vertex_group = True
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Decimate")
 
-
-        # 5 - shrinkwrap to the original
+        print("  -- Shrinkwrap")
         bpy.ops.object.modifier_add(type='SHRINKWRAP')
         bpy.context.object.modifiers["Shrinkwrap"].target = bpy.types.Scene.hr
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
-
-        # 6 - Remove non manifold and doubles
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.mesh.remove_doubles(threshold=0.0001)
-        bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
-        bpy.ops.mesh.vert_connect_nonplanar()
-        if self.manifold:
-            addon_utils.enable("object_print3d_utils")
-            bpy.ops.mesh.print3d_clean_non_manifold()
-        bpy.ops.object.editmode_toggle()
-
-        #Remove hypothetical material
-        while len(context.active_object.material_slots):
-            context.active_object.active_material_index = 0
-            bpy.ops.object.material_slot_remove()
 
         return{'FINISHED'}
 

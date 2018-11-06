@@ -1,6 +1,7 @@
 import bpy
 import os
 import tempfile
+import time
 from . import fn_soft
 
 class remesh_instant(bpy.types.Operator):
@@ -79,6 +80,9 @@ class remesh_instant(bpy.types.Operator):
         col = self.layout.column(align=True)
 
     def execute(self, context):
+
+        t0 = time.time()
+
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -90,7 +94,10 @@ class remesh_instant(bpy.types.Operator):
         tmpDir = tempfile.TemporaryDirectory()
         IN  = os.path.join(tmpDir.name, "tmp.obj")
         OUT = os.path.join(tmpDir.name, "tmp.o.obj")
+
+        t1 = time.time()
         bpy.ops.export_scene.obj(filepath=IN, use_selection=True)
+        t1 = time.time() - t1
 
         #Remesh
         if self.interactive:
@@ -131,7 +138,9 @@ class remesh_instant(bpy.types.Operator):
         else:
             #Reimport
             obj.select = False
+            t2 = time.time()
             bpy.ops.import_scene.obj(filepath=OUT)
+            t2 = time.time() - t2
             for o in context.selected_objects:
                 o.select=True
                 bpy.context.scene.objects.active = o
@@ -150,7 +159,7 @@ class remesh_instant(bpy.types.Operator):
                 context.active_object.active_material_index = 0
                 bpy.ops.object.material_slot_remove()
 
-            self.report({'INFO'}, 'Remeshed to %s polygons' % len(context.active_object.data.polygons))
+            self.report({'INFO'}, '%d tris in %.2fs + %.2fs for I/O' % (len(context.active_object.data.polygons), (time.time() - t0)-(t1+t2), t1 + t2))
             return{'FINISHED'}
 
 def register() :

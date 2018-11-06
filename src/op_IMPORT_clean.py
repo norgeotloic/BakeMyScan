@@ -14,6 +14,7 @@ class clean_object(bpy.types.Operator):
     center      = bpy.props.BoolProperty(name="center",      description="Center", default=True)
     scale       = bpy.props.BoolProperty(name="scale",       description="Scale", default=True)
     smooth      = bpy.props.IntProperty( name="smooth",      description="Smoothing iterations", default=1, min=0, max=10)
+    shade       = bpy.props.BoolProperty(name="shade",       description="Shade smooth", default=True)
     manifold    = bpy.props.BoolProperty(name="manifold",    description="Make manifold", default=False)
 
     @classmethod
@@ -41,6 +42,7 @@ class clean_object(bpy.types.Operator):
         self.layout.label("Normals")
         self.layout.prop(self, "sharp",     text="Remove sharp marks")
         self.layout.prop(self, "normals",   text="Normalize normals")
+        self.layout.prop(self, "shade",    text="Shade smooth")
         self.layout.prop(self, "smooth",    text="Smoothing iterations")
         col = self.layout.column(align=True)
 
@@ -96,6 +98,9 @@ class clean_object(bpy.types.Operator):
                 bpy.ops.object.modifier_add(type='SMOOTH')
                 bpy.context.object.modifiers["Smooth"].iterations = self.smooth
                 bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
+
+            if self.shade:
+                bpy.ops.object.shade_smooth()
 
             #Center
             if self.center:

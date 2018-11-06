@@ -87,13 +87,13 @@ class RemeshPanel(BakeMyScanPanel):
     bl_label       = "Remesh"
 
     def draw(self, context):
-        self.layout.label("Internal")
+        self.layout.label("Triangles")
         self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
-        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text="Naive quads")
         self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
-        self.layout.label("External")
         self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
         self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
+        self.layout.label("Quadrilaterals")
+        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
 
@@ -155,13 +155,13 @@ class fromSculptPanel(bpy.types.Panel):
     bl_options     = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        self.layout.label("Internal")
+        self.layout.label("Triangles")
         self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
-        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text="Naive quads")
         self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
-        self.layout.label("External")
         self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
         self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
+        self.layout.label("Quadrilaterals")
+        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
 

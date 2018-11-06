@@ -1,6 +1,8 @@
 import bpy
 import os
 
+import time
+
 class remesh_decimate(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_decimate"
     bl_label  = "Remesh with the decimate modifier"
@@ -29,6 +31,9 @@ class remesh_decimate(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
+
+        t0 = time.time()
+
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -59,7 +64,7 @@ class remesh_decimate(bpy.types.Operator):
             context.active_object.active_material_index = 0
             bpy.ops.object.material_slot_remove()
 
-        self.report({'INFO'}, 'Remeshed to %s triangles' % len(context.active_object.data.polygons))
+        self.report({'INFO'}, 'Remeshed to %s tris in %.2fs.' % (len(context.active_object.data.polygons), time.time() - t0))
 
         return{'FINISHED'}
 

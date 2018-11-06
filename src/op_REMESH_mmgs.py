@@ -2,6 +2,7 @@ import bpy
 import os
 import tempfile
 from . import fn_soft
+import time
 
 class remesh_mmgs(bpy.types.Operator):
     bl_idname = "bakemyscan.remesh_mmgs"
@@ -75,6 +76,8 @@ class remesh_mmgs(bpy.types.Operator):
         col = self.layout.column(align=True)
 
     def execute(self, context):
+        t0 = time.time()
+
         #Go into object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -86,7 +89,10 @@ class remesh_mmgs(bpy.types.Operator):
         tmpDir = tempfile.TemporaryDirectory()
         IN  = os.path.join(tmpDir.name, "tmp.mesh")
         OUT = os.path.join(tmpDir.name, "tmp.o.mesh")
+
+        t1 = time.time()
         bpy.ops.bakemyscan.export_mesh(filepath=IN, writeSol=self.weight, miniSol=self.hmin * maxDim, maxiSol=self.hmax * maxDim)
+        t1 = time.time() - t1
 
         #Remesh
         exe = context.user_preferences.addons["BakeMyScan"].preferences.mmgs
@@ -106,7 +112,9 @@ class remesh_mmgs(bpy.types.Operator):
 
         #Reimport
         try:
+            t2 = time.time()
             bpy.ops.bakemyscan.import_mesh(filepath=OUT)
+            t2 = time.time() - t2
             bpy.ops.object.shade_smooth()
             bpy.context.object.data.use_auto_smooth = False
             context.active_object.name = obj.name + ".mmgs"
@@ -114,7 +122,7 @@ class remesh_mmgs(bpy.types.Operator):
             while len(context.active_object.material_slots):
                 context.active_object.active_material_index = 0
                 bpy.ops.object.material_slot_remove()
-            self.report({'INFO'}, 'Remeshed to %s tris' % len(context.active_object.data.polygons))
+            self.report({'INFO'}, '%d tris in %.2fs + %.2fs for I/O' % (len(context.active_object.data.polygons), (time.time() - t0)-(t1+t2), t1 + t2))
             print("MMGS OUTPUT:\n%s\nMMGS ERROR:\n%s" % (output, error))
             return{'FINISHED'}
         except:
