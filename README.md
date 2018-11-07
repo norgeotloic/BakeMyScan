@@ -2,11 +2,11 @@
 
 *Update (2018/11/06): [Release 1.0.1 is out](https://github.com/norgeotloic/BakeMyScan/releases/tag/1.0.1): install the addon from this .zip: [BakeMyScan.zip](https://github.com/norgeotloic/BakeMyScan/releases/download/1.0.1/BakeMyScan.zip)*
 
-*Currently updating the website and preparing video tutorials (the one below is just a "placeholder")*
+*Currently updating the website, documentation, related videos... I'll need a little patience from you ;)*
 
 [BakeMyScan](http://bakemyscan.org) is a free blender addon, and aims to provide a fast, powerful and feature-rich toolbox to **efficiently optimize 3D models, scans and sculpts** for use in mobile/WebGL/AR/VR applications and game engines (Unreal/Unity).
 
-[![Alt text](https://img.youtube.com/vi/bR3YDcrw_4s/0.jpg)](https://youtu.be/bR3YDcrw_4s)
+[![Alt text](https://img.youtube.com/vi/bXkiSyLmQHg/0.jpg)](https://youtu.be/bXkiSyLmQHg)
 
 ##### Website / updates
 
