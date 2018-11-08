@@ -38,12 +38,12 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         return 1
 
     def execute(self, context):
-        #Switch to local view
-        #for area in screen.areas:
-        #    if area.type == "VIEW_3D":
-        #        bpy.ops.view3d.localview()
-
         obj = context.active_object
+
+        #Hide all other objects
+        visibleobjects = [o for o in bpy.data.objects if not o.hide and o!=obj]
+        for o in visibleobjects:
+            o.hide = True
 
         #Get the parameters
         path = os.path.dirname(os.path.abspath(self.properties.filepath))
@@ -110,13 +110,12 @@ class export_orthoview(bpy.types.Operator, ExportHelper):
         #Once done, delete the camera
         bpy.data.objects.remove(bpy.data.objects[camera.name])
 
-        #Switch out of local view
-        bpy.ops.view3d.localview()
+        #unhide the other objects
+        for o in visibleobjects:
+            o.hide = False
 
-        #Close the double window
-        #areas = [a for a in bpy.context.screen.areas if a.type=="IMAGE_EDITOR"]
-        #areas.sort(key=lambda a:a.y)
-        bottom, top = area, newArea#areas
+        #Close the double window !!??
+        bottom, top = area, newArea
         bpy.ops.screen.area_join(min_x=bottom.x, min_y=bottom.y, max_x=top.x+top.width, max_y=top.y)
         for a in context.screen.areas:
             if a == bottom:
