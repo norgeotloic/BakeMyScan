@@ -152,6 +152,8 @@ if __name__ == "__main__":
     def assert_model_imported():
         assert(len(bpy.data.objects) == 1)
     def assert_suzanne_remeshed():
+        for o in bpy.data.objects:
+            o.hide = False
         assert(len(bpy.data.objects) == 2)
         assert(bpy.context.active_object is not None)
         assert(bpy.context.active_object.name != "Suzanne")
@@ -475,7 +477,7 @@ if __name__ == "__main__":
     )
 
     ############################################################################
-    # 2.8 - Export operators
+    # 2.9 - Export operators
     ############################################################################
 
     #Export an orthoview
@@ -527,7 +529,7 @@ if __name__ == "__main__":
     )
 
     ############################################################################
-    # 2.9 - Other operators (.mesh file format and future operators)
+    # 2.10 - Other operators (.mesh file format and future operators)
     ############################################################################
 
     #Exports suzanne as a .mesh
@@ -545,6 +547,38 @@ if __name__ == "__main__":
         operator="import_mesh",
         args={"filepath":_PATH("cube.mesh")},
         after=assert_cube_read
+    )
+
+    ############################################################################
+    # 2.8 - Symetry and mesh relaxation
+    ############################################################################
+
+    #Test that the symetry operator do not crash (will add assertions later)
+    def returnnone():
+        pass
+    TESTS.add_operator(
+        name="symetry_x_cursor",
+        operator="symetrize",
+        before=create_suzanne,
+        after=returnnone,
+        reset=True,
+        args={"center":"cursor", "axis":"-X"}
+    )
+    TESTS.add_operator(
+        name="symetry_z_bbox",
+        operator="symetrize",
+        before=create_suzanne,
+        after=returnnone,
+        reset=True,
+        args={"center":"bbox", "axis":"+Z"}
+    )
+
+    #Test the mesh relaxation operator
+    TESTS.add_operator(
+        name="relaxation",
+        operator="relax",
+        reset=False,
+        args={"smooth":15}
     )
 
     ############################################################################

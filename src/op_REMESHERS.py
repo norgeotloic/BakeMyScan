@@ -16,9 +16,11 @@ class BaseRemesher(bpy.types.Operator):
     tmp        = tempfile.TemporaryDirectory()
     executable = None
     results    = []
+    keepMaterials = False
 
     #For remeshers which need to duplicate the object
     workonduplis = False
+
 
     @classmethod
     def poll(self, context):
@@ -88,9 +90,10 @@ class BaseRemesher(bpy.types.Operator):
             bpy.context.object.data.use_auto_smooth = False
             context.active_object.name = self.initialobject.name + "." + self.bl_label.lower().replace(" ","")
             #Remove hypothetical material
-            while len(context.active_object.material_slots):
-                context.active_object.active_material_index = 0
-                bpy.ops.object.material_slot_remove()
+            if not self.keepMaterials:
+                while len(context.active_object.material_slots):
+                    context.active_object.active_material_index = 0
+                    bpy.ops.object.material_slot_remove()
             #Hide the old object
             self.initialobject.hide = True
     def execute(self, context):
@@ -121,9 +124,9 @@ class BaseRemesher(bpy.types.Operator):
             self.importtime = time.time() - self.importtime
         #Post-process
         self.postprocess(context)
-        #Show the wireframe
-        context.object.show_wire = True
-        context.object.show_all_edges = True
+        #Show the wireframe (debug)
+        #context.object.show_wire = True
+        #context.object.show_all_edges = True
         #Report
         self.report({'INFO'}, 'Remeshed to %d polygons' % len(context.active_object.data.polygons))
         return{'FINISHED'}
@@ -571,6 +574,7 @@ class Symetry(BaseRemesher):
     bl_label  = "Symetry"
 
     workonduplis  = True
+    keepMaterials = True
 
     center = bpy.props.EnumProperty(
         items= (
@@ -716,7 +720,8 @@ class Relax(BaseRemesher):
     bl_idname = "bakemyscan.relax"
     bl_label  = "Relaxation"
 
-    workonduplis = True
+    workonduplis  = True
+    keepMaterials = True
 
     smooth = bpy.props.IntProperty(  name="smooth", description="Relaxation steps", default=2, min=0, max=150)
 

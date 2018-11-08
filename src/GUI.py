@@ -64,6 +64,7 @@ class RemeshPanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
         self.layout.label("Post-process")
+        self.layout.operator("bakemyscan.unwrap",            icon="GROUP_UVS",  text="Unwrap")
         self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symetry')
         self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
 class RemeshFromSculptPanel(bpy.types.Panel):
@@ -84,12 +85,6 @@ class RemeshFromSculptPanel(bpy.types.Panel):
         self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
-
-class UnwrapPanel(BakeMyScanPanel):
-    bl_label       = "UV unwrap"
-
-    def draw(self, context):
-        self.layout.operator("bakemyscan.unwrap", icon="GROUP_UVS", text="UV Unwrapping")
 
 class BakingPanel(BakeMyScanPanel):
     bl_label       = "Baking"
@@ -172,7 +167,6 @@ def register():
     bpy.utils.register_class(MaterialPanel)
     bpy.utils.register_class(RemeshPanel)
     bpy.utils.register_class(RemeshFromSculptPanel)
-    bpy.utils.register_class(UnwrapPanel)
     bpy.utils.register_class(BakingPanel)
     bpy.utils.register_class(ExportPanel)
     bpy.utils.register_class(ExperimentalPanel)
@@ -189,7 +183,6 @@ def unregister():
     bpy.utils.unregister_class(MaterialPanel)
     bpy.utils.unregister_class(RemeshPanel)
     bpy.utils.unregister_class(RemeshFromSculptPanel)
-    bpy.utils.unregister_class(UnwrapPanel)
     bpy.utils.unregister_class(BakingPanel)
     bpy.utils.unregister_class(ExportPanel)
     bpy.utils.unregister_class(ExperimentalPanel)
