@@ -50,42 +50,29 @@ class MaterialPanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save to .JSON")
         self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
 
-
-def setworldintensity(self, context):
-    bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
-    return None
-
-class IntensityProperty(bpy.types.PropertyGroup):
-    intensity =  bpy.props.FloatProperty(name="intensity", description="HDRI intensity", default=1, min=0., max=10000., update=setworldintensity)
-
-class HDRIPanel(BakeMyScanPanel):
-    """Creates a Panel in the Object properties window"""
-    bl_label       = "HDRI"
-
-    @classmethod
-    def poll(self, context):
-        #Render engine must be cycles
-        if bpy.context.scene.render.engine!="CYCLES":
-            return 0
-        #There must be a world called "World"
-        if bpy.data.worlds.get("World") is None:
-            return 0
-        return 1
-
-    def draw(self, context):
-        layout = self.layout
-        wm = context.window_manager
-
-        row = layout.row()
-        row.prop(wm, "my_previews_dir")
-
-        row = layout.row()
-        row.template_icon_view(wm, "my_previews")
-
-        layout.prop(context.scene.intensity, "intensity", text="HDRI intensity")
-
 class RemeshPanel(BakeMyScanPanel):
     bl_label       = "Remesh"
+
+    def draw(self, context):
+        self.layout.label("Triangles")
+        self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
+        self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
+        self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
+        self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
+        self.layout.label("Quadrilaterals")
+        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
+        self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
+        self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
+        self.layout.label("Post-process")
+        self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symetry')
+        self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
+class RemeshFromSculptPanel(bpy.types.Panel):
+    bl_space_type  = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category    = "Tools"
+    bl_label       = "BakeMyScan Remesh"
+    bl_context     = "sculpt_mode"
+    bl_options     = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         self.layout.label("Triangles")
@@ -123,9 +110,41 @@ class ExportPanel(BakeMyScanPanel):
 
     def draw(self, context):
         self.layout.operator("bakemyscan.export",                  icon="EXPORT", text="Export model and textures")
-        self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean non selected data")
         self.layout.operator("bakemyscan.export_orthoview",        icon="RENDER_STILL", text="Ortho View")
 
+def setworldintensity(self, context):
+    bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
+    return None
+class IntensityProperty(bpy.types.PropertyGroup):
+    intensity =  bpy.props.FloatProperty(name="intensity", description="HDRI intensity", default=1, min=0., max=10000., update=setworldintensity)
+class ExperimentalPanel(BakeMyScanPanel):
+    """Creates a Panel in the Object properties window"""
+    bl_label       = "Experimental"
+
+    @classmethod
+    def poll(self, context):
+        #Render engine must be cycles
+        if bpy.context.scene.render.engine!="CYCLES":
+            return 0
+        #There must be a world called "World"
+        if bpy.data.worlds.get("World") is None:
+            return 0
+        return 1
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label('HDRIs "shortcut"')
+        #HDRI
+        wm = context.window_manager
+        row = layout.row()
+        row.prop(wm, "my_previews_dir")
+        row = layout.row()
+        row.template_icon_view(wm, "my_previews")
+        layout.prop(context.scene.intensity, "intensity", text="HDRI intensity")
+
+        #Remove all but selected
+        layout.label('Cleanup some data')
+        layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean non selected data")
 
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "About"
@@ -147,64 +166,37 @@ class AboutPanel(BakeMyScanPanel):
         self.layout.operator("wm.url_open", text="Tweeter",   icon_value=bpy.types.Scene.custom_icons["tweeter"].icon_id).url = "https://twitter.com/norgeotloic"
         self.layout.operator("wm.url_open", text="Donate", icon_value=bpy.types.Scene.custom_icons["donate"].icon_id).url = "http://bakemyscan.org/donate"
 
-class fromSculptPanel(bpy.types.Panel):
-    bl_space_type  = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category    = "Tools"
-    bl_label       = "BakeMyScan Remesh"
-    bl_context     = "sculpt_mode"
-    bl_options     = {"DEFAULT_CLOSED"}
-
-    def draw(self, context):
-        self.layout.label("Triangles")
-        self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
-        self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
-        self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
-        self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
-        self.layout.label("Quadrilaterals")
-        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
-        self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
-        self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
-
 
 def register():
-
     bpy.utils.register_class(ImportPanel)
     bpy.utils.register_class(MaterialPanel)
-    bpy.utils.register_class(HDRIPanel)
     bpy.utils.register_class(RemeshPanel)
+    bpy.utils.register_class(RemeshFromSculptPanel)
     bpy.utils.register_class(UnwrapPanel)
     bpy.utils.register_class(BakingPanel)
     bpy.utils.register_class(ExportPanel)
+    bpy.utils.register_class(ExperimentalPanel)
     bpy.utils.register_class(AboutPanel)
-
-    bpy.utils.register_class(fromSculptPanel)
-
     #Add the custom intensity slider
     bpy.utils.register_class(IntensityProperty)
     bpy.types.Scene.intensity = bpy.props.PointerProperty(type=IntensityProperty)
-
     #Add the custom path to texture library
     bpy.utils.register_class(MyCustomProperties)
     bpy.types.Scene.textures_path = bpy.props.PointerProperty(type=MyCustomProperties)
 
 def unregister():
-
     bpy.utils.unregister_class(ImportPanel)
     bpy.utils.unregister_class(MaterialPanel)
-    bpy.utils.unregister_class(HDRIPanel)
     bpy.utils.unregister_class(RemeshPanel)
+    bpy.utils.unregister_class(RemeshFromSculptPanel)
     bpy.utils.unregister_class(UnwrapPanel)
     bpy.utils.unregister_class(BakingPanel)
     bpy.utils.unregister_class(ExportPanel)
+    bpy.utils.unregister_class(ExperimentalPanel)
     bpy.utils.unregister_class(AboutPanel)
-
-    bpy.utils.unregister_class(fromSculptPanel)
-
     #Clear the custom intensity slider
     bpy.utils.unregister_class(IntensityProperty)
     del bpy.types.Scene.intensity
-
     #Clear the custom path to textures
     bpy.utils.unregister_class(MyCustomProperties)
     del bpy.types.Scene.textures_path

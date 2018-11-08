@@ -1,6 +1,6 @@
 # BakeMyScan [![Build Status](https://travis-ci.org/norgeotloic/BakeMyScan.svg?branch=master)](https://travis-ci.org/norgeotloic/BakeMyScan)
 
-*Update (2018/11/06): [Release 1.0.1 is out](https://github.com/norgeotloic/BakeMyScan/releases/tag/1.0.1): install the addon from this .zip: [BakeMyScan.zip](https://github.com/norgeotloic/BakeMyScan/releases/download/1.0.1/BakeMyScan.zip)*
+*Update (2018/11/08): [Release 1.0.2 is out](https://github.com/norgeotloic/BakeMyScan/releases/tag/1.0.2): install the addon from this .zip: [BakeMyScan.zip](https://github.com/norgeotloic/BakeMyScan/releases/download/1.0.2/BakeMyScan.zip)*
 
 *Currently updating the website, documentation, related videos... I'll need a little patience from you ;)*
 

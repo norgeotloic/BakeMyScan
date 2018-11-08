@@ -3,6 +3,8 @@ import os
 from . import fn_soft
 import tempfile
 import time
+from mathutils import Vector
+import numpy as np
 
 class BaseRemesher(bpy.types.Operator):
     bl_idname = "bakemyscan.empty_remesher"
@@ -61,7 +63,6 @@ class BaseRemesher(bpy.types.Operator):
             #Apply the modifiers
             for m in self.copiedobject.modifiers:
                 bpy.ops.object.modifier_apply(modifier=m.name)
-
     def postprocess(self, context):
         #Check that there is only one new object
         newObjects = [o for o in bpy.data.objects if o not in self.existingobjects]
@@ -76,9 +77,11 @@ class BaseRemesher(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
             self.new.select=True
             bpy.context.scene.objects.active = self.new
-            #Remove edges marked as sharp
+            #Remove edges marked as sharp, and delete the loose geometry
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.mark_sharp(clear=True)
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.delete_loose()
             bpy.ops.object.editmode_toggle()
             #Shade smooth and rename it
             bpy.ops.object.shade_smooth()
@@ -88,6 +91,8 @@ class BaseRemesher(bpy.types.Operator):
             while len(context.active_object.material_slots):
                 context.active_object.active_material_index = 0
                 bpy.ops.object.material_slot_remove()
+            #Hide the old object
+            self.initialobject.hide = True
     def execute(self, context):
         #Set the executable path
         self.setexe(context)
@@ -460,6 +465,7 @@ class Quads(BaseRemesher):
         bpy.ops.object.editmode_toggle()
         """
 
+
 class Iterative(BaseRemesher):
     bl_idname = "bakemyscan.remesh_iterative"
     bl_label  = "Iterative method"
@@ -558,6 +564,196 @@ class Iterative(BaseRemesher):
             bpy.ops.mesh.print3d_clean_non_manifold()
         bpy.ops.object.editmode_toggle()
 
+
+#Make a model symetrical on the x axis
+class Symetry(BaseRemesher):
+    bl_idname = "bakemyscan.symetrize"
+    bl_label  = "Symetry"
+
+    workonduplis  = True
+
+    center = bpy.props.EnumProperty(
+        items= (
+            ('bbox','bbox','bbox'),
+            ('cursor','cursor','cursor'),
+            #Maybe more to come in the future depending on user feedbacks!
+        ),
+        description="center",
+        default="bbox"
+    )
+    axis = bpy.props.EnumProperty(
+        items= (
+            ('-X','-X','-X'),
+            ('+X','+X','+X'),
+            ('-Y','-Y','-Y'),
+            ('+Y','+Y','+Y'),
+            ('-Z','-Z','-Z'),
+            ('+Z','+Z','+Z')
+        ),
+        description="axis",
+        default="-X"
+    )
+
+    def remesh(self, context):
+        lr = self.copiedobject
+        hr = self.initialobject
+
+        #Get the symetry center depending on the method (maybe apply obj.matrix_world?)
+        cursor = bpy.context.scene.cursor_location
+
+        center, dim = None, None
+        if self.center == "bbox":
+            localBb = 0.125 * sum((Vector(b) for b in lr.bound_box), Vector())
+            center  = lr.matrix_world * localBb
+            if "X" in self.axis:
+                dim = lr.dimensions[0]
+            elif "Y" in self.axis:
+                dim = lr.dimensions[1]
+            elif "Z" in self.axis:
+                dim = lr.dimensions[2]
+        elif self.center == "cursor":
+            center = cursor.copy()
+            #Get the maximum distance between 3D cursor and bbox points
+            dim = 0
+            corners = [lr.matrix_world * Vector(v) for v in lr.bound_box]
+            #Find the distance
+            for corner in corners:
+                #Get the corner projected on the desired axis
+                cornProj, cursProj = 0, 0
+                if "X" in self.axis:
+                    cornProj, cursProj = corner[0], cursor[0]
+                elif "Y" in self.axis:
+                    cornProj, cursProj = corner[1], cursor[1]
+                elif "Z" in self.axis:
+                    cornProj, cursProj = corner[2], cursor[2]
+                #Compute the distance
+                dist   = np.sqrt((cornProj - cursProj)**2)
+                if dist > dim:
+                    dim = dist
+
+        #Compute the cube translation so that its face is on the center
+        offset = center.copy()
+        if self.axis=="-X":
+            offset[0] = offset[0] + 5*dim/2
+        if self.axis=="+X":
+            offset[0] = offset[0] - 5*dim/2
+        if self.axis=="-Y":
+            offset[1] = offset[1] +5* dim/2
+        if self.axis=="+Y":
+            offset[1] = offset[1] -5* dim/2
+        if self.axis=="-Z":
+            offset[2] = offset[2] + 5*dim/2
+        if self.axis=="+Z":
+            offset[2] = offset[2] - 5*dim/2
+
+        bpy.ops.mesh.primitive_cube_add(radius=5*dim / 2 , view_align=False, enter_editmode=False, location=offset)
+        cube = context.active_object
+
+        #Make the original object active once again
+        bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects.active = lr
+        lr.select = True
+
+        #boolean cut
+        bpy.ops.object.modifier_add(type='BOOLEAN')
+        lr.modifiers["Boolean"].operation = 'DIFFERENCE'
+        lr.modifiers["Boolean"].object    = cube
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Boolean")
+
+        #Remove the cube
+        bpy.data.objects.remove(cube)
+
+        #Make the original object active once again
+        bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects.active = lr
+        lr.select             = True
+
+        #Add a mirror modifier
+        bpy.ops.object.modifier_add(type='MIRROR')
+        mod = bpy.context.object.modifiers["Mirror"]
+        mod.use_clip = True
+        #Set the correct axis
+        if "Y" in self.axis:
+            mod.use_x = False
+            mod.use_y = True
+        if "Z" in self.axis:
+            mod.use_x = False
+            mod.use_z = True
+        #Add an empty at the cursor or bbox center
+        if self.center == "cursor":
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=cursor)
+        elif self.center == "bbox":
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=center)
+        empty = context.active_object
+        mod.mirror_object = empty
+        #Make the original object active once again
+        bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects.active = lr
+        lr.select             = True
+        #Apply
+        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Mirror")
+        #Remove the empty
+        bpy.data.objects.remove(empty)
+
+        #Remove faces with too big a number of polygons, created because of the boolean
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.select_all(action='DESELECT')
+        bpy.ops.mesh.select_face_by_sides(number=8, type='GREATER')
+        bpy.ops.mesh.delete(type='ONLY_FACE')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.remove_doubles()
+        bpy.ops.object.editmode_toggle()
+
+        #Make the original object active once again
+        bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects.active = lr
+        lr.select              = True
+
+        return {"FINISHED"}
+
+#Relax the topology
+class Relax(BaseRemesher):
+    bl_idname = "bakemyscan.relax"
+    bl_label  = "Relaxation"
+
+    workonduplis = True
+
+    smooth = bpy.props.IntProperty(  name="smooth", description="Relaxation steps", default=2, min=0, max=150)
+
+    def draw(self, context):
+        self.layout.prop(self, "smooth", text="Relaxation steps")
+
+    def remesh(self, context):
+        lr = self.copiedobject
+        hr = self.initialobject
+
+        #Add a few shrinkwrapping / smoothing iterations to relax the surface
+        for i in range(self.smooth):
+            bpy.ops.object.modifier_add(type='SHRINKWRAP')
+            bpy.context.object.modifiers["Shrinkwrap"].target = hr
+            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Shrinkwrap")
+            bpy.ops.object.select_all(action='TOGGLE')
+            bpy.ops.object.modifier_add(type='SMOOTH')
+            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
+
+        #With one last small smoothing step
+        if self.smooth > 0:
+            bpy.ops.object.modifier_add(type='SMOOTH')
+            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Smooth")
+
+        #Make the original object active once again
+        bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects.active = lr
+        lr.select              = True
+
+        #Hide the original object?
+        hr.hide = True
+        #bpy.data.objects.remove(hr)
+
+        return {"FINISHED"}
+
+
+
 def register() :
     bpy.utils.register_class(BaseRemesher)
     bpy.utils.register_class(Quadriflow)
@@ -567,6 +763,8 @@ def register() :
     bpy.utils.register_class(Basic)
     bpy.utils.register_class(Iterative)
     bpy.utils.register_class(Quads)
+    bpy.utils.register_class(Symetry)
+    bpy.utils.register_class(Relax)
 
 def unregister() :
     bpy.utils.unregister_class(BaseRemesher)
@@ -577,3 +775,5 @@ def unregister() :
     bpy.utils.unregister_class(Basic)
     bpy.utils.unregister_class(Iterative)
     bpy.utils.unregister_class(Quads)
+    bpy.utils.unregister_class(Symetry)
+    bpy.utils.register_class(Relax)
