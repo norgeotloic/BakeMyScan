@@ -781,4 +781,4 @@ def unregister() :
     bpy.utils.unregister_class(Iterative)
     bpy.utils.unregister_class(Quads)
     bpy.utils.unregister_class(Symmetry)
-    bpy.utils.register_class(Relax)
+    bpy.utils.unregister_class(Relax)
