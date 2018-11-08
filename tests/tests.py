@@ -550,14 +550,14 @@ if __name__ == "__main__":
     )
 
     ############################################################################
-    # 2.8 - Symetry and mesh relaxation
+    # 2.8 - Symmetry and mesh relaxation
     ############################################################################
 
-    #Test that the symetry operator do not crash (will add assertions later)
+    #Test that the symmetry operator do not crash (will add assertions later)
     def returnnone():
         pass
     TESTS.add_operator(
-        name="symetry_x_cursor",
+        name="symmetry_x_cursor",
         operator="symetrize",
         before=create_suzanne,
         after=returnnone,
@@ -565,7 +565,7 @@ if __name__ == "__main__":
         args={"center":"cursor", "axis":"-X"}
     )
     TESTS.add_operator(
-        name="symetry_z_bbox",
+        name="symmetry_z_bbox",
         operator="symetrize",
         before=create_suzanne,
         after=returnnone,

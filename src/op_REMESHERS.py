@@ -569,9 +569,9 @@ class Iterative(BaseRemesher):
 
 
 #Make a model symetrical on the x axis
-class Symetry(BaseRemesher):
+class Symmetry(BaseRemesher):
     bl_idname = "bakemyscan.symetrize"
-    bl_label  = "Symetry"
+    bl_label  = "Symmetry"
 
     workonduplis  = True
     keepMaterials = True
@@ -602,7 +602,7 @@ class Symetry(BaseRemesher):
         lr = self.copiedobject
         hr = self.initialobject
 
-        #Get the symetry center depending on the method (maybe apply obj.matrix_world?)
+        #Get the symmetry center depending on the method (maybe apply obj.matrix_world?)
         cursor = bpy.context.scene.cursor_location
 
         center, dim = None, None
@@ -768,7 +768,7 @@ def register() :
     bpy.utils.register_class(Basic)
     bpy.utils.register_class(Iterative)
     bpy.utils.register_class(Quads)
-    bpy.utils.register_class(Symetry)
+    bpy.utils.register_class(Symmetry)
     bpy.utils.register_class(Relax)
 
 def unregister() :
@@ -780,5 +780,5 @@ def unregister() :
     bpy.utils.unregister_class(Basic)
     bpy.utils.unregister_class(Iterative)
     bpy.utils.unregister_class(Quads)
-    bpy.utils.unregister_class(Symetry)
+    bpy.utils.unregister_class(Symmetry)
     bpy.utils.register_class(Relax)

@@ -65,7 +65,7 @@ class RemeshPanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
         self.layout.label("Post-process")
         self.layout.operator("bakemyscan.unwrap",            icon="GROUP_UVS",  text="Unwrap")
-        self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symetry')
+        self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symmetry')
         self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
 class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
