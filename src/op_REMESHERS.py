@@ -139,9 +139,25 @@ class Quadriflow(BaseRemesher):
 
     resolution = bpy.props.IntProperty( name="resolution", description="Resolution", default=1000, min=10, max=100000 )
 
+    advanced = bpy.props.BoolProperty(  name="advanced", description="advanced properties", default=False)
+    mincost  = bpy.props.BoolProperty( name="mincost", description="Min-Cost Flow Solver", default=False )
+    sharp    = bpy.props.BoolProperty( name="sharp", description="Preserve sharp edges", default=False )
+    satflip  = bpy.props.BoolProperty( name="satflip", description="SAT Flip Removal", default=False )
+
+    def check(self, context):
+        return True
     def draw(self, context):
         self.layout.prop(self, "resolution", text="Resolution")
-        col = self.layout.column(align=True)
+
+        box = self.layout.box()
+        box.prop(self, "advanced", text="Advanced options")
+        if self.advanced:
+            box.prop(self, "sharp",   text="Preserve sharp edges")
+            box.prop(self, "mincost", text="Use Min-Cost Flow solver")
+            if os.name != "nt":
+                box.prop(self, "satflip",   text="SAT Flip Removal")
+                if self.satflip:
+                    box.label('"minisat" and "timeout" need to be installed!')
 
     #Overriden methods
     def setexe(self, context):
@@ -159,6 +175,9 @@ class Quadriflow(BaseRemesher):
             input_mesh  = os.path.join(self.tmp.name, "tmp.obj"),
             output_mesh = os.path.join(self.tmp.name, "tmp.o.obj"),
             face_count = self.resolution,
+            mincost = self.mincost,
+            sharp = self.sharp,
+            satflip = self.satflip,
         )
 
 class Instant(BaseRemesher):

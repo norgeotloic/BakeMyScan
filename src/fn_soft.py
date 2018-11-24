@@ -120,6 +120,9 @@ def quadriflow(
     input_mesh,
     output_mesh=None,
     face_count=None,
+    mincost=False,
+    sharp=False,
+    satflip=False,
     executable="quadriflow"
     ):
     cmd = '"' + executable + '" -i %s ' % input_mesh
@@ -128,6 +131,13 @@ def quadriflow(
     cmd += "-o %s " % output_mesh
     if face_count is not None:
         cmd += "-f %d " % face_count
+    if sharp:
+        cmd += "-sharp "
+    if mincost:
+        cmd+= "-mcf "
+    if satflip:
+        cmd+= "-sat "
+
     return run(cmd)
 def meshlab(input_mesh):
     return run("meshlab %s" % input_mesh)
