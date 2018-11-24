@@ -812,27 +812,7 @@ class Relax(BaseRemesher):
 
 
 
-"""
-class Ultimate(bpy.types.Operator):
-    bl_idname = "bakemyscan.retopo"
-    bl_label  = "Ultimate retopo"
-    bl_options = {"REGISTER"}
 
-    #For executable remeshers
-    tmp        = tempfile.TemporaryDirectory()
-    executable = None
-    results    = []
-    keepMaterials = False
-
-    #For remeshers which need to duplicate the object
-    workonduplis = False
-
-    method = bpy.props.EnumProperty(
-        items= (
-            ('iterative', 'iterative', 'iterative'),
-            ("2", "2", "2"),
-            ("4", "4", "4"), ("6", "6", "6")) , name="r", description="Orientation symmetry type", default="r0")
-"""
 
 def register() :
     bpy.utils.register_class(BaseRemesher)

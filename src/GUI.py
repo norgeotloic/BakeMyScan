@@ -165,6 +165,10 @@ class ExperimentalPanel(BakeMyScanPanel):
         layout.label('Cleanup some data')
         layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean non selected data")
 
+        #Uber remesher
+        layout.label('Full pipeline')
+        layout.operator("bakemyscan.full_pipeline", icon="ERROR", text="Run the full pipeline")
+
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "About"
 
