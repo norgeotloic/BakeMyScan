@@ -14,7 +14,7 @@ import sys
 import json
 
 #Do we stop the execution on error?
-_BREAK = True
+_BREAK = False
 #Path to the local_directory
 _DIR = os.path.dirname(__file__)
 def _PATH(f):

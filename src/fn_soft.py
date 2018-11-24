@@ -142,10 +142,10 @@ def colmap_auto(
     sparse=1,
     dense=1,
     mesher="delaunay",
-    executable="colmap",
+    colmap="colmap",
     gpu=False
     ):
-    cmd  = '"' + executable + '" automatic_reconstructor '
+    cmd  = '"' + colmap + '" automatic_reconstructor '
     cmd += "--workspace_path %s " % workspace
     cmd += "--image_path %s " % images
     cmd += "--quality %s " % quality
@@ -165,7 +165,12 @@ def colmap_openmvs(
     sparse=1,
     dense=1,
     mesher="delaunay",
-    executable="colmap"
+    colmap="colmap",
+    interfacevisualsfm = "InterfaceVisualSFM",
+    densifypointcloud = "DensifyPointCloud",
+    reconstructmesh = "ReconstructMesh",
+    texturemesh = "TextureMesh",
+    meshlabserver = "meshlabserver"
     ):
     DB = os.path.join(workspace, "database.db")
     SP = os.path.join(workspace, "sparse")
@@ -175,23 +180,21 @@ def colmap_openmvs(
     os.chdir(workspace)
 
     #Colmap
-    cmd1 = executable + " feature_extractor --database_path %s --image_path %s " % (DB, images)
-    cmd2 = executable + " exhaustive_matcher --database_path %s" % DB
-    cmd3 = executable + " mapper --database_path %s --image_path %s --output_path %s" % ( DB, images, SP )
-    cmd4 = executable + " model_converter --input_path %s --output_path %s --output_type NVM" % (os.path.join(SP, "0"), os.path.join(workspace, "model.nvm"))
+    cmd1 = colmap + " feature_extractor --database_path %s --image_path %s " % (DB, images)
+    cmd2 = colmap + " exhaustive_matcher --database_path %s" % DB
+    cmd3 = colmap + " mapper --database_path %s --image_path %s --output_path %s" % ( DB, images, SP )
+    cmd4 = colmap + " model_converter --input_path %s --output_path %s --output_type NVM" % (os.path.join(SP, "0"), os.path.join(workspace, "model.nvm"))
 
     #OpenMVS
-    cmd5 = "InterfaceVisualSFM -w %s -i %s" % (workspace, os.path.join(workspace, "model.nvm"))
-    cmd6 = "DensifyPointCloud -w %s -i %s --resolution-level %d" % (workspace, os.path.join(workspace, "model.mvs"), 2)
-    cmd7 = "ReconstructMesh -w %s -i %s" % (workspace, os.path.join(workspace, "model_dense.mvs"))
-    cmd8 = "TextureMesh -w %s -i %s" % (workspace, os.path.join(workspace, "model_dense_mesh.mvs"))
+    cmd5 = interfacevisualsfm + " -w %s -i %s" % (workspace, os.path.join(workspace, "model.nvm"))
+    cmd6 = densifypointcloud + " -w %s -i %s --resolution-level %d" % (workspace, os.path.join(workspace, "model.mvs"), 2)
+    cmd7 = reconstructmesh + " -w %s -i %s" % (workspace, os.path.join(workspace, "model_dense.mvs"))
+    cmd8 = texturemesh + " -w %s -i %s" % (workspace, os.path.join(workspace, "model_dense_mesh.mvs"))
 
     #Conversion
-    cmd9 = "meshlabserver -om wt -i %s -o %s" % (os.path.join(workspace, "model_dense_mesh_texture.ply"), os.path.join(workspace, "model_dense_mesh_texture.obj"))
+    cmd9 = meshlabserver + " -om wt -i %s -o %s" % (os.path.join(workspace, "model_dense_mesh_texture.ply"), os.path.join(workspace, "model_dense_mesh_texture.obj"))
 
     os.chdir(old)
-
-
     for cmd in [cmd1, cmd2, cmd3, cmd4, cmd5, cmd6, cmd7, cmd8]:
         out, err, code = run(cmd)
         if code!=0:

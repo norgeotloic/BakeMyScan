@@ -145,7 +145,7 @@ class Quadriflow(BaseRemesher):
 
     #Overriden methods
     def setexe(self, context):
-        self.executable = context.user_preferences.addons["BakeMyScan"].preferences.quadriflow
+        self.executable = bpy.types.Scene.executables["quadriflow"]
     def export(self, context):
         bpy.ops.export_scene.obj(
             filepath      = os.path.join(self.tmp.name, "tmp.obj"),
@@ -217,7 +217,7 @@ class Instant(BaseRemesher):
 
     #Overriden methods
     def setexe(self, context):
-        self.executable = context.user_preferences.addons["BakeMyScan"].preferences.instant
+        self.executable = bpy.types.Scene.executables["instant"]
     def export(self, context):
         bpy.ops.export_scene.obj(
             filepath      = os.path.join(self.tmp.name, "tmp.obj"),
@@ -312,7 +312,7 @@ class Mmgs(BaseRemesher):
 
     #Overriden methods
     def setexe(self, context):
-        self.executable = context.user_preferences.addons["BakeMyScan"].preferences.mmgs
+        self.executable = bpy.types.Scene.executables["mmgs"]
     def export(self, context):
         obj    = context.active_object
         self.maxDim = max( max( obj.dimensions[0], obj.dimensions[1]) , obj.dimensions[2] )
@@ -353,7 +353,7 @@ class Meshlab(BaseRemesher):
 
     #Overriden methods
     def setexe(self, context):
-        self.executable = context.user_preferences.addons["BakeMyScan"].preferences.meshlabserver
+        self.executable = bpy.types.Scene.executables["meshlabserver"]
     def export(self, context):
         bpy.ops.export_scene.obj(
             filepath      = os.path.join(self.tmp.name, "tmp.obj"),
@@ -758,6 +758,28 @@ class Relax(BaseRemesher):
         return {"FINISHED"}
 
 
+
+"""
+class Ultimate(bpy.types.Operator):
+    bl_idname = "bakemyscan.retopo"
+    bl_label  = "Ultimate retopo"
+    bl_options = {"REGISTER"}
+
+    #For executable remeshers
+    tmp        = tempfile.TemporaryDirectory()
+    executable = None
+    results    = []
+    keepMaterials = False
+
+    #For remeshers which need to duplicate the object
+    workonduplis = False
+
+    method = bpy.props.EnumProperty(
+        items= (
+            ('iterative', 'iterative', 'iterative'),
+            ("2", "2", "2"),
+            ("4", "4", "4"), ("6", "6", "6")) , name="r", description="Orientation symmetry type", default="r0")
+"""
 
 def register() :
     bpy.utils.register_class(BaseRemesher)

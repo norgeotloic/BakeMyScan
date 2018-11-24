@@ -41,13 +41,15 @@ class colmap_auto(bpy.types.Operator):
             return 0
         if len([imghdr.what(os.path.join(D,x)) for x in os.listdir(D) if not os.path.isdir(os.path.join(D,x))]) == 0:
             return 0
+        if bpy.types.Scene.executables["colmap"] == "":
+            return 0
         return 1
 
     def execute(self, context):
         if True:
             D = bpy.types.Scene.imgpaths
             self.results = fn_soft.colmap_auto(
-                executable    = "colmap",
+                colmap        = bpy.types.Scene.executables["colmap"],
                 workspace     = D,
                 images        = D,
                 mesher        = self.mesher,
@@ -98,13 +100,24 @@ class colmap_openmvs(bpy.types.Operator):
             return 0
         if len([imghdr.what(os.path.join(D,x)) for x in os.listdir(D) if not os.path.isdir(os.path.join(D,x))]) == 0:
             return 0
+        if bpy.types.Scene.executables["colmap"] == "":
+            return 0
+        if bpy.types.Scene.executables["densifypointcloud"] == "":
+            return 0
+        if bpy.types.Scene.executables["interfacevisualsfm"] == "":
+            return 0
+        if bpy.types.Scene.executables["reconstructmesh"] == "":
+            return 0
+        if bpy.types.Scene.executables["texturemesh"] == "":
+            return 0
+        if bpy.types.Scene.executables["meshlabserver"] == "":
+            return 0
         return 1
 
     def execute(self, context):
         if True:
             D = bpy.types.Scene.imgpaths
             self.results = fn_soft.colmap_openmvs(
-                executable    = "colmap",
                 workspace     = D,
                 images        = D,
                 mesher        = self.mesher,
@@ -112,6 +125,12 @@ class colmap_openmvs(bpy.types.Operator):
                 sparse        = 1 if self.sparse else 0,
                 dense         = 1 if self.sparse else 0,
                 single_camera = 1 if self.single else 0,
+                colmap=bpy.types.Scene.executables["colmap"],
+                interfacevisualsfm = bpy.types.Scene.executables["interfacevisualsfm"],
+                densifypointcloud = bpy.types.Scene.executables["densifypointcloud"],
+                reconstructmesh = bpy.types.Scene.executables["reconstructmesh"],
+                texturemesh = bpy.types.Scene.executables["texturemesh"],
+                meshlabserver = bpy.types.Scene.executables["meshlabserver"],
             )
             return{'FINISHED'}
         else:

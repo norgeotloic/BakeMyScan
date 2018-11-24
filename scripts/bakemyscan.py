@@ -96,16 +96,16 @@ def get_args():
         parser.print_help()
         print('ERROR: invalid method name')
         sys.exit(5)
-    if args.method == "MMGS" and bpy.context.user_preferences.addons["BakeMyScan"].preferences.mmgs == "":
+    if args.method == "MMGS" and bpy.types.Scene.executables["mmgs"] == "":
         print("MMGS is not configured in the user preferences")
         sys.exit(6)
-    if args.method == "INSTANT" and bpy.context.user_preferences.addons["BakeMyScan"].preferences.instant == "":
+    if args.method == "INSTANT" and bpy.types.Scene.executables["instant"] == "":
         print("Instant Meshes is not configured in the user preferences")
         sys.exit(7)
-    if args.method == "QUADRIFLOW" and bpy.context.user_preferences.addons["BakeMyScan"].preferences.quadriflow == "":
+    if args.method == "QUADRIFLOW" and bpy.types.Scene.executables["quadriflow"] == "":
         print("Quadriflow is not configured in the user preferences")
         sys.exit(8)
-    if args.method == "MESHLAB" and bpy.context.user_preferences.addons["BakeMyScan"].preferences.meshlabserver == "":
+    if args.method == "MESHLAB" and bpy.types.Scene.executables["meshlabserver"] == "":
         print("Meshlabserver is not configured in the user preferences")
         sys.exit(9)
 
