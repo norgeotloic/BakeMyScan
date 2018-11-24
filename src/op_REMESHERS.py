@@ -346,10 +346,36 @@ class Meshlab(BaseRemesher):
     bl_label  = "Meshlab"
 
     facescount = bpy.props.IntProperty( name="facescount", description="Number of faces", default=5000, min=10, max=1000000 )
+    advanced = bpy.props.BoolProperty(  name="advanced", description="advanced properties", default=False)
+    quality    = bpy.props.FloatProperty( name="quality", description="Quality threshold", default=0.3, min=0., max=1. )
+    boundaries = bpy.props.BoolProperty( name="boundaries", description="Preserve boundary", default=False)
+    weight     = bpy.props.FloatProperty( name="weight", description="Boundary preserving weight", default=1., min=0., max=1. )
+    normals  = bpy.props.BoolProperty( name="normals", description="Preserve normals", default=False)
+    topology = bpy.props.BoolProperty( name="topology", description="Preserve topology", default=False)
+    existing = bpy.props.BoolProperty( name="existing", description="Use existing vertices", default=False)
+    planar   = bpy.props.BoolProperty( name="planar", description="Planar simplification", default=False)
+    post     = bpy.props.BoolProperty( name="post", description="Post-process (isolated, duplicates...)", default=True)
 
+    def check(self, context):
+        return True
     def draw(self, context):
-        self.layout.prop(self, "facescount", text="Number of faces")
-        col = self.layout.column(align=True)
+        box = self.layout.box()
+        box.label('Basic options')
+        box.prop(self, "facescount",  text="Number of faces")
+
+        box = self.layout.box()
+        box.prop(self, "advanced", text="Advanced options")
+        if self.advanced:
+            box.prop(self, "quality", text="Quality threshold")
+            box.prop(self, "normals", text="Preserve normals")
+            box.prop(self, "topology", text="Preserve topology")
+            box.prop(self, "existing", text="Use existing vertices")
+            box.prop(self, "planar", text="Planar simplification")
+            box.prop(self, "post", text="Post-process (isolated, duplicates...)")
+            box.prop(self, "boundaries", text="Preserve boundary")
+            if self.boundaries:
+                box.prop(self, "weight", text="Boundary preserving weight")
+
 
     #Overriden methods
     def setexe(self, context):
@@ -366,6 +392,14 @@ class Meshlab(BaseRemesher):
         with open(original_script, 'r') as infile :
             filedata = infile.read()
             newdata  = filedata.replace("FACESCOUNT", str(self.facescount))
+            newdata  = newdata.replace("QUALITY", str(self.quality))
+            newdata  = newdata.replace("BOUNDS", str(self.boundaries).lower())
+            newdata  = newdata.replace("WEIGHT", str(self.weight))
+            newdata  = newdata.replace("NORMALS", str(self.normals).lower())
+            newdata  = newdata.replace("TOPO", str(self.topology).lower())
+            newdata  = newdata.replace("OPTIM", str(not self.existing).lower())
+            newdata  = newdata.replace("PLANAR", str(self.planar).lower())
+            newdata  = newdata.replace("CLEAN", str(self.post).lower())
             if os.name == "nt":
                 newdata = newdata.replace("FILTERNAME", "Simplification: Quadric Edge Collapse Decimation")
             else:
