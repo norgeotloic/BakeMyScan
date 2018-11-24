@@ -126,6 +126,8 @@ def node_tree_pbr():
     _glossiness = AN(type="ShaderNodeTexImage")
     _normal     = AN(type="ShaderNodeTexImage")
     _height     = AN(type="ShaderNodeTexImage")
+    _transmission = AN(type="ShaderNodeTexImage")
+    _subsurface = AN(type="ShaderNodeTexImage")
     _opacity    = AN(type="ShaderNodeTexImage")
     _emission   = AN(type="ShaderNodeTexImage")
     _vertexcolors = AN(type="ShaderNodeAttribute")
@@ -137,6 +139,8 @@ def node_tree_pbr():
     _glossiness.name = _glossiness.label = "glossiness"
     _normal.name     = _normal.label     = "normal"
     _height.name     = _height.label     = "height"
+    _transmission.name = _transmission.label = "transmission"
+    _subsurface.name = _subsurface.label = "subsurface"
     _opacity.name    = _opacity.label    = "opacity"
     _emission.name   = _emission.label   = "emission"
     _vertexcolors.name = _vertexcolors.label = "vertexcolors"
@@ -247,8 +251,11 @@ def node_tree_pbr():
     _height.location = [-400, -500]
     _normal.location = [-600, -700]
     _normal.color_space = "NONE"
+    _subsurface.location = [-200, -100]
+    _subsurface.color_space = "NONE"
+    _transmission.location = [-200, -600]
+    _transmission.color_space = "NONE"
     #Post-shader emission and opacity mix
-
     _emission.location = [-200, 200]
     _emission_shader.location = [0, 200]
     _emission_mix.location = [200, 100]

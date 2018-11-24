@@ -72,6 +72,8 @@ class bake_cycles_textures(bpy.types.Operator):
     bake_surface   = bpy.props.BoolProperty(name="bake_surface",   description="material normals", default=False)
     bake_metallic  = bpy.props.BoolProperty(name="bake_metallic",  description="metalness", default=False)
     bake_roughness = bpy.props.BoolProperty(name="bake_roughness", description="roughness", default=False)
+    bake_transmission = bpy.props.BoolProperty(name="bake_transmission",  description="transmission", default=False)
+    bake_subsurface = bpy.props.BoolProperty(name="bake_subsurface",  description="subsurface", default=False)
     bake_emission  = bpy.props.BoolProperty(name="bake_emission",  description="emission", default=False)
     bake_opacity   = bpy.props.BoolProperty(name="bake_opacity",   description="opacity", default=False)
 
@@ -91,6 +93,8 @@ class bake_cycles_textures(bpy.types.Operator):
         box.prop(self, "bake_geometry", text="Geometric normals")
         box.prop(self, "bake_surface",  text="Surface normals")
         box.prop(self, "bake_ao",       text="Ambient occlusion")
+        box.prop(self, "bake_transmission", text="Transmission")
+        box.prop(self, "bake_subsurface", text="Subsurface")
         box.prop(self, "bake_emission", text="Emission")
         box.prop(self, "bake_opacity",  text="Opacity")
         col = self.layout.column(align=True)
@@ -150,6 +154,8 @@ class bake_cycles_textures(bpy.types.Operator):
         toBake["Metallic"]   = self.bake_metallic
         toBake["Roughness"]  = self.bake_roughness
         toBake["Normal"]     = self.bake_surface
+        toBake["Transmission"] = self.bake_transmission
+        toBake["Subsurface"] = self.bake_subsurface
         toBake["Emission"]   = self.bake_emission
         toBake["Opacity"]    = self.bake_opacity
 
@@ -235,6 +241,8 @@ class bake_cycles_textures(bpy.types.Operator):
             "metallic":  baked["Metallic"]   if self.bake_metallic else None,
             "roughness": baked["Roughness"]  if self.bake_roughness else None,
             "normal":    baked["Normals"]    if self.bake_geometry or self.bake_surface else None,
+            "transmission": baked["Transmission"] if self.bake_transmission else None,
+            "subsurface": baked["Subsurface"] if self.bake_subsurface else None,
             "emission":  baked["Emission"]   if self.bake_emission else None,
             "opacity":   baked["Opacity"]    if self.bake_opacity else None
         }

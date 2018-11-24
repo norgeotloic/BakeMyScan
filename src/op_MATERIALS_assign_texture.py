@@ -23,6 +23,8 @@ class assign_texture(bpy.types.Operator, ImportHelper):
             ("metallic", "metallic", "metallic"),
             ("ao", "ao", "ao"),
             ("height", "height", "height"),
+            ("transmission", "transmission", "transmission"),
+            ("subsurface", "subsurface", "subsurface"),
             ("opacity", "opacity", "opacity"),
             ("emission", "emission", "emission"),
         ) ,
@@ -121,6 +123,10 @@ class assign_texture(bpy.types.Operator, ImportHelper):
         if self.slot == "glossiness" and nodes.get("glossiness") is not None:
             LN(nodes.get("glossiness").outputs["Color"], nodes.get("glossiness_invert").inputs["Color"])
             LN(nodes.get("glossiness_invert").outputs["Color"], PR.inputs["Roughness"])
+        if self.slot == "transmission" and nodes.get("transmission") is not None:
+            LN(nodes.get("transmission").outputs["Color"], PR.inputs["Transmission"])
+        if self.slot == "subsurface" and nodes.get("subsurface") is not None:
+            LN(nodes.get("subsurface").outputs["Color"], PR.inputs["Subsurface"])
         #Less obvious with the normals and heights
         if self.slot == "height" or self.slot == "normal":
             LN(nodes.get("bump").outputs["Normal"], PR.inputs["Normal"])
