@@ -100,8 +100,11 @@ class bake_cycles_textures(bpy.types.Operator):
         #Render engine must be cycles
         if bpy.context.scene.render.engine!="CYCLES":
             return 0
+        #Object mode
+        if context.mode!="OBJECT":
+            return 0
         #If more than two objects are selected
-        if len(context.selected_objects)!=2:
+        if len(context.selected_objects)<2:
             return 0
         #If no object is active
         if context.active_object is None:
@@ -111,15 +114,15 @@ class bake_cycles_textures(bpy.types.Operator):
             if o.type != "MESH":
                 return 0
         #The source object must have correct materials
-        source = [o for o in context.selected_objects if o!=context.active_object][0] if len(context.selected_objects)==2 else context.active_object
+        sources = [o for o in context.selected_objects if o!=context.active_object]
         target = context.active_object
+
         #Each material must be not None and have nodes
-        if source.active_material is None:
-            return 0
-        if source.active_material.use_nodes == False:
-            return 0
-        if context.mode!="OBJECT":
-            return 0
+        for source in sources:
+            if source.active_material is None:
+                return 0
+            if source.active_material.use_nodes == False:
+                return 0
         #The target object must have a UV layout
         if len(target.data.uv_layers) == 0:
             return 0
@@ -128,24 +131,18 @@ class bake_cycles_textures(bpy.types.Operator):
     def execute(self, context):
 
         #Find which object is the source and which is the target
-        source, target = None, None
-        if len(context.selected_objects) == 1:
-            source = target = context.selected_objects[0]
-        if len(context.selected_objects) == 2:
-            target = [o for o in context.selected_objects if o==context.active_object][0]
-            source = [o for o in context.selected_objects if o!=target][0]
-
-        #Get the source material
-        material  = source.active_material
+        target  = context.active_object
+        sources = [o for o in context.selected_objects if o!=target]
 
         # Set the baking parameters
         bpy.data.scenes["Scene"].render.bake.use_selected_to_active = True
         bpy.data.scenes["Scene"].cycles.bake_type = 'EMIT'
         bpy.data.scenes["Scene"].cycles.samples   = 1
         bpy.data.scenes["Scene"].render.bake.margin = 8
-        dims = source.dimensions
         bpy.data.scenes["Scene"].render.bake.use_cage = True
-        bpy.data.scenes["Scene"].render.bake.cage_extrusion = self.cageRatio * max(max(dims[0], dims[1]), dims[2])
+        dims = target.dimensions
+        maxdim = max(max(dims[0], dims[1]), dims[2])
+        bpy.data.scenes["Scene"].render.bake.cage_extrusion = self.cageRatio * maxdim
 
         #Proceed to the different channels baking
         toBake = collections.OrderedDict()
@@ -169,10 +166,18 @@ class bake_cycles_textures(bpy.types.Operator):
 
                 print("Baking the channel: %s" % baketype)
 
-                #Copy the active material, and assign it to the source
-                tmpMat      = fn_bake.create_source_baking_material(material, baketype)
-                tmpMat.name = material.name + "_" + baketype
-                source.active_material = tmpMat
+                #Copy all the objects' materials, and modify them them
+                MATERIALS = []
+                for source in sources:
+                    MATS = [None for i in range(len(source.material_slots))]
+                    for i, slot in enumerate(source.material_slots):
+                        if slot.material is not None:
+                            if slot.material.use_nodes:
+                                MATS[i] = slot.material
+                                tmpMat      = fn_bake.create_source_baking_material(slot.material, baketype)
+                                tmpMat.name = slot.material.name + "_" + baketype
+                                source.material_slots[i].material = tmpMat
+                    MATERIALS.append(MATS)
 
                 #Create a material for the target
                 targetMat = fn_bake.create_target_baking_material(target)
@@ -192,10 +197,15 @@ class bake_cycles_textures(bpy.types.Operator):
                 bpy.ops.object.bake(type="EMIT")
                 baked[baketype] = imgNode.image
 
-                #Remove the material and reassign the original one
+                #Restore the original materials
+                for i, source in enumerate(sources):
+                    for j, slot in enumerate(source.material_slots):
+                        if MATERIALS[i][j] is not None:
+                            bpy.data.materials.remove(source.material_slots[j].material)
+                            source.material_slots[j].material = MATERIALS[i][j]
+
+                #Do some clean up
                 targetMat.node_tree.nodes.remove(imgNode)
-                source.active_material = material
-                bpy.data.materials.remove(tmpMat)
                 bpy.data.scenes["Scene"].render.bake.use_clear = True
 
         #Bake the AO
