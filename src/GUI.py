@@ -1,23 +1,47 @@
 import bpy
+import os
 
 class BakeMyScanPanel(bpy.types.Panel):
+    """A base class for panels to inherit"""
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_category    = "BakeMyScan"
     bl_options     = {"DEFAULT_CLOSED"}
     bl_context     = "objectmode"
 
+class ScanningProperties(bpy.types.PropertyGroup):
+    def create_images_variable(self, context):
+        bpy.types.Scene.imgpaths = self.imgpaths
+    imgpaths =  bpy.props.StringProperty(
+        name="texturepath",
+        description="Filepath used for importing the file",
+        maxlen=1024,
+        subtype='DIR_PATH',
+        update = create_images_variable
+    )
+class ScanPanel(BakeMyScanPanel):
+    """A panel for the scanning methods"""
+    bl_label       = "Scan"
+    def draw(self, context):
+        self.layout.label("Images directory")
+        self.layout.prop(context.scene.images_directory, "imgpaths", text="")
+        self.layout.label("Structure from motion")
+        self.layout.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
+        self.layout.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap + OpenMVS")
+
 class ImportPanel(BakeMyScanPanel):
+    """A panel for importing and pre-processing"""
     bl_label       = "Import"
     def draw(self, context):
         self.layout.operator("bakemyscan.import_scan",  icon="IMPORT",       text="Import")
         self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Pre-process")
 
-def updatepath(self, context):
-    print(self.texturepath)
-    bpy.ops.bakemyscan.create_library(filepath=self.texturepath)
-    return None
+
 class MyCustomProperties(bpy.types.PropertyGroup):
+    def updatepath(self, context):
+        print(self.texturepath)
+        bpy.ops.bakemyscan.create_library(filepath=self.texturepath)
+        return None
     texturepath =  bpy.props.StringProperty(
         name="texturepath",
         description="Filepath used for importing the file",
@@ -163,6 +187,7 @@ class AboutPanel(BakeMyScanPanel):
 
 
 def register():
+    bpy.utils.register_class(ScanPanel)
     bpy.utils.register_class(ImportPanel)
     bpy.utils.register_class(MaterialPanel)
     bpy.utils.register_class(RemeshPanel)
@@ -177,8 +202,13 @@ def register():
     #Add the custom path to texture library
     bpy.utils.register_class(MyCustomProperties)
     bpy.types.Scene.textures_path = bpy.props.PointerProperty(type=MyCustomProperties)
+    #
+    bpy.utils.register_class(ScanningProperties)
+    bpy.types.Scene.images_directory = bpy.props.PointerProperty(type=ScanningProperties)
+    bpy.types.Scene.imgpaths = ""
 
 def unregister():
+    bpy.utils.unregister_class(ScanPanel)
     bpy.utils.unregister_class(ImportPanel)
     bpy.utils.unregister_class(MaterialPanel)
     bpy.utils.unregister_class(RemeshPanel)
@@ -193,3 +223,7 @@ def unregister():
     #Clear the custom path to textures
     bpy.utils.unregister_class(MyCustomProperties)
     del bpy.types.Scene.textures_path
+
+    bpy.utils.unregister_class(ScanningProperties)
+    del bpy.types.Scene.images_directory
+    del bpy.types.Scene.imgpaths
