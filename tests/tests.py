@@ -20,6 +20,13 @@ _DIR = os.path.dirname(__file__)
 def _PATH(f):
     return os.path.join(_DIR, f)
 
+#Enable the addon
+try:
+    bpy.ops.wm.addon_enable(module="BakeMyScan")
+except:
+    print("Error enabling the addon")
+    sys.exit(2)
+
 ################################################################################
 # 1 - A class to manage the execution of the different test cases
 ################################################################################

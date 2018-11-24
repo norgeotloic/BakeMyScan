@@ -72,22 +72,29 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
 def register():
     bpy.types.Scene.executables = {}
     bpy.utils.register_class(BakeMyScanPrefs)
-    PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
 
-    #Print the preferences
-    for x in PREFS.keys():
-        print(x, PREFS[x])
+    #Register it after it has already been activated
+    try:
 
-    #Try to read in the preferences
-    path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
-    if os.path.exists(path):
-        with open(path, 'r') as fp:
-            bpy.types.Scene.executables = json.load(fp)
-            #Assign them to the variables
-            for x in bpy.types.Scene.executables.keys():
-                if PREFS[x] == "":
-                    PREFS[x] = bpy.types.Scene.executables[x]
-    print(bpy.types.Scene.executables)
+        PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
+
+        #Print the preferences
+        for x in PREFS.keys():
+            print(x, PREFS[x])
+
+        #Try to read in the preferences
+        path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
+        if os.path.exists(path):
+            with open(path, 'r') as fp:
+                bpy.types.Scene.executables = json.load(fp)
+                #Assign them to the variables
+                for x in bpy.types.Scene.executables.keys():
+                    if PREFS[x] == "":
+                        PREFS[x] = bpy.types.Scene.executables[x]
+
+    except:
+        print("Did not manage to read the configuration file. But that's not a big deal!")
+
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
     del bpy.types.Scene.executables
