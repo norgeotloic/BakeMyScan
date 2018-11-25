@@ -86,16 +86,16 @@ class BaseRemesher(bpy.types.Operator):
             bpy.ops.mesh.delete_loose()
             bpy.ops.object.editmode_toggle()
             #Shade smooth and rename it
-            bpy.ops.object.shade_smooth()
-            bpy.context.object.data.use_auto_smooth = False
-            context.active_object.name = self.initialobject.name + "." + self.bl_label.lower().replace(" ","")
+            #bpy.ops.object.shade_smooth()
+            #bpy.context.object.data.use_auto_smooth = False
+            #context.active_object.name = self.initialobject.name + "." + self.bl_label.lower().replace(" ","")
             #Remove hypothetical material
             if not self.keepMaterials:
                 while len(context.active_object.material_slots):
                     context.active_object.active_material_index = 0
                     bpy.ops.object.material_slot_remove()
             #Hide the old object
-            self.initialobject.hide = True
+            #self.initialobject.hide = True
     def execute(self, context):
         #Set the executable path
         self.setexe(context)
