@@ -218,8 +218,12 @@ def create_source_baking_material(material, channel):
     _image_nodes = get_all_nodes_in_material(_new_material, "TEX_IMAGE")
     for n in [x["node"] for x in _image_nodes]:
         if len(n.outputs["Color"].links)>0:
-            if not is_attached_to_normalmap_somehow(n):
-                n.color_space = "COLOR"
+            if channel == "Normal":
+                if not is_attached_to_normalmap_somehow(n):
+                    n.color_space = "COLOR"
+            else:
+                if channel != "Roughness": #DEBUG
+                    n.color_space = "COLOR"
     return _new_material
 
 def create_target_baking_material(obj):

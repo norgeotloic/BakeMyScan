@@ -207,7 +207,8 @@ class bake_cycles_textures(bpy.types.Operator):
                 for i, source in enumerate(sources):
                     for j, slot in enumerate(source.material_slots):
                         if MATERIALS[i][j] is not None:
-                            bpy.data.materials.remove(source.material_slots[j].material)
+                            if baketype != "Roughness": #DEBUG
+                                bpy.data.materials.remove(source.material_slots[j].material)
                             source.material_slots[j].material = MATERIALS[i][j]
 
                 #Do some clean up

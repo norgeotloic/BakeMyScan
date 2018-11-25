@@ -167,7 +167,11 @@ class ExperimentalPanel(BakeMyScanPanel):
 
         #Uber remesher
         layout.label('Full pipeline')
-        layout.operator("bakemyscan.full_pipeline", icon="ERROR", text="Run the full pipeline")
+        layout.operator("bakemyscan.full_pipeline", icon="ERROR", text="Full pipeline")
+
+        #Delighting
+        layout.label("Delighting")
+        layout.operator("bakemyscan.delight", icon="LAMP_AREA", text="Quick de-light")
 
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "About"
