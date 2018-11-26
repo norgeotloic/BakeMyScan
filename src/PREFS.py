@@ -2,7 +2,10 @@ import bpy
 import os
 import json
 
-from . import fn_soft
+import shutil
+
+def is_exe(exe):
+    return shutil.which(exe) is not None
 
 def absolute_paths(self, context):
     #Make the paths absolute
@@ -16,32 +19,38 @@ def absolute_paths(self, context):
     bpy.types.Scene.executables["reconstructmesh"] = os.path.abspath(bpy.path.abspath(self.reconstructmesh)) if self.reconstructmesh!="" else ""
     bpy.types.Scene.executables["texturemesh"] = os.path.abspath(bpy.path.abspath(self.texturemesh)) if self.texturemesh!="" else ""
     bpy.types.Scene.executables["openmvsdir"] = os.path.abspath(bpy.path.abspath(self.openmvsdir)) if self.openmvsdir!="" else ""
+
+    #Check that everything is an executable
+    oneWrong = False
+    for x in bpy.types.Scene.executables:
+        if x!="openmvsdir":
+            exe = bpy.types.Scene.executables[x]
+            if not is_exe(exe):
+                print("ERROR: %s is not a valid executable!" % exe)
+                bpy.types.Scene.executables[x] = ""
+                oneWrong = True
+    if not oneWrong:
+        print("All provided paths seem valid, we're good to go!")
+
     #Write to a .json file to keep even after updating the addon
     path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
     with open(path, 'w') as fp:
         json.dump(bpy.types.Scene.executables, fp, sort_keys=True, indent=4)
     return None
 
-"""
-def is_executable(self, value):
-    #Check that those are executables
-    for x in bpy.types.Scene.executables.keys():
-        exe = bpy.types.Scene.executables[x]
-        code = fn_soft.run('"%s" -h' % exe)[2]
-        print(exe, code)
-"""
-
 def find_openmvs_executables(self, context):
     bpy.types.Scene.executables["openmvsdir"] = os.path.abspath(bpy.path.abspath(self.openmvsdir)) if self.openmvsdir!="" else ""
-    for f in os.listdir(bpy.types.Scene.executables["openmvsdir"]):
-        if "InterfaceVisualSFM" in f:
-            self.interfacevisualsfm = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
-        if "DensifyPointCloud" in f:
-            self.densifypointcloud = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
-        if "ReconstructMesh" in f:
-            self.reconstructmesh = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
-        if "TextureMesh" in f:
-            self.texturemesh = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
+    D = bpy.types.Scene.executables["openmvsdir"]
+    if os.path.isdir(D):
+        for f in os.listdir(D):
+            if "InterfaceVisualSFM" in f:
+                self.interfacevisualsfm = os.path.join(D, f)
+            if "DensifyPointCloud" in f:
+                self.densifypointcloud = os.path.join(D, f)
+            if "ReconstructMesh" in f:
+                self.reconstructmesh = os.path.join(D, f)
+            if "TextureMesh" in f:
+                self.texturemesh = os.path.join(D, f)
     return None
 
 class BakeMyScanPrefs(bpy.types.AddonPreferences):
@@ -99,7 +108,6 @@ def register():
                         PREFS[x] = bpy.types.Scene.executables[x]
                 else:
                     PREFS[x] = bpy.types.Scene.executables[x]
-
 
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
