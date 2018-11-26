@@ -4,7 +4,7 @@ import time
 
 class full_pipeline(bpy.types.Operator):
     bl_idname = "bakemyscan.full_pipeline"
-    bl_label  = "Optimize the model"
+    bl_label  = "Retopology"
     bl_options = {"REGISTER", "UNDO"}
 
     #Quadriflow
@@ -118,16 +118,81 @@ class full_pipeline(bpy.types.Operator):
                 box.prop(self, "quads_factor", text="Weight factor")
 
         elif self.remeshing_method == "quadriflow":
-            op_REMESHERS.Quads.draw(self, context)
+            box.prop(self, "quadriflow_resolution", "Resolution")
+            box = box.box()
+            box.prop(self, "quadriflow_advanced", text="Advanced options")
+            if self.quadriflow_advanced:
+                box.prop(self, "quadriflow_sharp",   text="Preserve sharp edges")
+                box.prop(self, "quadriflow_mincost", text="Use Min-Cost Flow solver")
+                if os.name != "nt":
+                    box.prop(self, "quadriflow_satflip",   text="SAT Flip Removal")
+                    if self.quadriflow_satflip:
+                        box.label('"minisat" and "timeout" need to be installed!')
 
         elif self.remeshing_method == "meshlab":
-            op_REMESHERS.Quads.draw(self, context)
+            box.prop(self, "meshlab_facescount",  text="Number of faces")
+            box1 = box.box()
+            box1.prop(self, "meshlab_advanced", text="Advanced options")
+            if self.meshlab_advanced:
+                box1.prop(self, "meshlab_quality", text="Quality threshold")
+                box1.prop(self, "meshlab_normals", text="Preserve normals")
+                box1.prop(self, "meshlab_topology", text="Preserve topology")
+                box1.prop(self, "meshlab_existing", text="Use existing vertices")
+                box1.prop(self, "meshlab_planar", text="Planar simplification")
+                box1.prop(self, "meshlab_post", text="Post-process (isolated, duplicates...)")
+                box1.prop(self, "meshlab_boundaries", text="Preserve boundary")
+                if self.meshlab_boundaries:
+                    box1.prop(self, "meshlab_weight", text="Boundary preserving weight")
 
         elif self.remeshing_method == "instant":
-            op_REMESHERS.Quads.draw(self, context)
+            box.prop(self, "instant_interactive", text="Interactive mode")
+            if not self.instant_interactive:
+                box.prop(self, "instant_method", text="Remesh according to")
+                if self.instant_method == "faces":
+                    box.prop(self, "instant_facescount",  text="Desired number of faces")
+                elif self.instant_method == "verts":
+                    box.prop(self, "instant_vertscount",  text="Desired number of vertices")
+                elif self.instant_method == "edges":
+                    box.prop(self, "instant_edgelength",  text="Desired edge length (ratio)")
+                box2 = box.box()
+                box2.prop(self, "instant_advanced", text="Advanced options")
+                if self.instant_advanced:
+                    box2.prop(self, "instant_d", text="Deterministic (slower)")
+                    box2.prop(self, "instant_D", text="Tris/quads dominant instead of pure")
+                    box2.prop(self, "instant_i", text="Intrinsic mode")
+                    box2.prop(self, "instant_b", text="Align to boundaries")
+                    box2.prop(self, "instant_C", text="Compatibility mode")
+                    box2.prop(self, "instant_c", text="Creases angle threshold")
+                    box2.prop(self, "instant_S", text="Smoothing reprojection steps")
+                    box2.prop(self, "instant_r", text="Orientation symmetry type")
+                    box2.prop(self, "instant_p", text="Position symmetry type")
+
 
         elif self.remeshing_method == "mmgs":
-            op_REMESHERS.Quads.draw(self, context)
+            box.prop(self, "mmgs_hausd",  text="Haussdorf distance (ratio)")
+            box.prop(self, "mmgs_smooth", text="Ignore angle detection (smooth)")
+
+            box0 = box.box()
+            box0.prop(self, "mmgs_advanced", text="Advanced options")
+            if self.mmgs_advanced:
+                box0.prop(self, "mmgs_angle",  text="Angle detection (°)")
+                if not self.mmgs_weight:
+                    box0.prop(self, "mmgs_hmin",   text="Minimal edge size (ratio)")
+                    box0.prop(self, "mmgs_hmax",   text="Maximal edge size (ratio)")
+                box0.prop(self, "mmgs_hgrad",  text="Gradation parameter")
+                box0.prop(self, "mmgs_aniso",  text="Enable anisotropy")
+                box0.prop(self, "mmgs_nreg",   text="Normal regulation")
+
+            box1 = box.box()
+            box1.prop(self, "mmgs_weight", text="Use weight paint")
+            if self.mmgs_weight:
+                box1.label('Warning!')
+                box1.label('Low weights (blue) <-> max size')
+                box1.label('High weights (red) <-> min size')
+                box1.label('Min size too low -> very long!')
+                box1.label('Try defaults first!')
+                box1.prop(self, "mmgs_hmin",   text="Minimal edge size (ratio)")
+                box1.prop(self, "mmgs_hmax",   text="Maximal edge size (ratio)")
 
     @classmethod
     def poll(self, context):
@@ -152,25 +217,78 @@ class full_pipeline(bpy.types.Operator):
     def execute(self, context):
 
         if self.remeshing_method == "decimate":
-            bpy.ops.bakemyscan.remesh_decimate(limit=self.decim_limit, vertex_group=self.decim_vertex_group, factor=self.decim_factor)
+            bpy.ops.bakemyscan.remesh_decimate(
+                limit=self.decim_limit,
+                vertex_group=self.decim_vertex_group,
+                factor=self.decim_factor
+            )
 
         elif self.remeshing_method == "iterative":
-            bpy.ops.bakemyscan.remesh_iterative(limit=self.iter_limit, vertex_group=self.iter_vertex_group, factor=self.iter_factor)
+            bpy.ops.bakemyscan.remesh_iterative(
+                limit=self.iter_limit,
+                vertex_group=self.iter_vertex_group,
+                factor=self.iter_factor
+            )
 
         elif self.remeshing_method == "quads":
-            bpy.ops.bakemyscan.remesh_quads(nfaces=self.quads_nfaces, smooth=self.quads_smooth, vertex_group=self.quads_vertex_group, factor=self.quads_factor)
+            bpy.ops.bakemyscan.remesh_quads(
+                nfaces=self.quads_nfaces,
+                smooth=self.quads_smooth,
+                vertex_group=self.quads_vertex_group,
+                factor=self.quads_factor
+            )
 
         elif self.remeshing_method == "quadriflow":
-            op_REMESHERS.Quads.draw(self, context)
+            bpy.ops.bakemyscan.remesh_quadriflow(
+                resolution=self.quadriflow_resolution,
+                sharp=self.quadriflow_sharp,
+                mincost=self.quadriflow_mincost,
+                satflip=self.quadriflow_satflip
+            )
 
         elif self.remeshing_method == "meshlab":
-            op_REMESHERS.Quads.draw(self, context)
+            bpy.ops.bakemyscan.remesh_meshlab(
+                facescount=self.meshlab_facescount,
+                quality=self.meshlab_quality,
+                boundaries=self.meshlab_boundaries,
+                weight=self.meshlab_weight,
+                normals=self.meshlab_normals,
+                topology=self.meshlab_topology,
+                existing=self.meshlab_existing,
+                planar=self.meshlab_planar,
+                post=self.meshlab_post,
+            )
 
         elif self.remeshing_method == "instant":
-            op_REMESHERS.Quads.draw(self, context)
+            bpy.ops.bakemyscan.remesh_instant(
+                interactive=self.instant_interactive,
+                method=self.instant_method,
+                facescount=self.instant_facescount,
+                vertscount=self.instant_vertscount,
+                edgelength=self.instant_edgelength,
+                d=self.instant_d,
+                D=self.instant_D,
+                i=self.instant_i,
+                b=self.instant_b,
+                C=self.instant_C,
+                c=self.instant_c,
+                S=self.instant_S,
+                r=self.instant_r,
+                p=self.instant_p,
+            )
 
         elif self.remeshing_method == "mmgs":
-            op_REMESHERS.Quads.draw(self, context)
+            bpy.ops.bakemyscan.remesh_mmgs(
+                smooth=self.mmgs_smooth,
+                hausd=self.mmgs_hausd,
+                angle=self.mmgs_angle,
+                hmin=self.mmgs_hmin,
+                hmax=self.mmgs_hmax,
+                hgrad=self.mmgs_hgrad,
+                aniso=self.mmgs_aniso,
+                nreg=self.mmgs_nreg,
+                weight=self.mmgs_weight,
+            )
 
         return{'FINISHED'}
 
