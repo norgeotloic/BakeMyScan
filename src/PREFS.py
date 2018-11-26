@@ -2,6 +2,8 @@ import bpy
 import os
 import json
 
+from . import fn_soft
+
 def absolute_paths(self, context):
     #Make the paths absolute
     bpy.types.Scene.executables["mmgs"] = os.path.abspath(bpy.path.abspath(self.mmgs)) if self.mmgs!="" else ""
@@ -19,6 +21,16 @@ def absolute_paths(self, context):
     with open(path, 'w') as fp:
         json.dump(bpy.types.Scene.executables, fp, sort_keys=True, indent=4)
     return None
+
+"""
+def is_executable(self, value):
+    #Check that those are executables
+    for x in bpy.types.Scene.executables.keys():
+        exe = bpy.types.Scene.executables[x]
+        code = fn_soft.run('"%s" -h' % exe)[2]
+        print(exe, code)
+"""
+
 def find_openmvs_executables(self, context):
     bpy.types.Scene.executables["openmvsdir"] = os.path.abspath(bpy.path.abspath(self.openmvsdir)) if self.openmvsdir!="" else ""
     for f in os.listdir(bpy.types.Scene.executables["openmvsdir"]):
@@ -73,27 +85,21 @@ def register():
     bpy.types.Scene.executables = {}
     bpy.utils.register_class(BakeMyScanPrefs)
 
-    #Register it after it has already been activated
-    try:
+    PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
 
-        PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
-
-        #Print the preferences
-        for x in PREFS.keys():
-            print(x, PREFS[x])
-
-        #Try to read in the preferences
-        path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
-        if os.path.exists(path):
-            with open(path, 'r') as fp:
-                bpy.types.Scene.executables = json.load(fp)
-                #Assign them to the variables
-                for x in bpy.types.Scene.executables.keys():
+    #Try to read in the preferences
+    path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            bpy.types.Scene.executables = json.load(fp)
+            #Assign them to the variables
+            for x in bpy.types.Scene.executables.keys():
+                if x in PREFS:
                     if PREFS[x] == "":
                         PREFS[x] = bpy.types.Scene.executables[x]
+                else:
+                    PREFS[x] = bpy.types.Scene.executables[x]
 
-    except:
-        print("Did not manage to read the configuration file. But that's not a big deal!")
 
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
