@@ -91,6 +91,8 @@ class RemeshPanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.unwrap",            icon="GROUP_UVS",  text="Unwrap")
         self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symmetry')
         self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
+        self.layout.operator("bakemyscan.manifold",          icon="MOD_SMOKE",  text='Manifold')
+        
 class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
