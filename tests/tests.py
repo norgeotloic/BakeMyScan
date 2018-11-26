@@ -164,6 +164,10 @@ if __name__ == "__main__":
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.mmgs          = args.mmgs
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.instant       = args.instant
         bpy.context.user_preferences.addons["BakeMyScan"].preferences.meshlabserver = args.meshlabserver
+        bpy.types.Scene.executables["mmgs"] = args.mmgs
+        bpy.types.Scene.executables["instant"] = args.instant
+        bpy.types.Scene.executables["meshlabserver"] = args.meshlabserver
+
     except:
         print("Error setting the paths in preferences")
         sys.exit(3)
