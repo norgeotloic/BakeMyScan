@@ -60,6 +60,6 @@ if __name__ == "__main__":
         bpy.ops.wm.save_userpref()
     except:
         print("Error saving the user preferences")
-        sys.exit(3)
+        sys.exit(4)
 
     sys.exit(0)

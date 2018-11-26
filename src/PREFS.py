@@ -34,8 +34,11 @@ def absolute_paths(self, context):
 
     #Write to a .json file to keep even after updating the addon
     path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
-    with open(path, 'w') as fp:
-        json.dump(bpy.types.Scene.executables, fp, sort_keys=True, indent=4)
+    try:
+        with open(path, 'w') as fp:
+            json.dump(bpy.types.Scene.executables, fp, sort_keys=True, indent=4)
+    except:
+        print("Can't write into %s" % bpy.utils.resource_path('USER'), "bakemyscan.config")
     return None
 
 def find_openmvs_executables(self, context):
@@ -96,7 +99,7 @@ def register():
 
     PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
 
-    #Try to read in the preferences
+    #Try to read in the preferences from the saved file
     path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
     if os.path.exists(path):
         with open(path, 'r') as fp:
@@ -108,6 +111,10 @@ def register():
                         PREFS[x] = bpy.types.Scene.executables[x]
                 else:
                     PREFS[x] = bpy.types.Scene.executables[x]
+    else:
+        for x in PREFS:
+            if PREFS[x] is not None and PREFS[x]!="":
+                bpy.types.Scene.executables[x] = PREFS[x]
 
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
