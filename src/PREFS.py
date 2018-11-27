@@ -56,6 +56,18 @@ def find_openmvs_executables(self, context):
                 self.texturemesh = os.path.join(D, f)
     return None
 
+def updatepath(self, context):
+    print("Reading in materials from %s" % self.texturepath)
+    bpy.ops.bakemyscan.create_library(filepath=self.texturepath)
+    path = os.path.join(bpy.utils.resource_path('USER'), "materials.json")
+    try:
+        with open(path, 'w') as fp:
+            json.dump(bpy.types.Scene.pbrtextures, fp, sort_keys=True, indent=4)
+        print("Successfully saved %d texture sets to %s" % (len(bpy.types.Scene.pbrtextures), path))
+    except:
+        pass
+    return None
+
 class BakeMyScanPrefs(bpy.types.AddonPreferences):
     bl_idname     = 'BakeMyScan'
 
@@ -74,10 +86,17 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
     reconstructmesh    = bpy.props.StringProperty(name="ReconstructMesh", subtype='FILE_PATH', update=absolute_paths)
     texturemesh        = bpy.props.StringProperty(name="TextureMesh", subtype='FILE_PATH', update=absolute_paths)
 
+    #Texture library
+    texturepath =  bpy.props.StringProperty(description="PBR textures library", subtype='DIR_PATH', update=updatepath)
+
+
+
     def check(self, context):
         return True
     def draw(self, context):
         layout = self.layout
+        layout.label(text="PBR textures path")
+        layout.prop(self, "texturepath")
         layout.label(text="Remeshing tools")
         layout.prop(self, "instant")
         layout.prop(self, "mmgs")
@@ -115,6 +134,13 @@ def register():
         for x in PREFS:
             if PREFS[x] is not None and PREFS[x]!="":
                 bpy.types.Scene.executables[x] = PREFS[x]
+
+    #Try to read in the textures from the .json file
+    path = os.path.join(bpy.utils.resource_path('USER'), "materials.json")
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            bpy.types.Scene.pbrtextures = json.load(fp)
+            print("Successfully loaded %d texture sets from %s" % (len(bpy.types.Scene.pbrtextures), path))
 
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
