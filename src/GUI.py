@@ -134,7 +134,6 @@ def clean(tree, type):
             else:
                 for l in PR.inputs["Roughness"].links:
                     tree.links.remove(l)
-
 def link_material(tree):
     clean(tree, "ao")
     clean(tree, "albedo")
@@ -142,15 +141,8 @@ def link_material(tree):
     clean(tree, "height")
     clean(tree, "metallic")
     clean(tree, "roughness")
-    #links, tree.nodes.get("albedo"),    tree.nodes.get("ao_mix").inputs[1])
-    """
-    clean(tree.links, tree.nodes.get("ao"),        tree.nodes.get("ao_mix").inputs[2])
-    clean(tree.links, tree.nodes.get("normal"),    tree.nodes.get("nmap").inputs["Color"])
-    clean(tree.links, tree.nodes.get("height"),    tree.nodes.get("bump").inputs["Height"])
-    clean(tree.links, tree.nodes.get("metallic"),  tree.nodes.get("BakeMyScan PBR").inputs["Metallic"])
-    clean(tree.links, tree.nodes.get("roughness"), tree.nodes.get("BakeMyScan PBR").inputs["Roughness"])
-    """
     pass
+
 class MaterialPanel(BakeMyScanPanel):
     bl_label       = "Textures"
 
@@ -166,7 +158,8 @@ class MaterialPanel(BakeMyScanPanel):
 
     def draw(self, context):
 
-        self.layout.operator("bakemyscan.delight", icon="LAMP_AREA", text="Quick de-light")
+
+
 
         def create_image_UI(layout, name, node):
             row = layout.row()
@@ -187,7 +180,15 @@ class MaterialPanel(BakeMyScanPanel):
                     if mat.node_tree.nodes.get("PBR") is not None:
                         nodes = mat.node_tree.nodes.get("PBR").node_tree.nodes
                         display = True
+        if ob is not None and len(context.selected_objects)>0:
+            self.layout.template_ID(
+                data=ob,
+                property="active_material",
+                new="bakemyscan.create_empty_material",
+                open="bakemyscan.material_from_library"
+            )
         if display:
+            self.layout.operator("bakemyscan.delight", icon="LAMP_AREA", text="Quick de-light")
             box = self.layout.box()
             create_image_UI(box, "Albedo", nodes["albedo"])
             create_image_UI(box, "AO", nodes["ao"])
@@ -195,8 +196,7 @@ class MaterialPanel(BakeMyScanPanel):
             create_image_UI(box, "Height", nodes["height"])
             create_image_UI(box, "Metallic", nodes["metallic"])
             create_image_UI(box, "Roughness", nodes["roughness"])
-        else:
-            self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
+
 
         if display:
             try:
