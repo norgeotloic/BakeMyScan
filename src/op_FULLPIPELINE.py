@@ -2,6 +2,27 @@ import bpy
 import os
 import time
 
+def available_methods_callback(scene, context):
+    items= [
+        ('decimate', 'Decimate', ''),
+        ('iterative', 'Iterative', ''),
+        ('quads', 'Quick quads', ''),
+    ]
+    if "mmgs" in bpy.types.Scene.executables:
+        if bpy.types.Scene.executables["mmgs"] is not None and bpy.types.Scene.executables["mmgs"]!="":
+            items.append(('mmgs', 'Mmgs', ''))
+    if "instant" in bpy.types.Scene.executables:
+        if bpy.types.Scene.executables["instant"] is not None and bpy.types.Scene.executables["instant"]!="":
+            items.append(('instant', 'Instant Meshes', ''))
+    if "quadriflow" in bpy.types.Scene.executables:
+        if bpy.types.Scene.executables["quadriflow"] is not None and bpy.types.Scene.executables["quadriflow"]!="":
+            items.append(('quadriflow', 'Quadriflow', ''))
+    if "meshlabserver" in bpy.types.Scene.executables:
+        if bpy.types.Scene.executables["meshlabserver"] is not None and bpy.types.Scene.executables["meshlabserver"]!="":
+            items.append(('meshlabserver', 'Meshlab', ''))
+
+    return items
+
 class full_pipeline(bpy.types.Operator):
     bl_idname = "bakemyscan.full_pipeline"
     bl_label  = "Retopology"
@@ -73,17 +94,8 @@ class full_pipeline(bpy.types.Operator):
 
     #Remeshing options
     remeshing_method = bpy.props.EnumProperty(
-        items= (
-            ('decimate', 'Decimate', ''),
-            ('iterative', 'Iterative', ''),
-            ('quads', 'Quick quads', ''),
-            ('mmgs', 'Mmgs', ''),
-            ('meshlab', 'Meshlab', ''),
-            ('instant', 'Instant Meshes', ''),
-            ('quadriflow', 'Quadriflow', ''),
-        ),
+        items = available_methods_callback,
         description="Remeshing method",
-        default="decimate"
     )
 
     def invoke(self, context, event):

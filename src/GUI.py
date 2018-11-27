@@ -1,5 +1,7 @@
 import bpy
 import os
+from   bpy_extras.io_utils import ImportHelper
+
 
 class BakeMyScanPanel(bpy.types.Panel):
     """A base class for panels to inherit"""
@@ -23,19 +25,46 @@ class ScanPanel(BakeMyScanPanel):
     """A panel for the scanning methods"""
     bl_label       = "Scan"
     def draw(self, context):
-        self.layout.label("Images directory")
-        self.layout.prop(context.scene.images_directory, "imgpaths", text="")
-        self.layout.label("Structure from motion")
-        self.layout.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
-        self.layout.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap + OpenMVS")
+        box = self.layout
+        box.label("Images directory")
+        box.prop(context.scene.images_directory, "imgpaths", text="")
+        box.label("Structure from motion")
+        box.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
+        box.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap + OpenMVS")
 
 class ImportPanel(BakeMyScanPanel):
     """A panel for importing and pre-processing"""
-    bl_label       = "Import"
+    bl_label       = "I/O"
     def draw(self, context):
         self.layout.operator("bakemyscan.import_scan",  icon="IMPORT",       text="Import")
+        self.layout.operator("bakemyscan.export",                  icon="EXPORT", text="Export model and textures")
+        self.layout.operator("bakemyscan.export_orthoview",        icon="RENDER_STILL", text="Ortho View")
+        self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean non selected data")
+
+class PipelinePanel(BakeMyScanPanel):
+    bl_label = "Pipeline"
+    def draw(self, context):
         self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Pre-process")
 
+        self.layout.label("Textures")
+
+        self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
+
+
+
+
+        self.layout.label("Retopology")
+        self.layout.operator("bakemyscan.full_pipeline", icon="MOD_DECIM", text="Remesh")
+        self.layout.operator("bakemyscan.unwrap",            icon="GROUP_UVS",  text="Unwrap")
+
+        self.layout.label("Post-process")
+        self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symmetry')
+        self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
+        self.layout.operator("bakemyscan.manifold",          icon="MOD_SMOKE",  text='Manifold')
+
+        self.layout.label("Baking")
+        self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Textures to textures")
+        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Albedo to vertex color")
 
 class MyCustomProperties(bpy.types.PropertyGroup):
     def updatepath(self, context):
@@ -49,8 +78,81 @@ class MyCustomProperties(bpy.types.PropertyGroup):
         subtype='DIR_PATH',
         update=updatepath
     )
+
+def clean(tree, type):
+    GET = tree.nodes.get
+    NEW = tree.links.new
+    PR  = GET("BakeMyScan PBR")
+
+    node = GET(type)
+    if node is not None:
+
+        if type=="albedo":
+            if node.image is not None:
+                if GET("delight") is not None:
+                    NEW(GET(type).outputs["Color"], GET("delight").inputs["Color"])
+                    NEW(GET("delight").outputs["Color"], GET("ao_mix").inputs[1])
+                else:
+                    NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[1])
+                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+            else:
+                for l in PR.inputs["Base Color"].links:
+                    tree.links.remove(l)
+
+        if type=="ao":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[2])
+                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+            else:
+                for l in GET("ao_mix").inputs[2].links:
+                    tree.links.remove(l)
+
+        if type=="normal":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("nmap").inputs["Color"])
+            else:
+                for l in GET("nmap").inputs["Color"].links:
+                    tree.links.remove(l)
+
+        if type=="height":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("bump").inputs["Height"])
+            else:
+                for l in GET("bump").inputs["Height"].links:
+                    tree.links.remove(l)
+
+        if type=="metallic":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], PR.inputs["Metallic"])
+            else:
+                for l in PR.inputs["Metallic"].links:
+                    tree.links.remove(l)
+
+        if type=="roughness":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], PR.inputs["Roughness"])
+            else:
+                for l in PR.inputs["Roughness"].links:
+                    tree.links.remove(l)
+
+def link_material(tree):
+    clean(tree, "ao")
+    clean(tree, "albedo")
+    clean(tree, "normal")
+    clean(tree, "height")
+    clean(tree, "metallic")
+    clean(tree, "roughness")
+    #links, tree.nodes.get("albedo"),    tree.nodes.get("ao_mix").inputs[1])
+    """
+    clean(tree.links, tree.nodes.get("ao"),        tree.nodes.get("ao_mix").inputs[2])
+    clean(tree.links, tree.nodes.get("normal"),    tree.nodes.get("nmap").inputs["Color"])
+    clean(tree.links, tree.nodes.get("height"),    tree.nodes.get("bump").inputs["Height"])
+    clean(tree.links, tree.nodes.get("metallic"),  tree.nodes.get("BakeMyScan PBR").inputs["Metallic"])
+    clean(tree.links, tree.nodes.get("roughness"), tree.nodes.get("BakeMyScan PBR").inputs["Roughness"])
+    """
+    pass
 class MaterialPanel(BakeMyScanPanel):
-    bl_label       = "Materials"
+    bl_label       = "Textures"
 
     @classmethod
     def poll(self, context):
@@ -59,40 +161,57 @@ class MaterialPanel(BakeMyScanPanel):
             return 0
         return 1
 
+    def check(self, context):
+        return True
+
     def draw(self, context):
 
-        self.layout.label("Material from scratch")
-        self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
-        self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
+        self.layout.operator("bakemyscan.delight", icon="LAMP_AREA", text="Quick de-light")
 
-        self.layout.label("Material from texture")
-        self.layout.operator("bakemyscan.material_from_texture", icon="MATERIAL",  text="Load material from texture")
+        def create_image_UI(layout, name, node):
+            row = layout.row()
+            lab = row.row()
+            lab.scale_x = 1.0
+            lab.label(name)
+            sub=row.row()
+            sub.scale_x=4.0
+            sub.template_ID(data=node,property="image",open="image.open")
 
-        self.layout.label("PBR library")
+        display = False
+        nodes   = None
+        ob = context.active_object
+        if ob is not None and len(context.selected_objects)>0:
+            mat = ob.active_material
+            if mat is not None:
+                if mat.use_nodes:
+                    if mat.node_tree.nodes.get("PBR") is not None:
+                        nodes = mat.node_tree.nodes.get("PBR").node_tree.nodes
+                        display = True
+        if display:
+            box = self.layout.box()
+            create_image_UI(box, "Albedo", nodes["albedo"])
+            create_image_UI(box, "AO", nodes["ao"])
+            create_image_UI(box, "Normal", nodes["normal"])
+            create_image_UI(box, "Height", nodes["height"])
+            create_image_UI(box, "Metallic", nodes["metallic"])
+            create_image_UI(box, "Roughness", nodes["roughness"])
+        else:
+            self.layout.operator("bakemyscan.create_empty_material", icon="MATERIAL", text="New empty material")
+
+        if display:
+            try:
+                if bpy.context.space_data.viewport_shade != 'RENDERED':
+                    link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
+            except:
+                link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
+
+        """
         self.layout.prop(context.scene.textures_path, "texturepath", text="Path", icon="FILE_FOLDER")
         self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load from .JSON")
         self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save to .JSON")
         self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
+        """
 
-class RemeshPanel(BakeMyScanPanel):
-    bl_label       = "Remesh"
-
-    def draw(self, context):
-        self.layout.label("Triangles")
-        self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
-        self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
-        self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
-        self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
-        self.layout.label("Quadrilaterals")
-        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
-        self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
-        self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
-        self.layout.label("Post-process")
-        self.layout.operator("bakemyscan.unwrap",            icon="GROUP_UVS",  text="Unwrap")
-        self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symmetry')
-        self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
-        self.layout.operator("bakemyscan.manifold",          icon="MOD_SMOKE",  text='Manifold')
-        
 class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
@@ -111,27 +230,6 @@ class RemeshFromSculptPanel(bpy.types.Panel):
         self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
-
-class BakingPanel(BakeMyScanPanel):
-    bl_label       = "Baking"
-
-    @classmethod
-    def poll(self, context):
-        #Render engine must be cycles
-        if bpy.context.scene.render.engine!="CYCLES":
-            return 0
-        return 1
-
-    def draw(self, context):
-        self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Textures to textures")
-        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Albedo to vertex color")
-
-class ExportPanel(BakeMyScanPanel):
-    bl_label       = "Export"
-
-    def draw(self, context):
-        self.layout.operator("bakemyscan.export",                  icon="EXPORT", text="Export model and textures")
-        self.layout.operator("bakemyscan.export_orthoview",        icon="RENDER_STILL", text="Ortho View")
 
 def setworldintensity(self, context):
     bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
@@ -163,18 +261,6 @@ class ExperimentalPanel(BakeMyScanPanel):
         row.template_icon_view(wm, "my_previews")
         layout.prop(context.scene.intensity, "intensity", text="HDRI intensity")
 
-        #Remove all but selected
-        layout.label('Cleanup some data')
-        layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean non selected data")
-
-        #Uber remesher
-        layout.label('Full pipeline')
-        layout.operator("bakemyscan.full_pipeline", icon="ERROR", text="Full pipeline")
-
-        #Delighting
-        layout.label("Delighting")
-        layout.operator("bakemyscan.delight", icon="LAMP_AREA", text="Quick de-light")
-
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "About"
 
@@ -195,17 +281,14 @@ class AboutPanel(BakeMyScanPanel):
         self.layout.operator("wm.url_open", text="Tweeter",   icon_value=bpy.types.Scene.custom_icons["tweeter"].icon_id).url = "https://twitter.com/norgeotloic"
         self.layout.operator("wm.url_open", text="Donate", icon_value=bpy.types.Scene.custom_icons["donate"].icon_id).url = "http://bakemyscan.org/donate"
 
-
 def register():
     bpy.utils.register_class(ScanPanel)
     bpy.utils.register_class(ImportPanel)
     bpy.utils.register_class(MaterialPanel)
-    bpy.utils.register_class(RemeshPanel)
     bpy.utils.register_class(RemeshFromSculptPanel)
-    bpy.utils.register_class(BakingPanel)
-    bpy.utils.register_class(ExportPanel)
     bpy.utils.register_class(ExperimentalPanel)
     bpy.utils.register_class(AboutPanel)
+    bpy.utils.register_class(PipelinePanel)
     #Add the custom intensity slider
     bpy.utils.register_class(IntensityProperty)
     bpy.types.Scene.intensity = bpy.props.PointerProperty(type=IntensityProperty)
@@ -217,16 +300,18 @@ def register():
     bpy.types.Scene.images_directory = bpy.props.PointerProperty(type=ScanningProperties)
     bpy.types.Scene.imgpaths = ""
 
+    bpy.types.Scene.my_image = bpy.props.PointerProperty(name="Image", type=bpy.types.Image)
+
+    bpy.types.Scene.oldlinks = {}
+
 def unregister():
     bpy.utils.unregister_class(ScanPanel)
     bpy.utils.unregister_class(ImportPanel)
     bpy.utils.unregister_class(MaterialPanel)
-    bpy.utils.unregister_class(RemeshPanel)
     bpy.utils.unregister_class(RemeshFromSculptPanel)
-    bpy.utils.unregister_class(BakingPanel)
-    bpy.utils.unregister_class(ExportPanel)
     bpy.utils.unregister_class(ExperimentalPanel)
     bpy.utils.unregister_class(AboutPanel)
+    bpy.utils.unregister_class(PipelinePanel)
     #Clear the custom intensity slider
     bpy.utils.unregister_class(IntensityProperty)
     del bpy.types.Scene.intensity
@@ -237,3 +322,6 @@ def unregister():
     bpy.utils.unregister_class(ScanningProperties)
     del bpy.types.Scene.images_directory
     del bpy.types.Scene.imgpaths
+
+    del bpy.types.Scene.my_image
+    del bpy.types.Scene.oldlinks
