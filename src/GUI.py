@@ -2,6 +2,8 @@ import bpy
 import os
 from   bpy_extras.io_utils import ImportHelper
 
+import addon_utils
+
 
 class BakeMyScanPanel(bpy.types.Panel):
     """A base class for panels to inherit"""
@@ -23,7 +25,7 @@ class ScanningProperties(bpy.types.PropertyGroup):
     )
 class ScanPanel(BakeMyScanPanel):
     """A panel for the scanning methods"""
-    bl_label       = "Scan"
+    bl_label       = "Structure from Motion"
     def draw(self, context):
         box = self.layout
         box.label("Images directory")
@@ -34,7 +36,7 @@ class ScanPanel(BakeMyScanPanel):
 
 class ImportPanel(BakeMyScanPanel):
     """A panel for importing and pre-processing"""
-    bl_label       = "I/O"
+    bl_label       = "Import / Export"
     def draw(self, context):
         self.layout.operator("bakemyscan.import_scan",  icon="IMPORT",       text="Import")
         self.layout.operator("bakemyscan.export",                  icon="EXPORT", text="Export model and textures")
@@ -45,13 +47,6 @@ class PipelinePanel(BakeMyScanPanel):
     bl_label = "Pipeline"
     def draw(self, context):
         self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Pre-process")
-
-        self.layout.label("Textures")
-
-        self.layout.operator("bakemyscan.assign_texture", icon="TEXTURE",  text="Assign PBR textures")
-
-
-
 
         self.layout.label("Retopology")
         self.layout.operator("bakemyscan.full_pipeline", icon="MOD_DECIM", text="Remesh")
@@ -144,7 +139,7 @@ def link_material(tree):
     pass
 
 class MaterialPanel(BakeMyScanPanel):
-    bl_label       = "Textures"
+    bl_label       = "Material / Textures"
 
     @classmethod
     def poll(self, context):
@@ -157,9 +152,6 @@ class MaterialPanel(BakeMyScanPanel):
         return True
 
     def draw(self, context):
-
-
-
 
         def create_image_UI(layout, name, node):
             row = layout.row()
@@ -197,20 +189,12 @@ class MaterialPanel(BakeMyScanPanel):
             create_image_UI(box, "Metallic", nodes["metallic"])
             create_image_UI(box, "Roughness", nodes["roughness"])
 
-
         if display:
             try:
                 if bpy.context.space_data.viewport_shade != 'RENDERED':
                     link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
             except:
                 link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
-
-        """
-        self.layout.prop(context.scene.textures_path, "texturepath", text="Path", icon="FILE_FOLDER")
-        self.layout.operator("bakemyscan.load_json_library",     icon="IMPORT",   text="Load from .JSON")
-        self.layout.operator("bakemyscan.save_json_library",     icon="EXPORT",   text="Save to .JSON")
-        self.layout.operator("bakemyscan.material_from_library", icon="MATERIAL", text="Load material from library")
-        """
 
 class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
@@ -261,34 +245,94 @@ class ExperimentalPanel(BakeMyScanPanel):
         row.template_icon_view(wm, "my_previews")
         layout.prop(context.scene.intensity, "intensity", text="HDRI intensity")
 
+class currentVersion(bpy.types.Operator):
+    bl_idname = "bakemyscan.current_version"
+    bl_label  = "Current version"
+    @classmethod
+    def poll(self, context):
+        return 0
+
+import asyncio
+import requests
+import functools
+import json
+async def do_request():
+    loop     = asyncio.get_event_loop()
+    future   = loop.run_in_executor(None, requests.get, 'https://api.github.com/repos/norgeotloic/BakeMyScan/releases')
+    response = await future
+    object = json.loads(response.text)
+    bpy.types.Scene.newVersion = object[0]["tag_name"]
+    for mod in addon_utils.modules():
+        if mod.bl_info.get("name") == "BakeMyScan":
+            bpy.types.Scene.currentVersion = ".".join([str(x) for x in mod.bl_info.get("version")])
+            if bpy.types.Scene.currentVersion == bpy.types.Scene.newVersion:
+                print("No new updates")
+            else:
+                print("Oh yeah, a new update!")
+
+class checkUpdates(bpy.types.Operator):
+    bl_idname = "bakemyscan.check_updates"
+    bl_label  = "Check for updates"
+    @classmethod
+    def poll(self, context):
+        return 1
+    def execute(self, context):
+        loop = asyncio.get_event_loop()
+        response = loop.run_until_complete(do_request())
+        if response is not None:
+
+            return {"FINISHED"}
+        else:
+            return {"CANCELLED"}
+
 class AboutPanel(BakeMyScanPanel):
-    bl_label       = "About"
+    bl_label       = "Updates / Documentation"
 
     def draw(self, context):
-        self.layout.label("BakeMyScan")
+
         self.layout.operator("wm.url_open", text="bakemyscan.org", icon_value=bpy.types.Scene.custom_icons["bakemyscan"].icon_id).url = "http://bakemyscan.org"
+        row = self.layout.row(align=True)
+        row.operator("bakemyscan.check_updates", text='Check for updates', icon="FILE_REFRESH")
+        for mod in addon_utils.modules():
+            if mod.bl_info.get("name") == "BakeMyScan":
+                row.operator("bakemyscan.current_version", icon="QUESTION", text='Version: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
+
+        self.layout.label("Development")
         self.layout.operator("wm.url_open", text="Github",         icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
         self.layout.operator("wm.url_open", text="Build status",   icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"
+        self.layout.operator("wm.url_open", text="Roadmap",   icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan/milestones"
+        self.layout.operator("wm.url_open", text='"Blog"',    icon="WORDWRAP_ON").url = "http://bakemyscan.org/blog"
+
+        self.layout.label("Social")
+        self.layout.operator("wm.url_open", text="Sketchfab", icon_value=bpy.types.Scene.custom_icons["sketchfab"].icon_id).url = "https://sketchfab.com/norgeotloic"
+        self.layout.operator("wm.url_open", text="Twitter",   icon_value=bpy.types.Scene.custom_icons["tweeter"].icon_id).url = "https://twitter.com/norgeotloic"
+        self.layout.operator("wm.url_open", text="Youtube",   icon_value=bpy.types.Scene.custom_icons["youtube"].icon_id).url = "https://youtube.com/norgeotloic"
 
         self.layout.label("External software")
         self.layout.operator("wm.url_open", text="MMGtools", icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id).url = "https://www.mmgtools.org/"
         self.layout.operator("wm.url_open", text="Instant Meshes", icon_value=bpy.types.Scene.custom_icons["instant"].icon_id).url = "https://github.com/wjakob/instant-meshes"
         self.layout.operator("wm.url_open", text="Quadriflow", icon="MOD_DECIM").url = "https://github.com/hjwdzh/QuadriFlow"
         self.layout.operator("wm.url_open", text="Meshlab", icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id).url = "http://www.meshlab.net/"
+        self.layout.operator("wm.url_open", text="Colmap", icon="CAMERA_DATA").url = "https://colmap.github.io/"
+        self.layout.operator("wm.url_open", text="OpenMVS", icon="CAMERA_DATA").url = "http://cdcseacave.github.io/openMVS/"
 
-        self.layout.label("Yours truly, Loïc")
-        self.layout.operator("wm.url_open", text="Sketchfab", icon_value=bpy.types.Scene.custom_icons["sketchfab"].icon_id).url = "https://sketchfab.com/norgeotloic"
-        self.layout.operator("wm.url_open", text="Tweeter",   icon_value=bpy.types.Scene.custom_icons["tweeter"].icon_id).url = "https://twitter.com/norgeotloic"
-        self.layout.operator("wm.url_open", text="Donate", icon_value=bpy.types.Scene.custom_icons["donate"].icon_id).url = "http://bakemyscan.org/donate"
+
 
 def register():
+    bpy.utils.register_class(currentVersion)
+    bpy.utils.register_class(checkUpdates)
+    bpy.types.Scene.newVersion = None
+    bpy.types.Scene.currentVersion = None
+
     bpy.utils.register_class(ScanPanel)
     bpy.utils.register_class(ImportPanel)
     bpy.utils.register_class(MaterialPanel)
     bpy.utils.register_class(RemeshFromSculptPanel)
-    bpy.utils.register_class(ExperimentalPanel)
-    bpy.utils.register_class(AboutPanel)
+
     bpy.utils.register_class(PipelinePanel)
+    bpy.utils.register_class(AboutPanel)
+    bpy.utils.register_class(ExperimentalPanel)
+
     #Add the custom intensity slider
     bpy.utils.register_class(IntensityProperty)
     bpy.types.Scene.intensity = bpy.props.PointerProperty(type=IntensityProperty)
@@ -305,13 +349,16 @@ def register():
     bpy.types.Scene.oldlinks = {}
 
 def unregister():
+    bpy.utils.unregister_class(currentVersion)
+    bpy.utils.unregister_class(checkUpdates)
+
     bpy.utils.unregister_class(ScanPanel)
     bpy.utils.unregister_class(ImportPanel)
     bpy.utils.unregister_class(MaterialPanel)
     bpy.utils.unregister_class(RemeshFromSculptPanel)
-    bpy.utils.unregister_class(ExperimentalPanel)
-    bpy.utils.unregister_class(AboutPanel)
     bpy.utils.unregister_class(PipelinePanel)
+    bpy.utils.unregister_class(AboutPanel)
+    bpy.utils.unregister_class(ExperimentalPanel)
     #Clear the custom intensity slider
     bpy.utils.unregister_class(IntensityProperty)
     del bpy.types.Scene.intensity
@@ -325,3 +372,5 @@ def unregister():
 
     del bpy.types.Scene.my_image
     del bpy.types.Scene.oldlinks
+    del bpy.types.Scene.newVersion
+    del bpy.types.Scene.currentVersion

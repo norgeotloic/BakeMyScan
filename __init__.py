@@ -1,7 +1,7 @@
 bl_info = {
     'name':     'BakeMyScan',
     'category': 'Object',
-    'version': (1, 0, 2),
+    'version': (1, 3, 2),
     'blender': (2, 79, 0),
     "description": "Multipurpose add-on to texture, remesh and bake objects",
     "author": "Loïc NORGEOT",
@@ -50,7 +50,7 @@ def register():
     bpy.types.Scene.custom_icons.load("travis", os.path.join(icons_dir, "travis.png"), 'IMAGE')
     bpy.types.Scene.custom_icons.load("sketchfab", os.path.join(icons_dir, "sketchfab.png"), 'IMAGE')
     bpy.types.Scene.custom_icons.load("tweeter", os.path.join(icons_dir, "tweeter.png"), 'IMAGE')
-    bpy.types.Scene.custom_icons.load("donate", os.path.join(icons_dir, "donate.png"), 'IMAGE')
+    bpy.types.Scene.custom_icons.load("youtube", os.path.join(icons_dir, "youtube.png"), 'IMAGE')
 
 def unregister():
     for currentModuleName in modulesFullNames.values():

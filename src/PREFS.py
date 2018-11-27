@@ -114,6 +114,7 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
 
 def register():
     bpy.types.Scene.executables = {}
+    bpy.types.Scene.pbrtextures = {}
     bpy.utils.register_class(BakeMyScanPrefs)
 
     PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
@@ -145,3 +146,4 @@ def register():
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
     del bpy.types.Scene.executables
+    del bpy.types.Scene.pbrtextures
