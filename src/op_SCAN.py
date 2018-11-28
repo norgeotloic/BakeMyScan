@@ -219,9 +219,18 @@ class delight(bpy.types.Operator):
         #Where is the albedo going?
         sockets = [l.to_socket for l in albedo.outputs["Color"].links]
 
-        #Add a desaturate color node, an invert, and a multiply
-        ao = bakeAO(mat, "delighting_ao", 2048)
-
+        #Create the node group
+        ao = None
+        #Try to find an image in the ao slot
+        if tree.nodes.get("ao").image is not None:
+            ao = tree.nodes.get("ao").image
+        #If it does not already exists, bake it.
+        else:
+            name = context.active_object.name + "_delighting_ao"
+            if bpy.data.images.get(name) is not None:
+                ao = bpy.data.images.get(name)
+            else:
+                ao = bakeAO(mat, name, 2048)
         #Create and link the delighting group node
         _group = tree.nodes.new(type="ShaderNodeGroup")
         _group.node_tree = fn_nodes.node_tree_delight()

@@ -91,14 +91,21 @@ def clean(tree, type):
                     NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[1])
                 NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
             else:
-                for l in PR.inputs["Base Color"].links:
+                for l in GET("ao_mix").inputs[1].links:
                     tree.links.remove(l)
 
         if type=="ao":
             if node.image is not None:
                 NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[2])
                 NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+                """
+                if GET("delight") is not None:
+                    node2 = GET("delight").node_tree.nodes["ao"]
+                    node2.image.filepath_raw = node.image.filepath_raw
+                    node2.image.reload()
+                """
             else:
+                pass
                 for l in GET("ao_mix").inputs[2].links:
                     tree.links.remove(l)
 
@@ -138,6 +145,49 @@ def link_material(tree):
     clean(tree, "roughness")
     pass
 
+
+class MaterialProperties(bpy.types.PropertyGroup):
+    def update_delight_invert(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+        nodes["delight"].inputs["Invert"].default_value = self.delight_invert_factor
+        return None
+    delight_invert_factor = bpy.props.FloatProperty(description="Inversion factor for delighting", default=0.3, min=0.,max=1., update=update_delight_invert)
+
+    def update_delight_ao(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+        nodes["delight"].inputs["AO"].default_value = self.delight_ao_factor
+        return None
+    delight_ao_factor = bpy.props.FloatProperty(description="Ambient Occlusion factor for delighting", default=0.15, min=0.,max=1., update=update_delight_ao)
+
+    def update_ao(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+        nodes["ao_mix"].inputs["Fac"].default_value = self.ao_factor
+        return None
+    ao_factor = bpy.props.FloatProperty(description="Ambient Occlusion factor", default=0.5, min=0.,max=1., update=update_ao)
+
+    def update_UV_scale(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes
+        group = [g for g in nodes if g.type=="GROUP"][0]
+        group.inputs["UV scale"].default_value = self.uv_scale
+        return None
+    uv_scale = bpy.props.FloatProperty(description="UV scale", default=1, min=0.,max=1000., update=update_UV_scale)
+
+    def update_height(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes
+        group = [g for g in nodes if g.type=="GROUP"][0]
+        group.inputs["Height"].default_value = self.height
+        return None
+    height = bpy.props.FloatProperty(description="Height", default=0.005, min=-1.,max=1., update=update_height)
+
+    def toggle_delight(self, context):
+        if self.delight:
+            bpy.ops.bakemyscan.delight()
+        else:
+            nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+            nodes.remove(nodes.get("delight"))
+
+    delight = bpy.props.BoolProperty(description="Delighting", default=False, update=toggle_delight)
+
 class MaterialPanel(BakeMyScanPanel):
     bl_label       = "Material / Textures"
 
@@ -162,16 +212,22 @@ class MaterialPanel(BakeMyScanPanel):
             sub.scale_x=4.0
             sub.template_ID(data=node,property="image",open="image.open")
 
+        #Do we display the textures and delighting options?
         display = False
         nodes   = None
         ob = context.active_object
         if ob is not None and len(context.selected_objects)>0:
-            mat = ob.active_material
-            if mat is not None:
-                if mat.use_nodes:
-                    if mat.node_tree.nodes.get("PBR") is not None:
-                        nodes = mat.node_tree.nodes.get("PBR").node_tree.nodes
-                        display = True
+            if len(ob.material_slots)>0:
+                mat = ob.active_material
+                if mat is not None:
+                    if mat.use_nodes:
+                        groups = [g for g in mat.node_tree.nodes if g.type=="GROUP"]
+                        if len(groups)==1:
+                            if mat.node_tree.nodes.get("PBR") is not None:
+                                nodes = mat.node_tree.nodes.get("PBR").node_tree.nodes
+                                display = True
+
+        #Display the material selector widget
         if ob is not None and len(context.selected_objects)>0:
             self.layout.template_ID(
                 data=ob,
@@ -179,22 +235,53 @@ class MaterialPanel(BakeMyScanPanel):
                 new="bakemyscan.create_empty_material",
                 open="bakemyscan.material_from_library"
             )
+
         if display:
-            self.layout.operator("bakemyscan.delight", icon="LAMP_AREA", text="Quick de-light")
+            #Display the texture slots
             box = self.layout.box()
             create_image_UI(box, "Albedo", nodes["albedo"])
             create_image_UI(box, "AO", nodes["ao"])
+            if nodes["ao"].image is not None:
+                row = box.row()
+                lab = row.row()
+                lab.scale_x = 1.0
+                lab.label("")
+                sub=row.row()
+                sub.scale_x=4.0
+                sub.prop(context.scene.bakemyscan_properties, "ao_factor", text="Factor")
             create_image_UI(box, "Normal", nodes["normal"])
             create_image_UI(box, "Height", nodes["height"])
             create_image_UI(box, "Metallic", nodes["metallic"])
             create_image_UI(box, "Roughness", nodes["roughness"])
 
-        if display:
+            #Delighting box
+            if nodes.get("albedo") is not None:
+                if nodes["albedo"].image is not None:
+                    box = self.layout.box()
+                    box.prop(context.scene.bakemyscan_properties, "delight", text="Delight")
+                    if nodes.get("delight"):
+                        box.prop(context.scene.bakemyscan_properties, "delight_invert_factor", text="Invert factor")
+                        box.prop(context.scene.bakemyscan_properties, "delight_ao_factor", text="AO factor")
+
+            #Correct the links in the material
             try:
                 if bpy.context.space_data.viewport_shade != 'RENDERED':
                     link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
             except:
                 link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
+
+        else:
+            #If there is a material, which comes from the library
+            if len(ob.material_slots)>0:
+                mat = ob.active_material
+                if mat is not None:
+                    if mat.use_nodes:
+                        groups = [g for g in mat.node_tree.nodes if g.type=="GROUP"]
+                        if len(groups)==1:
+                            g = groups[0]
+                            if "Height" in g.inputs and "UV scale" in g.inputs:
+                                self.layout.prop(context.scene.bakemyscan_properties, "uv_scale", text="UV scale")
+                                self.layout.prop(context.scene.bakemyscan_properties, "height",   text="Height")
 
 class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
@@ -348,6 +435,9 @@ def register():
 
     bpy.types.Scene.oldlinks = {}
 
+    bpy.utils.register_class(MaterialProperties)
+    bpy.types.Scene.bakemyscan_properties = bpy.props.PointerProperty(type=MaterialProperties)
+
 def unregister():
     bpy.utils.unregister_class(currentVersion)
     bpy.utils.unregister_class(checkUpdates)
@@ -374,3 +464,6 @@ def unregister():
     del bpy.types.Scene.oldlinks
     del bpy.types.Scene.newVersion
     del bpy.types.Scene.currentVersion
+
+    bpy.utils.unregister_class(MaterialProperties)
+    del bpy.types.Scene.bakemyscan_properties
