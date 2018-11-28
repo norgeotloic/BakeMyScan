@@ -141,7 +141,7 @@ class full_pipeline(bpy.types.Operator):
                     if self.quadriflow_satflip:
                         box.label('"minisat" and "timeout" need to be installed!')
 
-        elif self.remeshing_method == "meshlab":
+        elif self.remeshing_method == "meshlabserver":
             box.prop(self, "meshlab_facescount",  text="Number of faces")
             box1 = box.box()
             box1.prop(self, "meshlab_advanced", text="Advanced options")
@@ -208,9 +208,6 @@ class full_pipeline(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        #Render engine must be cycles
-        if bpy.context.scene.render.engine!="CYCLES":
-            return 0
         #Object mode
         if context.mode!="OBJECT":
             return 0
@@ -258,7 +255,7 @@ class full_pipeline(bpy.types.Operator):
                 satflip=self.quadriflow_satflip
             )
 
-        elif self.remeshing_method == "meshlab":
+        elif self.remeshing_method == "meshlabserver":
             bpy.ops.bakemyscan.remesh_meshlab(
                 facescount=self.meshlab_facescount,
                 quality=self.meshlab_quality,

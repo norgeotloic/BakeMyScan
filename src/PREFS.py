@@ -4,8 +4,8 @@ import json
 
 import shutil
 
-def is_exe(exe):
-    return shutil.which(exe) is not None
+def is_exe(path):
+    return shutil.which(path) is not None
 
 def absolute_paths(self, context):
     #Make the paths absolute
@@ -26,7 +26,7 @@ def absolute_paths(self, context):
         if x!="openmvsdir":
             exe = bpy.types.Scene.executables[x]
             if not is_exe(exe):
-                print("ERROR: %s is not a valid executable!" % exe)
+                print("Warning: %s - '%s' not valid" % (x, exe))
                 bpy.types.Scene.executables[x] = ""
                 oneWrong = True
     if not oneWrong:
@@ -126,13 +126,13 @@ def register():
             bpy.types.Scene.executables = json.load(fp)
             #Assign them to the variables
             for x in bpy.types.Scene.executables.keys():
-                if x in PREFS:
+                if x in PREFS.keys():
                     if PREFS[x] == "":
                         PREFS[x] = bpy.types.Scene.executables[x]
                 else:
                     PREFS[x] = bpy.types.Scene.executables[x]
     else:
-        for x in PREFS:
+        for x in PREFS.keys():
             if PREFS[x] is not None and PREFS[x]!="":
                 bpy.types.Scene.executables[x] = PREFS[x]
 
