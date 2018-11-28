@@ -60,6 +60,14 @@ def update_hdri_background(self, context):
     #Link it to the background
     background = world.node_tree.nodes.get('Background')
     world.node_tree.links.new(env.outputs["Color"], background.inputs["Color"])
+    #Add a mapping node with generated input coordinates
+    coordinates = world.node_tree.nodes.new(type="ShaderNodeTexCoord")
+    mapping     = world.node_tree.nodes.new(type="ShaderNodeMapping")
+    mapping.vector_type = 'TEXTURE'
+    mapping.name = mapping.label = "BMS_world"
+    world.node_tree.links.new(coordinates.outputs["Generated"], mapping.inputs["Vector"])
+    world.node_tree.links.new(mapping.outputs["Vector"], env.inputs["Vector"])
+
     #Try to switch to render mode
     try:
         bpy.context.space_data.viewport_shade = 'RENDERED'

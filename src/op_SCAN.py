@@ -36,7 +36,7 @@ class colmap_auto(bpy.types.Operator):
     @classmethod
     def poll(self, context):
         #Need to be in Cycles render mode
-        D = bpy.types.Scene.imgpaths
+        D = bpy.types.Scene.imagesdirectory
         if D=="":
             return 0
         if not os.path.exists(D):
@@ -49,7 +49,7 @@ class colmap_auto(bpy.types.Operator):
 
     def execute(self, context):
         if True:
-            D = bpy.types.Scene.imgpaths
+            D = bpy.types.Scene.imagesdirectory
             self.results = fn_soft.colmap_auto(
                 colmap        = bpy.types.Scene.executables["colmap"],
                 workspace     = D,
@@ -95,7 +95,7 @@ class colmap_openmvs(bpy.types.Operator):
     @classmethod
     def poll(self, context):
         #Need to be in Cycles render mode
-        D = bpy.types.Scene.imgpaths
+        D = bpy.types.Scene.imagesdirectory
         if D=="":
             return 0
         if not os.path.exists(D):
@@ -118,7 +118,7 @@ class colmap_openmvs(bpy.types.Operator):
 
     def execute(self, context):
         if True:
-            D = bpy.types.Scene.imgpaths
+            D = bpy.types.Scene.imagesdirectory
             self.results = fn_soft.colmap_openmvs(
                 workspace     = D,
                 images        = D,

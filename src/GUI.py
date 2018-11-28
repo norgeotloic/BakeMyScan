@@ -3,7 +3,7 @@ import os
 from   bpy_extras.io_utils import ImportHelper
 
 import addon_utils
-
+from . import fn_nodes
 
 class BakeMyScanPanel(bpy.types.Panel):
     """A base class for panels to inherit"""
@@ -13,23 +13,83 @@ class BakeMyScanPanel(bpy.types.Panel):
     bl_options     = {"DEFAULT_CLOSED"}
     bl_context     = "objectmode"
 
-class ScanningProperties(bpy.types.PropertyGroup):
-    def create_images_variable(self, context):
-        bpy.types.Scene.imgpaths = self.imgpaths
-    imgpaths =  bpy.props.StringProperty(
-        name="texturepath",
-        description="Filepath used for importing the file",
-        maxlen=1024,
-        subtype='DIR_PATH',
-        update = create_images_variable
-    )
+class BakeMyScanProperties(bpy.types.PropertyGroup):
+
+    #Callbacks
+    def toggle_delight(self, context):
+        if self.delight:
+            bpy.ops.bakemyscan.delight()
+        else:
+            nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+            nodes.remove(nodes.get("delight"))
+        return None
+    def update_delight_invert(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+        nodes["delight"].inputs["Invert"].default_value = self.delight_invert_factor
+        return None
+    def update_delight_ao(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+        nodes["delight"].inputs["AO"].default_value = self.delight_ao_factor
+        return None
+    def update_ao(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
+        nodes["ao_mix"].inputs["Fac"].default_value = self.ao_factor
+        return None
+    def update_UV_scale(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes
+        group = [g for g in nodes if g.type=="GROUP"][0]
+        group.inputs["UV scale"].default_value = self.uv_scale
+        return None
+    def update_height(self, context):
+        nodes = context.active_object.active_material.node_tree.nodes
+        group = [g for g in nodes if g.type=="GROUP"][0]
+        group.inputs["Height"].default_value = self.height
+        return None
+    def setworldintensity(self, context):
+        bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
+        return None
+    def toggle_hdri(self, context):
+        context.scene.world.cycles_visibility.camera = self.visibility
+        bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
+        return None
+    def rotate_hdri(self, context):
+        bpy.data.worlds['World'].node_tree.nodes["BMS_world"].rotation[2] = 3.14159 * self.rotation
+        bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
+        return None
+    def create_PBR_library(self, context):
+        print(self.texturepath)
+        bpy.ops.bakemyscan.create_library(filepath=self.texturepath)
+        return None
+    def update_scan_images(self, context):
+        bpy.types.Scene.imagesdirectory = self.imagesdirectory
+        return None
+
+
+    #Delighting properties
+    delight = bpy.props.BoolProperty(description="Delighting", default=False, update=toggle_delight)
+    delight_invert_factor = bpy.props.FloatProperty(description="Inversion factor for delighting", default=0.3, min=0.,max=1., update=update_delight_invert)
+    delight_ao_factor = bpy.props.FloatProperty(description="Ambient Occlusion factor for delighting", default=0.15, min=0.,max=1., update=update_delight_ao)
+    #General material properties
+    ao_factor = bpy.props.FloatProperty(description="Ambient Occlusion factor", default=0.5, min=0.,max=1., update=update_ao)
+    uv_scale = bpy.props.FloatProperty(description="UV scale", default=1, min=0.,max=1000., update=update_UV_scale)
+    height = bpy.props.FloatProperty(description="Height", default=0.005, min=-1.,max=1., update=update_height)
+    #HDRI properties
+    intensity =  bpy.props.FloatProperty(description="HDRI intensity", default=1, min=0., max=10000., update=setworldintensity)
+    visibility = bpy.props.BoolProperty(description="HDRI visibility", default=False, update=toggle_hdri)
+    rotation =  bpy.props.FloatProperty(description="HDRI rotation", default=0., min=-1., max=1., update=rotate_hdri)
+    #Scanning images
+    imagesdirectory = bpy.props.StringProperty(description="Filepath used for importing the file",subtype='DIR_PATH', update=update_scan_images)
+    #PBR library
+    texturepath =  bpy.props.StringProperty(description="Filepath used for importing the file",subtype='DIR_PATH',update=create_PBR_library)
+
+
 class ScanPanel(BakeMyScanPanel):
     """A panel for the scanning methods"""
     bl_label       = "Structure from Motion"
     def draw(self, context):
         box = self.layout
         box.label("Images directory")
-        box.prop(context.scene.images_directory, "imgpaths", text="")
+        box.prop(context.scene.bakemyscan_properties, "imagesdirectory", text="")
         box.label("Structure from motion")
         box.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
         box.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap + OpenMVS")
@@ -60,133 +120,6 @@ class PipelinePanel(BakeMyScanPanel):
         self.layout.label("Baking")
         self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Textures to textures")
         self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Albedo to vertex color")
-
-class MyCustomProperties(bpy.types.PropertyGroup):
-    def updatepath(self, context):
-        print(self.texturepath)
-        bpy.ops.bakemyscan.create_library(filepath=self.texturepath)
-        return None
-    texturepath =  bpy.props.StringProperty(
-        name="texturepath",
-        description="Filepath used for importing the file",
-        maxlen=1024,
-        subtype='DIR_PATH',
-        update=updatepath
-    )
-
-def clean(tree, type):
-    GET = tree.nodes.get
-    NEW = tree.links.new
-    PR  = GET("BakeMyScan PBR")
-
-    node = GET(type)
-    if node is not None:
-
-        if type=="albedo":
-            if node.image is not None:
-                if GET("delight") is not None:
-                    NEW(GET(type).outputs["Color"], GET("delight").inputs["Color"])
-                    NEW(GET("delight").outputs["Color"], GET("ao_mix").inputs[1])
-                else:
-                    NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[1])
-                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
-            else:
-                for l in GET("ao_mix").inputs[1].links:
-                    tree.links.remove(l)
-
-        if type=="ao":
-            if node.image is not None:
-                NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[2])
-                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
-                """
-                if GET("delight") is not None:
-                    node2 = GET("delight").node_tree.nodes["ao"]
-                    node2.image.filepath_raw = node.image.filepath_raw
-                    node2.image.reload()
-                """
-            else:
-                pass
-                for l in GET("ao_mix").inputs[2].links:
-                    tree.links.remove(l)
-
-        if type=="normal":
-            if node.image is not None:
-                NEW(GET(type).outputs["Color"], GET("nmap").inputs["Color"])
-            else:
-                for l in GET("nmap").inputs["Color"].links:
-                    tree.links.remove(l)
-
-        if type=="height":
-            if node.image is not None:
-                NEW(GET(type).outputs["Color"], GET("bump").inputs["Height"])
-            else:
-                for l in GET("bump").inputs["Height"].links:
-                    tree.links.remove(l)
-
-        if type=="metallic":
-            if node.image is not None:
-                NEW(GET(type).outputs["Color"], PR.inputs["Metallic"])
-            else:
-                for l in PR.inputs["Metallic"].links:
-                    tree.links.remove(l)
-
-        if type=="roughness":
-            if node.image is not None:
-                NEW(GET(type).outputs["Color"], PR.inputs["Roughness"])
-            else:
-                for l in PR.inputs["Roughness"].links:
-                    tree.links.remove(l)
-def link_material(tree):
-    clean(tree, "ao")
-    clean(tree, "albedo")
-    clean(tree, "normal")
-    clean(tree, "height")
-    clean(tree, "metallic")
-    clean(tree, "roughness")
-    pass
-
-
-class MaterialProperties(bpy.types.PropertyGroup):
-    def update_delight_invert(self, context):
-        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
-        nodes["delight"].inputs["Invert"].default_value = self.delight_invert_factor
-        return None
-    delight_invert_factor = bpy.props.FloatProperty(description="Inversion factor for delighting", default=0.3, min=0.,max=1., update=update_delight_invert)
-
-    def update_delight_ao(self, context):
-        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
-        nodes["delight"].inputs["AO"].default_value = self.delight_ao_factor
-        return None
-    delight_ao_factor = bpy.props.FloatProperty(description="Ambient Occlusion factor for delighting", default=0.15, min=0.,max=1., update=update_delight_ao)
-
-    def update_ao(self, context):
-        nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
-        nodes["ao_mix"].inputs["Fac"].default_value = self.ao_factor
-        return None
-    ao_factor = bpy.props.FloatProperty(description="Ambient Occlusion factor", default=0.5, min=0.,max=1., update=update_ao)
-
-    def update_UV_scale(self, context):
-        nodes = context.active_object.active_material.node_tree.nodes
-        group = [g for g in nodes if g.type=="GROUP"][0]
-        group.inputs["UV scale"].default_value = self.uv_scale
-        return None
-    uv_scale = bpy.props.FloatProperty(description="UV scale", default=1, min=0.,max=1000., update=update_UV_scale)
-
-    def update_height(self, context):
-        nodes = context.active_object.active_material.node_tree.nodes
-        group = [g for g in nodes if g.type=="GROUP"][0]
-        group.inputs["Height"].default_value = self.height
-        return None
-    height = bpy.props.FloatProperty(description="Height", default=0.005, min=-1.,max=1., update=update_height)
-
-    def toggle_delight(self, context):
-        if self.delight:
-            bpy.ops.bakemyscan.delight()
-        else:
-            nodes = context.active_object.active_material.node_tree.nodes.get("PBR").node_tree.nodes
-            nodes.remove(nodes.get("delight"))
-
-    delight = bpy.props.BoolProperty(description="Delighting", default=False, update=toggle_delight)
 
 class MaterialPanel(BakeMyScanPanel):
     bl_label       = "Material / Textures"
@@ -266,9 +199,9 @@ class MaterialPanel(BakeMyScanPanel):
             #Correct the links in the material
             try:
                 if bpy.context.space_data.viewport_shade != 'RENDERED':
-                    link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
+                    fn_nodes.link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
             except:
-                link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
+                fn_nodes.link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
 
         else:
             #If there is a material, which comes from the library
@@ -302,14 +235,9 @@ class RemeshFromSculptPanel(bpy.types.Panel):
         self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
         self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
 
-def setworldintensity(self, context):
-    bpy.data.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value = self.intensity
-    return None
-class IntensityProperty(bpy.types.PropertyGroup):
-    intensity =  bpy.props.FloatProperty(name="intensity", description="HDRI intensity", default=1, min=0., max=10000., update=setworldintensity)
-class ExperimentalPanel(BakeMyScanPanel):
+class HDRIsPanel(BakeMyScanPanel):
     """Creates a Panel in the Object properties window"""
-    bl_label       = "Experimental"
+    bl_label       = "HDRIs"
 
     @classmethod
     def poll(self, context):
@@ -323,54 +251,18 @@ class ExperimentalPanel(BakeMyScanPanel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label('HDRIs "shortcut"')
         #HDRI
         wm = context.window_manager
         row = layout.row()
         row.prop(wm, "my_previews_dir")
-        row = layout.row()
-        row.template_icon_view(wm, "my_previews")
-        layout.prop(context.scene.intensity, "intensity", text="HDRI intensity")
-
-class currentVersion(bpy.types.Operator):
-    bl_idname = "bakemyscan.current_version"
-    bl_label  = "Current version"
-    @classmethod
-    def poll(self, context):
-        return 0
-
-import asyncio
-import requests
-import functools
-import json
-async def do_request():
-    loop     = asyncio.get_event_loop()
-    future   = loop.run_in_executor(None, requests.get, 'https://api.github.com/repos/norgeotloic/BakeMyScan/releases')
-    response = await future
-    object = json.loads(response.text)
-    bpy.types.Scene.newVersion = object[0]["tag_name"]
-    for mod in addon_utils.modules():
-        if mod.bl_info.get("name") == "BakeMyScan":
-            bpy.types.Scene.currentVersion = ".".join([str(x) for x in mod.bl_info.get("version")])
-            if bpy.types.Scene.currentVersion == bpy.types.Scene.newVersion:
-                print("No new updates")
-            else:
-                print("Oh yeah, a new update!")
-
-class checkUpdates(bpy.types.Operator):
-    bl_idname = "bakemyscan.check_updates"
-    bl_label  = "Check for updates"
-    @classmethod
-    def poll(self, context):
-        return 1
-    def execute(self, context):
-        loop = asyncio.get_event_loop()
-        response = loop.run_until_complete(do_request())
-        if response is not None:
-
-            return {"FINISHED"}
-        else:
-            return {"CANCELLED"}
+        if wm.my_previews_dir != "":
+            row = layout.row()
+            row.template_icon_view(wm, "my_previews")
+            layout.prop(context.scene.bakemyscan_properties, "visibility", text="Show background")
+            #layout.prop(context.scene.bakemyscan_properties, "intensity", text="Display background")
+            layout.prop(context.scene.bakemyscan_properties, "intensity", text="Intensity")
+            layout.prop(context.scene.bakemyscan_properties, "rotation", text="Rotation")
+            #layout.prop(context.scene.bakemyscan_properties, "intensity", text="Rotation")
 
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "Updates / Documentation"
@@ -406,64 +298,27 @@ class AboutPanel(BakeMyScanPanel):
 
 
 def register():
-    bpy.utils.register_class(currentVersion)
-    bpy.utils.register_class(checkUpdates)
-    bpy.types.Scene.newVersion = None
-    bpy.types.Scene.currentVersion = None
+    bpy.utils.register_class(BakeMyScanProperties)
+    bpy.types.Scene.bakemyscan_properties = bpy.props.PointerProperty(type=BakeMyScanProperties)
+    bpy.types.Scene.imagesdirectory = ""
 
     bpy.utils.register_class(ScanPanel)
     bpy.utils.register_class(ImportPanel)
     bpy.utils.register_class(MaterialPanel)
     bpy.utils.register_class(RemeshFromSculptPanel)
-
     bpy.utils.register_class(PipelinePanel)
+    bpy.utils.register_class(HDRIsPanel)
     bpy.utils.register_class(AboutPanel)
-    bpy.utils.register_class(ExperimentalPanel)
-
-    #Add the custom intensity slider
-    bpy.utils.register_class(IntensityProperty)
-    bpy.types.Scene.intensity = bpy.props.PointerProperty(type=IntensityProperty)
-    #Add the custom path to texture library
-    bpy.utils.register_class(MyCustomProperties)
-    bpy.types.Scene.textures_path = bpy.props.PointerProperty(type=MyCustomProperties)
-    #
-    bpy.utils.register_class(ScanningProperties)
-    bpy.types.Scene.images_directory = bpy.props.PointerProperty(type=ScanningProperties)
-    bpy.types.Scene.imgpaths = ""
-
-    bpy.types.Scene.my_image = bpy.props.PointerProperty(name="Image", type=bpy.types.Image)
-
-    bpy.types.Scene.oldlinks = {}
-
-    bpy.utils.register_class(MaterialProperties)
-    bpy.types.Scene.bakemyscan_properties = bpy.props.PointerProperty(type=MaterialProperties)
 
 def unregister():
-    bpy.utils.unregister_class(currentVersion)
-    bpy.utils.unregister_class(checkUpdates)
+    bpy.utils.unregister_class(BakeMyScanProperties)
+    del bpy.types.Scene.bakemyscan_properties
+    del bpy.types.Scene.imagesdirectory
 
     bpy.utils.unregister_class(ScanPanel)
     bpy.utils.unregister_class(ImportPanel)
     bpy.utils.unregister_class(MaterialPanel)
     bpy.utils.unregister_class(RemeshFromSculptPanel)
     bpy.utils.unregister_class(PipelinePanel)
+    bpy.utils.unregister_class(HDRIsPanel)
     bpy.utils.unregister_class(AboutPanel)
-    bpy.utils.unregister_class(ExperimentalPanel)
-    #Clear the custom intensity slider
-    bpy.utils.unregister_class(IntensityProperty)
-    del bpy.types.Scene.intensity
-    #Clear the custom path to textures
-    bpy.utils.unregister_class(MyCustomProperties)
-    del bpy.types.Scene.textures_path
-
-    bpy.utils.unregister_class(ScanningProperties)
-    del bpy.types.Scene.images_directory
-    del bpy.types.Scene.imgpaths
-
-    del bpy.types.Scene.my_image
-    del bpy.types.Scene.oldlinks
-    del bpy.types.Scene.newVersion
-    del bpy.types.Scene.currentVersion
-
-    bpy.utils.unregister_class(MaterialProperties)
-    del bpy.types.Scene.bakemyscan_properties

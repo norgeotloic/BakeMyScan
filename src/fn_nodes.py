@@ -351,3 +351,68 @@ def cycles_material_to_vertex_color(material):
     slots.clear(0)
     mtex = slots.add()
     mtex.texture = tex
+
+def clean(tree, type):
+    GET = tree.nodes.get
+    NEW = tree.links.new
+    PR  = GET("BakeMyScan PBR")
+
+    node = GET(type)
+    if node is not None:
+
+        if type=="albedo":
+            if node.image is not None:
+                if GET("delight") is not None:
+                    NEW(GET(type).outputs["Color"], GET("delight").inputs["Color"])
+                    NEW(GET("delight").outputs["Color"], GET("ao_mix").inputs[1])
+                else:
+                    NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[1])
+                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+            else:
+                for l in GET("ao_mix").inputs[1].links:
+                    tree.links.remove(l)
+
+        if type=="ao":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[2])
+                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+            else:
+                pass
+                for l in GET("ao_mix").inputs[2].links:
+                    tree.links.remove(l)
+
+        if type=="normal":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("nmap").inputs["Color"])
+            else:
+                for l in GET("nmap").inputs["Color"].links:
+                    tree.links.remove(l)
+
+        if type=="height":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("bump").inputs["Height"])
+            else:
+                for l in GET("bump").inputs["Height"].links:
+                    tree.links.remove(l)
+
+        if type=="metallic":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], PR.inputs["Metallic"])
+            else:
+                for l in PR.inputs["Metallic"].links:
+                    tree.links.remove(l)
+
+        if type=="roughness":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], PR.inputs["Roughness"])
+            else:
+                for l in PR.inputs["Roughness"].links:
+                    tree.links.remove(l)
+def link_material(tree):
+    clean(tree, "ao")
+    clean(tree, "albedo")
+    clean(tree, "normal")
+    clean(tree, "height")
+    clean(tree, "metallic")
+    clean(tree, "roughness")
+    pass
