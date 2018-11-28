@@ -81,7 +81,7 @@ class Update(bpy.types.Operator):
         #Replace
         final_path = os.path.join(bpy.utils.resource_path('USER'), "scripts", "addons", "BakeMyScan")
         print(final_path)
-        go = False
+        go = True
         if go:
             if os.path.exists(final_path):
                 if os.path.isdir(final_path):
