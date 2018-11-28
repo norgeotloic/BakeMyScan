@@ -64,7 +64,6 @@ class BakeMyScanProperties(bpy.types.PropertyGroup):
         bpy.types.Scene.imagesdirectory = self.imagesdirectory
         return None
 
-
     #Delighting properties
     delight = bpy.props.BoolProperty(description="Delighting", default=False, update=toggle_delight)
     delight_invert_factor = bpy.props.FloatProperty(description="Inversion factor for delighting", default=0.3, min=0.,max=1., update=update_delight_invert)
@@ -81,7 +80,6 @@ class BakeMyScanProperties(bpy.types.PropertyGroup):
     imagesdirectory = bpy.props.StringProperty(description="Filepath used for importing the file",subtype='DIR_PATH', update=update_scan_images)
     #PBR library
     texturepath =  bpy.props.StringProperty(description="Filepath used for importing the file",subtype='DIR_PATH',update=create_PBR_library)
-
 
 class ScanPanel(BakeMyScanPanel):
     """A panel for the scanning methods"""
@@ -259,10 +257,8 @@ class HDRIsPanel(BakeMyScanPanel):
             row = layout.row()
             row.template_icon_view(wm, "my_previews")
             layout.prop(context.scene.bakemyscan_properties, "visibility", text="Show background")
-            #layout.prop(context.scene.bakemyscan_properties, "intensity", text="Display background")
             layout.prop(context.scene.bakemyscan_properties, "intensity", text="Intensity")
             layout.prop(context.scene.bakemyscan_properties, "rotation", text="Rotation")
-            #layout.prop(context.scene.bakemyscan_properties, "intensity", text="Rotation")
 
 class AboutPanel(BakeMyScanPanel):
     bl_label       = "Updates / Documentation"
@@ -270,11 +266,27 @@ class AboutPanel(BakeMyScanPanel):
     def draw(self, context):
 
         self.layout.operator("wm.url_open", text="bakemyscan.org", icon_value=bpy.types.Scene.custom_icons["bakemyscan"].icon_id).url = "http://bakemyscan.org"
+
+        _text     = "Check for updates"
+        _operator = "bakemyscan.check_updates"
+        if bpy.types.Scene.currentVersion is not None and bpy.types.Scene.newVersion is not None:
+            if bpy.types.Scene.currentVersion == bpy.types.Scene.newVersion and not bpy.types.Scene.restartRequired:
+                _text     = "Nothing new. Check again?"
+                _operator = "bakemyscan.check_updates"
+            elif bpy.types.Scene.restartRequired:
+                _text     = "Restart blender to update"
+                _operator = "wm.quit_blender"
+            else:
+                _text     = "Update to %s" % bpy.types.Scene.newVersion
+                _operator = "bakemyscan.update"
+        else:
+            pass
+
         row = self.layout.row(align=True)
-        row.operator("bakemyscan.check_updates", text='Check for updates', icon="FILE_REFRESH")
+        row.operator(_operator, text=_text, icon="FILE_REFRESH")
         for mod in addon_utils.modules():
             if mod.bl_info.get("name") == "BakeMyScan":
-                row.operator("bakemyscan.current_version", icon="QUESTION", text='Version: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
+                row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
 
         self.layout.label("Development")
         self.layout.operator("wm.url_open", text="Github",         icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
@@ -294,8 +306,6 @@ class AboutPanel(BakeMyScanPanel):
         self.layout.operator("wm.url_open", text="Meshlab", icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id).url = "http://www.meshlab.net/"
         self.layout.operator("wm.url_open", text="Colmap", icon="CAMERA_DATA").url = "https://colmap.github.io/"
         self.layout.operator("wm.url_open", text="OpenMVS", icon="CAMERA_DATA").url = "http://cdcseacave.github.io/openMVS/"
-
-
 
 def register():
     bpy.utils.register_class(BakeMyScanProperties)
