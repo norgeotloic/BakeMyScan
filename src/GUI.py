@@ -115,9 +115,9 @@ class PipelinePanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
         self.layout.operator("bakemyscan.manifold",          icon="MOD_SMOKE",  text='Manifold')
 
-        self.layout.label("Baking")
-        self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Textures to textures")
-        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR", text="Albedo to vertex color")
+        self.layout.label("Texture baking")
+        self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Bake textures")
+        self.layout.operator("bakemyscan.bake_to_vertex_colors", icon="COLOR",   text="Albedo to Vertex color")
 
 class MaterialPanel(BakeMyScanPanel):
     bl_label       = "Material / Textures"
@@ -157,6 +157,10 @@ class MaterialPanel(BakeMyScanPanel):
                             if mat.node_tree.nodes.get("PBR") is not None:
                                 nodes = mat.node_tree.nodes.get("PBR").node_tree.nodes
                                 display = True
+
+        #Display a warning
+        if ob is None:
+            self.layout.label("No active object")
 
         #Display the material selector widget
         if ob is not None and len(context.selected_objects)>0:
@@ -202,17 +206,18 @@ class MaterialPanel(BakeMyScanPanel):
                 fn_nodes.link_material(ob.active_material.node_tree.nodes.get("PBR").node_tree)
 
         else:
-            #If there is a material, which comes from the library
-            if len(ob.material_slots)>0:
-                mat = ob.active_material
-                if mat is not None:
-                    if mat.use_nodes:
-                        groups = [g for g in mat.node_tree.nodes if g.type=="GROUP"]
-                        if len(groups)==1:
-                            g = groups[0]
-                            if "Height" in g.inputs and "UV scale" in g.inputs:
-                                self.layout.prop(context.scene.bakemyscan_properties, "uv_scale", text="UV scale")
-                                self.layout.prop(context.scene.bakemyscan_properties, "height",   text="Height")
+            #If there is a material which comes from the library
+            if ob is not None:
+                if len(ob.material_slots)>0:
+                    mat = ob.active_material
+                    if mat is not None:
+                        if mat.use_nodes:
+                            groups = [g for g in mat.node_tree.nodes if g.type=="GROUP"]
+                            if len(groups)==1:
+                                g = groups[0]
+                                if "Height" in g.inputs and "UV scale" in g.inputs:
+                                    self.layout.prop(context.scene.bakemyscan_properties, "uv_scale", text="UV scale")
+                                    self.layout.prop(context.scene.bakemyscan_properties, "height",   text="Height")
 
 class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
@@ -261,12 +266,13 @@ class HDRIsPanel(BakeMyScanPanel):
             layout.prop(context.scene.bakemyscan_properties, "rotation", text="Rotation")
 
 class AboutPanel(BakeMyScanPanel):
-    bl_label       = "Updates / Documentation"
+    bl_label       = "Updates / Help"
 
     def draw(self, context):
 
         self.layout.operator("wm.url_open", text="bakemyscan.org", icon_value=bpy.types.Scene.custom_icons["bakemyscan"].icon_id).url = "http://bakemyscan.org"
 
+        #Update
         _text     = "Check for updates"
         _operator = "bakemyscan.check_updates"
         if bpy.types.Scene.currentVersion is not None and bpy.types.Scene.newVersion is not None:
@@ -281,7 +287,6 @@ class AboutPanel(BakeMyScanPanel):
                 _operator = "bakemyscan.update"
         else:
             pass
-
         row = self.layout.row(align=True)
         row.operator(_operator, text=_text, icon="FILE_REFRESH")
         for mod in addon_utils.modules():
@@ -293,16 +298,19 @@ class AboutPanel(BakeMyScanPanel):
                         row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
                 except:
                     row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
-        self.layout.label("Development")
-        self.layout.operator("wm.url_open", text="Github",         icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
-        self.layout.operator("wm.url_open", text="Build status",   icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"
-        self.layout.operator("wm.url_open", text="Roadmap",   icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan/milestones"
-        self.layout.operator("wm.url_open", text='"Blog"',    icon="WORDWRAP_ON").url = "http://bakemyscan.org/blog"
 
-        self.layout.label("Social")
+        self.layout.label("Resources")
+        self.layout.operator("wm.url_open", text="Tutorials", icon="QUESTION").url = "http://bakemyscan.org/tutorials"
+        self.layout.operator("wm.url_open", text="BlenderArtists", icon="BLENDER").url = "https://blenderartists.org/t/bakemyscan-open-source-toolbox-for-asset-optimization"
         self.layout.operator("wm.url_open", text="Sketchfab", icon_value=bpy.types.Scene.custom_icons["sketchfab"].icon_id).url = "https://sketchfab.com/norgeotloic"
         self.layout.operator("wm.url_open", text="Twitter",   icon_value=bpy.types.Scene.custom_icons["tweeter"].icon_id).url = "https://twitter.com/norgeotloic"
         self.layout.operator("wm.url_open", text="Youtube",   icon_value=bpy.types.Scene.custom_icons["youtube"].icon_id).url = "https://youtube.com/norgeotloic"
+
+        self.layout.label("Development")
+        self.layout.operator("wm.url_open", text="Github",         icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
+        self.layout.operator("wm.url_open", text="Build status",   icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"
+        self.layout.operator("wm.url_open", text="Roadmap",   icon="SORTTIME").url = "http://github.com/norgeotloic/BakeMyScan/milestones"
+        self.layout.operator("wm.url_open", text='"Blog"',    icon="WORDWRAP_ON").url = "http://bakemyscan.org/blog"
 
         self.layout.label("External software")
         self.layout.operator("wm.url_open", text="MMGtools", icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id).url = "https://www.mmgtools.org/"
