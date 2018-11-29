@@ -65,7 +65,7 @@ class bake_cycles_textures(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     resolution     = bpy.props.IntProperty( name="resolution",     description="image resolution", default=1024, min=128, max=8192)
-    cageRatio      = bpy.props.FloatProperty(name="cageRatio",     description="baking cage size as a ratio", default=0.1, min=0.00001, max=5)
+    cageRatio      = bpy.props.FloatProperty(name="cageRatio",     description="baking cage size as a ratio", default=0.02, min=0.00001, max=5)
     bake_albedo    = bpy.props.BoolProperty(name="bake_albedo",    description="albedo", default=True)
     bake_ao        = bpy.props.BoolProperty(name="bake_ao",        description="ambient occlusion", default=False)
     bake_geometry  = bpy.props.BoolProperty(name="bake_geometry",  description="geometric normals", default=True)
