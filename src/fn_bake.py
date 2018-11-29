@@ -214,12 +214,24 @@ def create_source_baking_material(material, channel):
             _input_node = fill_input_slot(n["node"], n["tree"], channel)
             convert_principled_to_emission(n["node"], n["tree"], _input_node)
 
-    #Turn all non colors textures, except normals, to colors
+    #Turn all textures to colors whn baking the normals, except the normals themselves
     _image_nodes = get_all_nodes_in_material(_new_material, "TEX_IMAGE")
     for n in [x["node"] for x in _image_nodes]:
         if len(n.outputs["Color"].links)>0:
-            if not is_attached_to_normalmap_somehow(n):
-                n.color_space = "COLOR"
+            if channel == "Normal":
+                if not is_attached_to_normalmap_somehow(n):
+                    n.color_space = "COLOR"
+
+    #Add a gamma correction for metalness, roughness, transmission...
+    if channel!="Normal" and channel!="Base Color":
+        _emission_nodes = get_all_nodes_in_material(_new_material, "EMISSION")
+        for emit in _emission_nodes:
+            _gamma = emit["tree"].nodes.new(type="ShaderNodeGamma")
+            _gamma.inputs["Gamma"].default_value = 2.2
+            if len(emit["node"].inputs["Color"].links)>0:
+                emit['tree'].links.new(emit["node"].inputs["Color"].links[0].from_socket, _gamma.inputs["Color"])
+                emit['tree'].links.new(_gamma.outputs["Color"], emit["node"].inputs["Color"])
+
     return _new_material
 
 def create_target_baking_material(obj):

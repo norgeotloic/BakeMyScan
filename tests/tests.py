@@ -1,10 +1,9 @@
-#On windows
-#blender --addons BakeMyScan --background --python BakeMyScan\scripts\tests\tests.py
-#On linux
-#blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/tests.py
-
-#Need to have run the userprefs before:
-#blender --addons BakeMyScan --background --python BakeMyScan\scripts\tests\userprefs.py -- --mmgs bin/mmgs_O3 --instant 'Instant Meshes/Instant Meshes' --meshlabserver 'LC_ALL=C meshlabserver'
+# Local computer
+# blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/tests.py
+# or
+# blender --addons BakeMyScan -b -P tests/tests.py -- --mmgs "/usr/local/bin/mmgs_O3" --instant "/usr/local/bin/instantMeshes" --meshlabserver "/usr/bin/meshlabserver"
+# Travis
+# blender --addons BakeMyScan --background --python BakeMyScan/scripts/tests/tests.py -- --mmgs bin/mmgs_O3 --instant 'Instant Meshes/Instant Meshes' --meshlabserver 'LC_ALL=C meshlabserver'
 
 import collections
 import bpy
@@ -13,6 +12,8 @@ import time
 import sys
 import json
 
+import argparse
+
 #Do we stop the execution on error?
 _BREAK = False
 #Path to the local_directory
@@ -20,12 +21,6 @@ _DIR = os.path.dirname(__file__)
 def _PATH(f):
     return os.path.join(_DIR, f)
 
-#Enable the addon
-try:
-    bpy.ops.wm.addon_enable(module="BakeMyScan")
-except:
-    print("Error enabling the addon")
-    sys.exit(2)
 
 ################################################################################
 # 1 - A class to manage the execution of the different test cases
@@ -134,6 +129,54 @@ class TestSequence:
 ################################################################################
 
 if __name__ == "__main__":
+
+    ############################################################################
+    # Automagically force the user settings for travis
+    ############################################################################
+    #Create the parser
+    parser = argparse.ArgumentParser(description="Tests the BakeMyScan add-on")
+    #Create the arguments
+    parser.add_argument("--mmgs",          type=str, help="Path to mmgs executable")
+    parser.add_argument("--instant",       type=str, help="Path to Instant Meshes executable")
+    parser.add_argument("--meshlabserver", type=str, help="Path to meshlabserver executable")
+    #Parse
+    argv = sys.argv[sys.argv.index("--") + 1:]
+    args = parser.parse_args(argv)
+    #Make the executable paths absolute
+    try:
+        if os.path.exists(args.mmgs):
+            args.mmgs = os.path.abspath(args.mmgs)
+        if os.path.exists(args.instant):
+            args.instant = os.path.abspath(args.instant)
+        if os.path.exists(args.meshlabserver):
+            args.meshlabserver = os.path.abspath(args.meshlabserver)
+    except:
+        print("Did not managed to make the paths absolute")
+        sys.exit(1)
+    #Activate the addon
+    try:
+        bpy.ops.wm.addon_enable(module="BakeMyScan")
+    except:
+        print("Error enabling the addon")
+        sys.exit(2)
+    #Set the executables in the addon user preferences
+    try:
+        bpy.context.user_preferences.addons["BakeMyScan"].preferences.mmgs          = args.mmgs
+        bpy.context.user_preferences.addons["BakeMyScan"].preferences.instant       = args.instant
+        bpy.context.user_preferences.addons["BakeMyScan"].preferences.meshlabserver = args.meshlabserver
+        bpy.types.Scene.executables["mmgs"] = args.mmgs
+        bpy.types.Scene.executables["instant"] = args.instant
+        bpy.types.Scene.executables["meshlabserver"] = args.meshlabserver
+
+    except:
+        print("Error setting the paths in preferences")
+        sys.exit(3)
+    #Save the user preferences
+    try:
+        bpy.ops.wm.save_userpref()
+    except:
+        print("Error saving the user preferences")
+        sys.exit(4)
 
     TESTS = TestSequence()
     TESTS.reset()
@@ -322,7 +365,7 @@ if __name__ == "__main__":
     ############################################################################
     # 2.4 - External remeshing methods
     ############################################################################
-
+    """
     #Remesh suzanne with mmgs
     TESTS.add_operator(
         name="remesh_mmgs",
@@ -354,7 +397,7 @@ if __name__ == "__main__":
             reset=True,
             args={"facescount":1500}
         )
-
+    """
     ############################################################################
     # 2.5 - PBR textures library operators
     ############################################################################

@@ -13,9 +13,8 @@ class clean_object(bpy.types.Operator):
     normals     = bpy.props.BoolProperty(name="normals",     description="Normals", default=True)
     center      = bpy.props.BoolProperty(name="center",      description="Center", default=True)
     scale       = bpy.props.BoolProperty(name="scale",       description="Scale", default=True)
-    smooth      = bpy.props.IntProperty( name="smooth",      description="Smoothing iterations", default=1, min=0, max=10)
+    smooth      = bpy.props.IntProperty( name="smooth",      description="Smoothing iterations", default=0, min=0, max=50)
     shade       = bpy.props.BoolProperty(name="shade",       description="Shade smooth", default=True)
-    manifold    = bpy.props.BoolProperty(name="manifold",    description="Make manifold", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -38,7 +37,6 @@ class clean_object(bpy.types.Operator):
         self.layout.label("Geometry")
         self.layout.prop(self, "doubles",   text="Remove duplicated vertices")
         self.layout.prop(self, "loose",     text="Delete loose geometry")
-        self.layout.prop(self, "manifold",  text="Make manifold")
         self.layout.label("Normals")
         self.layout.prop(self, "sharp",     text="Remove sharp marks")
         self.layout.prop(self, "normals",   text="Normalize normals")
@@ -87,11 +85,6 @@ class clean_object(bpy.types.Operator):
 
             #Go out of edit mode
             bpy.ops.object.editmode_toggle()
-
-            #Non manifold
-            if self.manifold:
-                addon_utils.enable("object_print3d_utils")
-                bpy.ops.mesh.print3d_clean_non_manifold()
 
             #Smoothing
             if self.smooth>0:

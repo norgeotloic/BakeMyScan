@@ -55,6 +55,16 @@ def update_hdri_background(self, context):
     env = world.node_tree.nodes.get('Environment Texture')
     if env is None:
         env = world.node_tree.nodes.new(type="ShaderNodeTexEnvironment")
+    coordinates = world.node_tree.nodes.get("Texture Coordinate")
+    if coordinates is None:
+        coordinates = world.node_tree.nodes.new(type="ShaderNodeTexCoord")
+    mapping = world.node_tree.nodes.get("BMS_world")
+    if mapping is None:
+        mapping     = world.node_tree.nodes.new(type="ShaderNodeMapping")
+        mapping.vector_type = 'TEXTURE'
+        mapping.name = mapping.label = "BMS_world"    
+    world.node_tree.links.new(coordinates.outputs["Generated"], mapping.inputs["Vector"])
+    world.node_tree.links.new(mapping.outputs["Vector"], env.inputs["Vector"])
     #Assign an image to the node
     env.image = bpy.data.images.load(hdri, check_existing=True)
     #Link it to the background

@@ -272,6 +272,66 @@ def node_tree_pbr():
     #Return
     return _node_tree
 
+def node_tree_delight():
+    #Create the group and its input/output sockets
+    _node_tree = bpy.data.node_groups.new(type="ShaderNodeTree", name="delight")
+    _node_tree.inputs.new('NodeSocketColor','Color')
+    _node_tree.inputs.new('NodeSocketFloat','Invert')
+    _node_tree.inputs.new('NodeSocketFloat','AO')
+    _node_tree.outputs.new('NodeSocketColor','Color')
+
+    #Aliases for the functions
+    AN = _node_tree.nodes.new
+    LN = _node_tree.links.new
+    #Inputs and outputs
+    _input     = AN(type="NodeGroupInput")
+    _output    = AN(type="NodeGroupOutput")
+    _input.name = _input.label = "input"
+    _output.name = _output.label = "output"
+
+    #Create the nodes for the invert
+    _desaturate = AN(type="ShaderNodeRGBToBW")
+    _invert     = AN(type="ShaderNodeInvert")
+    _multiply   = AN(type="ShaderNodeMixRGB")
+    _multiply.blend_type = "MULTIPLY"
+    _multiply.inputs["Fac"].default_value=1.0
+
+    #Create the links
+    LN(_input.outputs["Color"], _desaturate.inputs["Color"])
+    LN(_desaturate.outputs["Val"], _invert.inputs["Color"])
+    LN(_invert.outputs["Color"], _multiply.inputs[2])
+    LN(_input.outputs["Color"], _multiply.inputs[1])
+
+    #Bake the ambient occlusion
+    _imagenode = AN(type="ShaderNodeTexImage")
+    _imagenode.name = _imagenode.label = "ao"
+
+    #Multiply by the invert of the ao
+    _invert_ao     = AN(type="ShaderNodeInvert")
+    _multiply_ao   = AN(type="ShaderNodeMixRGB")
+    _multiply_ao.blend_type = "VALUE"
+    _multiply_ao.inputs["Fac"].default_value=1.0
+    LN(_imagenode.outputs["Color"], _invert_ao.inputs["Color"])
+    LN(_invert_ao.outputs["Color"], _multiply_ao.inputs[2])
+    LN(_multiply.outputs["Color"], _multiply_ao.inputs[1])
+
+    LN(_multiply_ao.outputs["Color"], _output.inputs["Color"])
+    LN(_input.outputs["Invert"], _multiply.inputs["Fac"])
+    LN(_input.outputs["AO"], _multiply_ao.inputs["Fac"])
+
+    #Position everything
+    _output.location     = [1000,200]
+    _input.location = [0,200]
+    _desaturate.location = [200,0]
+    _invert.location = [400,0]
+    _imagenode.location = [200, -200]
+    _invert_ao.location = [400, -200]
+    _multiply.location = [600,0]
+    _multiply_ao.location = [800,0]
+
+    #Return
+    return _node_tree
+
 def cycles_material_to_vertex_color(material):
     """Transforms a Cycles material into a blender one"""
 
@@ -291,3 +351,68 @@ def cycles_material_to_vertex_color(material):
     slots.clear(0)
     mtex = slots.add()
     mtex.texture = tex
+
+def clean(tree, type):
+    GET = tree.nodes.get
+    NEW = tree.links.new
+    PR  = GET("BakeMyScan PBR")
+
+    node = GET(type)
+    if node is not None:
+
+        if type=="albedo":
+            if node.image is not None:
+                if GET("delight") is not None:
+                    NEW(GET(type).outputs["Color"], GET("delight").inputs["Color"])
+                    NEW(GET("delight").outputs["Color"], GET("ao_mix").inputs[1])
+                else:
+                    NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[1])
+                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+            else:
+                for l in GET("ao_mix").inputs[1].links:
+                    tree.links.remove(l)
+
+        if type=="ao":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("ao_mix").inputs[2])
+                NEW(GET("ao_mix").outputs["Color"], PR.inputs["Base Color"])
+            else:
+                pass
+                for l in GET("ao_mix").inputs[2].links:
+                    tree.links.remove(l)
+
+        if type=="normal":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("nmap").inputs["Color"])
+            else:
+                for l in GET("nmap").inputs["Color"].links:
+                    tree.links.remove(l)
+
+        if type=="height":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], GET("bump").inputs["Height"])
+            else:
+                for l in GET("bump").inputs["Height"].links:
+                    tree.links.remove(l)
+
+        if type=="metallic":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], PR.inputs["Metallic"])
+            else:
+                for l in PR.inputs["Metallic"].links:
+                    tree.links.remove(l)
+
+        if type=="roughness":
+            if node.image is not None:
+                NEW(GET(type).outputs["Color"], PR.inputs["Roughness"])
+            else:
+                for l in PR.inputs["Roughness"].links:
+                    tree.links.remove(l)
+def link_material(tree):
+    clean(tree, "ao")
+    clean(tree, "albedo")
+    clean(tree, "normal")
+    clean(tree, "height")
+    clean(tree, "metallic")
+    clean(tree, "roughness")
+    pass

@@ -2,6 +2,11 @@ import bpy
 import os
 import json
 
+import shutil
+
+def is_exe(path):
+    return shutil.which(path) is not None
+
 def absolute_paths(self, context):
     #Make the paths absolute
     bpy.types.Scene.executables["mmgs"] = os.path.abspath(bpy.path.abspath(self.mmgs)) if self.mmgs!="" else ""
@@ -14,22 +19,55 @@ def absolute_paths(self, context):
     bpy.types.Scene.executables["reconstructmesh"] = os.path.abspath(bpy.path.abspath(self.reconstructmesh)) if self.reconstructmesh!="" else ""
     bpy.types.Scene.executables["texturemesh"] = os.path.abspath(bpy.path.abspath(self.texturemesh)) if self.texturemesh!="" else ""
     bpy.types.Scene.executables["openmvsdir"] = os.path.abspath(bpy.path.abspath(self.openmvsdir)) if self.openmvsdir!="" else ""
+    bpy.types.Scene.executables["texturepath"] = os.path.abspath(bpy.path.abspath(self.texturepath)) if self.texturepath!="" else ""
+
+    #Check that everything is an executable
+    oneWrong = False
+    for x in bpy.types.Scene.executables:
+        if x!="openmvsdir" and x!="texturepath":
+            exe = bpy.types.Scene.executables[x]
+            if not (exe=="" or exe is None) and not is_exe(exe):
+                print("Warning: %s - '%s' is not valid" % (x, exe))
+                bpy.types.Scene.executables[x] = ""
+                oneWrong = True
+    if not oneWrong:
+        print("All provided paths seem valid, we're good to go!")
+
     #Write to a .json file to keep even after updating the addon
     path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
-    with open(path, 'w') as fp:
-        json.dump(bpy.types.Scene.executables, fp, sort_keys=True, indent=4)
+    try:
+        with open(path, 'w') as fp:
+            json.dump(bpy.types.Scene.executables, fp, sort_keys=True, indent=4)
+    except:
+        print("Can't write into %s" % bpy.utils.resource_path('USER'), "bakemyscan.config")
     return None
+
 def find_openmvs_executables(self, context):
     bpy.types.Scene.executables["openmvsdir"] = os.path.abspath(bpy.path.abspath(self.openmvsdir)) if self.openmvsdir!="" else ""
-    for f in os.listdir(bpy.types.Scene.executables["openmvsdir"]):
-        if "InterfaceVisualSFM" in f:
-            self.interfacevisualsfm = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
-        if "DensifyPointCloud" in f:
-            self.densifypointcloud = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
-        if "ReconstructMesh" in f:
-            self.reconstructmesh = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
-        if "TextureMesh" in f:
-            self.texturemesh = os.path.join(bpy.types.Scene.executables["openmvsdir"], f)
+    D = bpy.types.Scene.executables["openmvsdir"]
+    if os.path.isdir(D):
+        for f in os.listdir(D):
+            if "InterfaceVisualSFM" in f:
+                self.interfacevisualsfm = os.path.join(D, f)
+            if "DensifyPointCloud" in f:
+                self.densifypointcloud = os.path.join(D, f)
+            if "ReconstructMesh" in f:
+                self.reconstructmesh = os.path.join(D, f)
+            if "TextureMesh" in f:
+                self.texturemesh = os.path.join(D, f)
+    return None
+
+def updatepath(self, context):
+    print("Reading in materials from %s" % self.texturepath)
+    bpy.ops.bakemyscan.create_library(filepath=self.texturepath)
+    path = os.path.join(bpy.utils.resource_path('USER'), "materials.json")
+    try:
+        with open(path, 'w') as fp:
+            json.dump(bpy.types.Scene.pbrtextures, fp, sort_keys=True, indent=4)
+        print("Successfully saved %d texture sets to %s" % (len(bpy.types.Scene.pbrtextures), path))
+    except:
+        pass
+    absolute_paths(self, context)
     return None
 
 class BakeMyScanPrefs(bpy.types.AddonPreferences):
@@ -50,10 +88,17 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
     reconstructmesh    = bpy.props.StringProperty(name="ReconstructMesh", subtype='FILE_PATH', update=absolute_paths)
     texturemesh        = bpy.props.StringProperty(name="TextureMesh", subtype='FILE_PATH', update=absolute_paths)
 
+    #Texture library
+    texturepath =  bpy.props.StringProperty(description="PBR textures library", subtype='DIR_PATH', update=updatepath)
+
+
+
     def check(self, context):
         return True
     def draw(self, context):
         layout = self.layout
+        layout.label(text="PBR textures library")
+        layout.prop(self, "texturepath")
         layout.label(text="Remeshing tools")
         layout.prop(self, "instant")
         layout.prop(self, "mmgs")
@@ -71,30 +116,36 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
 
 def register():
     bpy.types.Scene.executables = {}
+    bpy.types.Scene.pbrtextures = {}
     bpy.utils.register_class(BakeMyScanPrefs)
 
-    #Register it after it has already been activated
-    try:
+    PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
 
-        PREFS = bpy.context.user_preferences.addons["BakeMyScan"].preferences
-
-        #Print the preferences
-        for x in PREFS.keys():
-            print(x, PREFS[x])
-
-        #Try to read in the preferences
-        path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
-        if os.path.exists(path):
-            with open(path, 'r') as fp:
-                bpy.types.Scene.executables = json.load(fp)
-                #Assign them to the variables
-                for x in bpy.types.Scene.executables.keys():
+    #Try to read in the preferences from the saved file
+    path = os.path.join(bpy.utils.resource_path('USER'), "bakemyscan.config")
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            bpy.types.Scene.executables = json.load(fp)
+            #Assign them to the variables
+            for x in bpy.types.Scene.executables.keys():
+                if x in PREFS.keys():
                     if PREFS[x] == "":
                         PREFS[x] = bpy.types.Scene.executables[x]
+                else:
+                    PREFS[x] = bpy.types.Scene.executables[x]
+    else:
+        for x in PREFS.keys():
+            if PREFS[x] is not None and PREFS[x]!="":
+                bpy.types.Scene.executables[x] = PREFS[x]
 
-    except:
-        print("Did not manage to read the configuration file. But that's not a big deal!")
+    #Try to read in the textures from the .json file
+    path = os.path.join(bpy.utils.resource_path('USER'), "materials.json")
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            bpy.types.Scene.pbrtextures = json.load(fp)
+            print("Successfully loaded %d texture sets from %s" % (len(bpy.types.Scene.pbrtextures), path))
 
 def unregister():
     bpy.utils.unregister_class(BakeMyScanPrefs)
     del bpy.types.Scene.executables
+    del bpy.types.Scene.pbrtextures

@@ -15,13 +15,6 @@ class create_library(bpy.types.Operator):
         maxlen=1024,
         subtype='DIR_PATH')
 
-    @classmethod
-    def poll(self, context):
-        #Need to be in Cycles render mode
-        if bpy.context.scene.render.engine != "CYCLES":
-            return 0
-        return 1
-
     def execute(self, context):
 
         materials = fn_match.findMaterials(os.path.dirname(self.properties.filepath))
@@ -34,11 +27,6 @@ class create_library(bpy.types.Operator):
 
 def register() :
     bpy.utils.register_class(create_library)
-    bpy.types.Scene.pbrtextures = {}
 
 def unregister() :
     bpy.utils.unregister_class(create_library)
-    try:
-        del bpy.types.Scene.pbrtextures
-    except:
-        pass

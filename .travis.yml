@@ -38,9 +38,8 @@ install:
   - ls Instant/
   - ls blender/
   - ls BakeMyScan/
-
+  #Check the executables
+  - which meshlabserver
 script:
-  #Try to set the user preferences
-  - blender/blender --addons BakeMyScan -b -P BakeMyScan/tests/userprefs.py -- --mmgs "bin/mmgs_O3" --instant "Instant/Instant Meshes" --meshlabserver "LC_ALL=C meshlabserver"
   #Run the tests
-  - blender/blender --addons BakeMyScan -b -P BakeMyScan/tests/tests.py
+  - blender/blender --addons BakeMyScan -b -P BakeMyScan/tests/tests.py -- --mmgs "bin/mmgs_O3" --instant "Instant/Instant Meshes" --meshlabserver "/usr/bin/meshlabserver"
