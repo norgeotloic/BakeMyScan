@@ -89,8 +89,8 @@ class ScanPanel(BakeMyScanPanel):
         box.label("Images directory")
         box.prop(context.scene.bakemyscan_properties, "imagesdirectory", text="")
         box.label("Structure from motion")
-        box.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
-        box.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap + OpenMVS")
+        #box.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
+        box.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap OpenMVS Meshlab")
 
 class ImportPanel(BakeMyScanPanel):
     """A panel for importing and pre-processing"""
@@ -286,8 +286,13 @@ class AboutPanel(BakeMyScanPanel):
         row.operator(_operator, text=_text, icon="FILE_REFRESH")
         for mod in addon_utils.modules():
             if mod.bl_info.get("name") == "BakeMyScan":
-                row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
-
+                try:
+                    if bpy.types.Scene.currentVersion != bpy.types.Scene.newVersion:
+                        row.operator("wm.url_open", text="Changelog", icon="QUESTION").url = "https://github.com/norgeotloic/BakeMyScan/releases/latest"
+                    else:
+                        row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
+                except:
+                    row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
         self.layout.label("Development")
         self.layout.operator("wm.url_open", text="Github",         icon_value=bpy.types.Scene.custom_icons["github"].icon_id).url = "http://github.com/norgeotloic/BakeMyScan"
         self.layout.operator("wm.url_open", text="Build status",   icon_value=bpy.types.Scene.custom_icons["travis"].icon_id).url = "https://travis-ci.org/norgeotloic/BakeMyScan"

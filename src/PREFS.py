@@ -19,14 +19,15 @@ def absolute_paths(self, context):
     bpy.types.Scene.executables["reconstructmesh"] = os.path.abspath(bpy.path.abspath(self.reconstructmesh)) if self.reconstructmesh!="" else ""
     bpy.types.Scene.executables["texturemesh"] = os.path.abspath(bpy.path.abspath(self.texturemesh)) if self.texturemesh!="" else ""
     bpy.types.Scene.executables["openmvsdir"] = os.path.abspath(bpy.path.abspath(self.openmvsdir)) if self.openmvsdir!="" else ""
+    bpy.types.Scene.executables["texturepath"] = os.path.abspath(bpy.path.abspath(self.texturepath)) if self.texturepath!="" else ""
 
     #Check that everything is an executable
     oneWrong = False
     for x in bpy.types.Scene.executables:
-        if x!="openmvsdir":
+        if x!="openmvsdir" and x!="texturepath":
             exe = bpy.types.Scene.executables[x]
-            if not is_exe(exe):
-                print("Warning: %s - '%s' not valid" % (x, exe))
+            if not (exe=="" or exe is None) and not is_exe(exe):
+                print("Warning: %s - '%s' is not valid" % (x, exe))
                 bpy.types.Scene.executables[x] = ""
                 oneWrong = True
     if not oneWrong:
@@ -66,6 +67,7 @@ def updatepath(self, context):
         print("Successfully saved %d texture sets to %s" % (len(bpy.types.Scene.pbrtextures), path))
     except:
         pass
+    absolute_paths(self, context)
     return None
 
 class BakeMyScanPrefs(bpy.types.AddonPreferences):
@@ -95,7 +97,7 @@ class BakeMyScanPrefs(bpy.types.AddonPreferences):
         return True
     def draw(self, context):
         layout = self.layout
-        layout.label(text="PBR textures path")
+        layout.label(text="PBR textures library")
         layout.prop(self, "texturepath")
         layout.label(text="Remeshing tools")
         layout.prop(self, "instant")

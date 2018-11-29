@@ -6,6 +6,9 @@ from . import fn_soft
 from . import fn_bake
 from . import fn_nodes
 
+import shutil
+
+
 class colmap_auto(bpy.types.Operator):
     bl_idname = "bakemyscan.colmap_auto"
     bl_label  = "Use colmap"
@@ -14,7 +17,6 @@ class colmap_auto(bpy.types.Operator):
 
     mesher  = bpy.props.EnumProperty(items= ( ('delaunay', 'delaunay', 'delaunay'), ("poisson", "poisson", "poisson")) , description="Mesher", default="delaunay")
     quality = bpy.props.EnumProperty(items= ( ('low', 'low', 'low'), ("medium", "medium", "medium"), ("high", "high", "high")) , description="Quality", default="medium")
-
     sparse = bpy.props.BoolProperty(description="Sparse", default=True)
     dense  = bpy.props.BoolProperty(description="Dense", default=True)
     single = bpy.props.BoolProperty(description="Single Camera", default=True)
@@ -25,12 +27,15 @@ class colmap_auto(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
     def draw(self, context):
+        self.layout.prop(self, "gpu",     text="GPU")
         self.layout.prop(self, "mesher",  text="Mesher")
         self.layout.prop(self, "quality", text="Quality")
         self.layout.prop(self, "sparse",  text="Sparse")
-        self.layout.prop(self, "dense",   text="Dense")
         self.layout.prop(self, "single",  text="Single Camera")
-        self.layout.prop(self, "gpu",  text="GPU")
+        if self.gpu:
+            self.layout.prop(self, "dense",   text="Dense")
+        else:
+            self.layout.label("Dense reconstruction needs a CUDA GPU")
         col = self.layout.column(align=True)
 
     @classmethod
@@ -48,23 +53,19 @@ class colmap_auto(bpy.types.Operator):
         return 1
 
     def execute(self, context):
-        if True:
-            D = bpy.types.Scene.imagesdirectory
-            self.results = fn_soft.colmap_auto(
-                colmap        = bpy.types.Scene.executables["colmap"],
-                workspace     = D,
-                images        = D,
-                mesher        = self.mesher,
-                quality       = self.quality,
-                sparse        = 1 if self.sparse else 0,
-                dense         = 1 if self.sparse else 0,
-                single_camera = 1 if self.single else 0,
-                gpu           = self.gpu
-            )
-            return{'FINISHED'}
-        else:
-            print("Did not manage to run colmap")
-            return{'CANCELLED'}
+        self.results = fn_soft.colmap_auto(
+            colmap        = bpy.types.Scene.executables["colmap"],
+            workspace     = os.path.join(bpy.types.Scene.imagesdirectory, "BakeMyScanRecon"),
+            images        = bpy.types.Scene.imagesdirectory,
+            mesher        = self.mesher,
+            quality       = self.quality,
+            sparse        = 1 if self.sparse else 0,
+            dense         = 1 if self.dense else 0,
+            single_camera = 1 if self.single else 0,
+            gpu           = self.gpu
+        )
+        return{'FINISHED'}
+
 
 
 class colmap_openmvs(bpy.types.Operator):
@@ -73,23 +74,28 @@ class colmap_openmvs(bpy.types.Operator):
     bl_options = {"REGISTER"}
 
 
-    mesher  = bpy.props.EnumProperty(items= ( ('delaunay', 'delaunay', 'delaunay'), ("poisson", "poisson", "poisson")) , description="Mesher", default="delaunay")
-    quality = bpy.props.EnumProperty(items= ( ('low', 'low', 'low'), ("medium", "medium", "medium"), ("high", "high", "high")) , description="Quality", default="medium")
-
-    sparse = bpy.props.BoolProperty(description="Sparse", default=True)
-    dense  = bpy.props.BoolProperty(description="Dense", default=True)
     single = bpy.props.BoolProperty(description="Single Camera", default=True)
+    gpu    = bpy.props.BoolProperty(description="GPU", default=True)
+    reconstruct_distance = bpy.props.FloatProperty(description="Pixel distance", default=2.5, min=1., max=20.)
+    texture_resolution = bpy.props.IntProperty(description="Scale factor for texturing", default=2, min=0, max=5)
+    densify_resolution=bpy.props.IntProperty(description="Scale factor for densifying", default=2, min=0, max=5)
+    min_size=bpy.props.IntProperty(description="Minimal texture size", default=640, min=128, max=4096)
 
     def check(self, context):
         return True
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
     def draw(self, context):
-        self.layout.prop(self, "mesher",  text="Mesher")
-        self.layout.prop(self, "quality", text="Quality")
-        self.layout.prop(self, "sparse",  text="Sparse")
-        self.layout.prop(self, "dense",   text="Dense")
-        self.layout.prop(self, "single",  text="Single Camera")
+        box = self.layout.box()
+        box.label("Colmap")
+        box.prop(self, "single",  text="Single Camera")
+        box.prop(self, "gpu",  text="Use GPU")
+        box = self.layout.box()
+        box.label("OpenMVS")
+        box.prop(self, "min_size",             text="Minimal image size")
+        box.prop(self, "densify_resolution",   text="Image scale - Densify")
+        box.prop(self, "texture_resolution",   text="Image scale - Texture")
+        box.prop(self, "reconstruct_distance", text="Min. verts distance (px)")
         col = self.layout.column(align=True)
 
     @classmethod
@@ -117,27 +123,51 @@ class colmap_openmvs(bpy.types.Operator):
         return 1
 
     def execute(self, context):
-        if True:
-            D = bpy.types.Scene.imagesdirectory
-            self.results = fn_soft.colmap_openmvs(
-                workspace     = D,
-                images        = D,
-                mesher        = self.mesher,
-                quality       = self.quality,
-                sparse        = 1 if self.sparse else 0,
-                dense         = 1 if self.sparse else 0,
-                single_camera = 1 if self.single else 0,
-                colmap=bpy.types.Scene.executables["colmap"],
-                interfacevisualsfm = bpy.types.Scene.executables["interfacevisualsfm"],
-                densifypointcloud = bpy.types.Scene.executables["densifypointcloud"],
-                reconstructmesh = bpy.types.Scene.executables["reconstructmesh"],
-                texturemesh = bpy.types.Scene.executables["texturemesh"],
-                meshlabserver = bpy.types.Scene.executables["meshlabserver"],
-            )
-            return{'FINISHED'}
-        else:
-            print("Did not manage to run colmap")
-            return{'CANCELLED'}
+
+        W = bpy.types.Scene.imagesdirectory
+
+        oldFiles = os.listdir(W)
+
+        #Create a recon directory
+        path = os.path.join(W, "BakeMyScanRecon")
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
+        os.mkdir(path)
+
+        #Run Colmap + OpenMVS
+        fn_soft.colmap_openmvs(
+            workspace     = W,
+            images        = bpy.types.Scene.imagesdirectory,
+            colmap=bpy.types.Scene.executables["colmap"],
+            interfacevisualsfm = bpy.types.Scene.executables["interfacevisualsfm"],
+            densifypointcloud = bpy.types.Scene.executables["densifypointcloud"],
+            reconstructmesh = bpy.types.Scene.executables["reconstructmesh"],
+            texturemesh = bpy.types.Scene.executables["texturemesh"],
+            meshlabserver = bpy.types.Scene.executables["meshlabserver"],
+            gpu           = 1 if self.gpu else 0,
+            single_camera = 1 if self.single else 0,
+            reconstruct_distance=self.reconstruct_distance,
+            texture_resolution=self.texture_resolution,
+            densify_resolution=self.densify_resolution,
+            min_size=self.min_size,
+        )
+
+        #Move the results
+        for f in os.listdir(W):
+            if f not in oldFiles:
+                if "BakeMyScanRecon" not in f:
+                    os.rename(os.path.join(W, f), os.path.join(path, f))
+
+        #Reimport the files
+        bpy.context.scene.render.engine="CYCLES"
+        bpy.ops.bakemyscan.import_scan(filepath = os.path.join(path, "result.obj"))
+        bpy.ops.bakemyscan.clean_object()
+        bpy.ops.bakemyscan.create_empty_material()
+        bpy.ops.bakemyscan.assign_texture(slot="albedo", filepath=os.path.join(path, "result.png"))
+        return{'FINISHED'}
 
 def bakeAO(mat, nam, res):
     #To blender internal
