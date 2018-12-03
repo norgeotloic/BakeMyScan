@@ -1,7 +1,7 @@
 bl_info = {
     'name':     'BakeMyScan',
     'category': 'Object',
-    'version': (1, 3, 2),
+    'version': (1, 1, 0),
     'blender': (2, 79, 0),
     "description": "Multipurpose add-on to texture, remesh and bake objects",
     "author": "Loïc NORGEOT",

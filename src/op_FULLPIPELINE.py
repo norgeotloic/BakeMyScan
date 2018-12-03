@@ -209,7 +209,7 @@ class full_pipeline(bpy.types.Operator):
     @classmethod
     def poll(self, context):
         #Object mode
-        if context.mode!="OBJECT":
+        if context.mode!="OBJECT" and context.mode!="SCULPT":
             return 0
         #If more than two objects are selected
         if len(context.selected_objects)!=1:
@@ -224,6 +224,8 @@ class full_pipeline(bpy.types.Operator):
         return 1
 
     def execute(self, context):
+
+        
 
         if self.remeshing_method == "decimate":
             bpy.ops.bakemyscan.remesh_decimate(

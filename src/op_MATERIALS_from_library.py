@@ -74,6 +74,8 @@ class node_from_library(bpy.types.Operator):
             return 0
         if context.active_object is None:
             return 0
+        if context.active_object.active_material is None:
+            return 0
         return 1
 
     def invoke(self, context, event):

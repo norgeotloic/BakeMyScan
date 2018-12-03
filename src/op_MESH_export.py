@@ -94,13 +94,8 @@ class export_mesh(bpy.types.Operator, ExportHelper):
 
         return {'FINISHED'}
 
-def export_func(self, context):
-    self.layout.operator("bakemyscan.export_mesh", text="MESH (.mesh)")
-
 def register():
     bpy.utils.register_class(export_mesh)
-    bpy.types.INFO_MT_file_export.append(export_func)
 
 def unregister():
     bpy.utils.unregister_class(export_mesh)
-    bpy.types.INFO_MT_file_export.remove(export_func)

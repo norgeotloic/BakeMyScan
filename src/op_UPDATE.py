@@ -31,13 +31,6 @@ async def do_request():
                         bpy.types.Scene.update_url = a["browser_download_url"]
                         print(bpy.types.Scene.update_url)
 
-class CurrentVersion(bpy.types.Operator):
-    bl_idname = "bakemyscan.current_version"
-    bl_label  = "Current version"
-    @classmethod
-    def poll(self, context):
-        return 0
-
 class CheckUpdates(bpy.types.Operator):
     bl_idname = "bakemyscan.check_updates"
     bl_label  = "Check for updates"
@@ -92,7 +85,6 @@ class Update(bpy.types.Operator):
         return {"FINISHED"}
 
 def register():
-    bpy.utils.register_class(CurrentVersion)
     bpy.utils.register_class(CheckUpdates)
     bpy.utils.register_class(Update)
     bpy.types.Scene.newVersion      = None
@@ -101,7 +93,6 @@ def register():
     bpy.types.Scene.restartRequired = False
 
 def unregister():
-    bpy.utils.unregister_class(CurrentVersion)
     bpy.utils.unregister_class(CheckUpdates)
     bpy.utils.unregister_class(Update)
     del bpy.types.Scene.newVersion

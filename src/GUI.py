@@ -92,17 +92,8 @@ class ScanPanel(BakeMyScanPanel):
         #box.operator("bakemyscan.colmap_auto", icon="CAMERA_DATA", text="Colmap auto")
         box.operator("bakemyscan.colmap_openmvs", icon="CAMERA_DATA", text="Colmap OpenMVS Meshlab")
 
-class ImportPanel(BakeMyScanPanel):
-    """A panel for importing and pre-processing"""
-    bl_label       = "Import / Export"
-    def draw(self, context):
-        self.layout.operator("bakemyscan.import_scan",  icon="IMPORT",       text="Import")
-        self.layout.operator("bakemyscan.export",                  icon="EXPORT", text="Export model and textures")
-        self.layout.operator("bakemyscan.export_orthoview",        icon="RENDER_STILL", text="Ortho View")
-        self.layout.operator("bakemyscan.remove_all_but_selected", icon="ERROR", text="Clean non selected data")
-
 class PipelinePanel(BakeMyScanPanel):
-    bl_label = "Pipeline"
+    bl_label = "Model optimization"
     def draw(self, context):
         self.layout.operator("bakemyscan.clean_object", icon="PARTICLEMODE", text="Pre-process")
 
@@ -111,9 +102,11 @@ class PipelinePanel(BakeMyScanPanel):
         self.layout.operator("bakemyscan.unwrap",            icon="GROUP_UVS",  text="Unwrap")
 
         self.layout.label("Post-process")
+
         self.layout.operator("bakemyscan.symetrize",         icon="MOD_MIRROR", text='Symmetry')
         self.layout.operator("bakemyscan.relax",             icon="MOD_SMOKE",  text='Relax!')
-        self.layout.operator("bakemyscan.manifold",          icon="MOD_SMOKE",  text='Manifold')
+        self.layout.operator("bakemyscan.manifold",          icon="MOD_FLUIDSIM",  text='Manifold')
+        self.layout.operator("bakemyscan.remove_all_but_selected", icon="X", text="Clean non selected data")
 
         self.layout.label("Texture baking")
         self.layout.operator("bakemyscan.bake_textures",         icon="TEXTURE", text="Bake textures")
@@ -223,20 +216,12 @@ class RemeshFromSculptPanel(bpy.types.Panel):
     bl_space_type  = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_category    = "Tools"
-    bl_label       = "BakeMyScan Remesh"
+    bl_label       = "BakeMyScan"
     bl_context     = "sculpt_mode"
     bl_options     = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        self.layout.label("Triangles")
-        self.layout.operator("bakemyscan.remesh_decimate",   icon="MOD_DECIM", text="Simple decimate")
-        self.layout.operator("bakemyscan.remesh_iterative",  icon="MOD_DECIM", text="Iterative method")
-        self.layout.operator("bakemyscan.remesh_mmgs",       icon_value=bpy.types.Scene.custom_icons["mmg"].icon_id, text="MMGS")
-        self.layout.operator("bakemyscan.remesh_meshlab",    icon_value=bpy.types.Scene.custom_icons["meshlab"].icon_id, text="Meshlab")
-        self.layout.label("Quadrilaterals")
-        self.layout.operator("bakemyscan.remesh_quads",      icon="MOD_DECIM", text='"Dirty" quads')
-        self.layout.operator("bakemyscan.remesh_instant",    icon_value=bpy.types.Scene.custom_icons["instant"].icon_id, text="InstantMeshes")
-        self.layout.operator("bakemyscan.remesh_quadriflow", icon="MOD_DECIM", text="Quadriflow")
+        self.layout.operator("bakemyscan.full_pipeline", icon="MOD_DECIM", text="Retopology")
 
 class HDRIsPanel(BakeMyScanPanel):
     """Creates a Panel in the Object properties window"""
@@ -293,11 +278,15 @@ class AboutPanel(BakeMyScanPanel):
             if mod.bl_info.get("name") == "BakeMyScan":
                 try:
                     if bpy.types.Scene.currentVersion != bpy.types.Scene.newVersion:
-                        row.operator("wm.url_open", text="Changelog", icon="QUESTION").url = "https://github.com/norgeotloic/BakeMyScan/releases/latest"
+                        row.operator("wm.url_open", text="Changelog", icon="INFO").url = "https://github.com/norgeotloic/BakeMyScan/releases/latest"
                     else:
-                        row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
+                        name = ".".join([str(x) for x in mod.bl_info.get("version")])
+                        icon = bpy.types.Scene.custom_icons["bakemyscan"].icon_id
+                        row.operator("wm.url_open", icon="INFO", text='Current: %s' % name, icon_value=icon).url = "https://github.com/norgeotloic/BakeMyScan/releases/tag/"+name
                 except:
-                    row.operator("bakemyscan.current_version", icon="QUESTION", text='Current: %s' % ".".join([str(x) for x in mod.bl_info.get("version")]))
+                    name = ".".join([str(x) for x in mod.bl_info.get("version")])
+                    icon = bpy.types.Scene.custom_icons["bakemyscan"].icon_id
+                    row.operator("wm.url_open", icon="INFO", text='Current: %s' % name, icon_value=icon).url = "https://github.com/norgeotloic/BakeMyScan/releases/tag/"+name
 
         self.layout.label("Resources")
         self.layout.operator("wm.url_open", text="Tutorials", icon="QUESTION").url = "http://bakemyscan.org/tutorials"
@@ -320,28 +309,64 @@ class AboutPanel(BakeMyScanPanel):
         self.layout.operator("wm.url_open", text="Colmap", icon="CAMERA_DATA").url = "https://colmap.github.io/"
         self.layout.operator("wm.url_open", text="OpenMVS", icon="CAMERA_DATA").url = "http://cdcseacave.github.io/openMVS/"
 
+#Main menu fonctions
+def import_mesh_func(self, context):
+    self.layout.operator("bakemyscan.import_mesh", text="MESH (.mesh)")
+def export_mesh_func(self, context):
+    self.layout.operator("bakemyscan.export_mesh", text="MESH (.mesh)")
+def import_bms_func(self, context):
+    self.layout.operator("bakemyscan.import_scan", text="BMS (.obj, .fbx, .ply)")
+def export_bms_func(self, context):
+    self.layout.operator("bakemyscan.export", text="BMS: model (.obj, .fbx) and textures (.jpg, .png)")
+def export_ortho_func(self, context):
+    self.layout.operator("bakemyscan.export_orthoview", text="Orthographic view", icon="CAMERA_DATA")
+
+#Node editor menu
+def add_empty_pbr(self, context):
+    self.layout.operator("bakemyscan.create_empty_node", text="Empty PBR node", icon="ZOOMIN")
+def add_pbr_from_library(self, context):
+    self.layout.operator("bakemyscan.node_from_library", text="PBR node from library", icon="MATERIAL")
+
 def register():
+    #Variables
     bpy.utils.register_class(BakeMyScanProperties)
     bpy.types.Scene.bakemyscan_properties = bpy.props.PointerProperty(type=BakeMyScanProperties)
     bpy.types.Scene.imagesdirectory = ""
-
+    #Panels
     bpy.utils.register_class(ScanPanel)
-    bpy.utils.register_class(ImportPanel)
     bpy.utils.register_class(MaterialPanel)
     bpy.utils.register_class(RemeshFromSculptPanel)
     bpy.utils.register_class(PipelinePanel)
     bpy.utils.register_class(HDRIsPanel)
     bpy.utils.register_class(AboutPanel)
+    #Menu options
+    bpy.types.INFO_MT_file_import.append(import_mesh_func)
+    bpy.types.INFO_MT_file_export.append(export_mesh_func)
+    bpy.types.INFO_MT_file_import.append(import_bms_func)
+    bpy.types.INFO_MT_file_export.append(export_bms_func)
+    bpy.types.INFO_MT_render.append(export_ortho_func)
+    #Node options
+    bpy.types.NODE_MT_add.append(add_empty_pbr)
+    bpy.types.NODE_MT_add.append(add_pbr_from_library)
 
 def unregister():
+    #Variables
     bpy.utils.unregister_class(BakeMyScanProperties)
     del bpy.types.Scene.bakemyscan_properties
     del bpy.types.Scene.imagesdirectory
-
+    #Panels
     bpy.utils.unregister_class(ScanPanel)
-    bpy.utils.unregister_class(ImportPanel)
     bpy.utils.unregister_class(MaterialPanel)
     bpy.utils.unregister_class(RemeshFromSculptPanel)
     bpy.utils.unregister_class(PipelinePanel)
     bpy.utils.unregister_class(HDRIsPanel)
     bpy.utils.unregister_class(AboutPanel)
+    #Menu options
+    bpy.types.INFO_MT_file_import.remove(import_mesh_func)
+    bpy.types.INFO_MT_file_export.remove(export_mesh_func)
+    bpy.types.INFO_MT_file_import.remove(import_bms_func)
+    bpy.types.INFO_MT_file_export.remove(export_bms_func)
+    bpy.types.INFO_MT_render.remove(export_ortho_func)
+    #Node options
+    bpy.types.NODE_MT_add.remove(add_empty_pbr)
+    bpy.types.NODE_MT_add.remove(add_pbr_from_library)

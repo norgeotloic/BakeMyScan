@@ -181,8 +181,6 @@ def import_func(self, context):
 
 def register():
     bpy.utils.register_class(import_mesh)
-    bpy.types.INFO_MT_file_import.append(import_func)
 
 def unregister():
     bpy.utils.unregister_class(import_mesh)
-    bpy.types.INFO_MT_file_import.remove(import_func)
